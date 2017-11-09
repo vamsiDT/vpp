@@ -28,12 +28,6 @@
 
 #include <dpdk/device/dpdk_priv.h>
 
-/////////////////////////////////////////////
-#include <dpdk/device/flow_table_cpu.h>
-#include <dpdk/device/flow_table_var.h>
-#include <vppinfra/elog.h>
-//////////////////////////////////////////////////////////////////////////
-
 static char *dpdk_error_strings[] = {
 #define _(n,s) s,
   foreach_dpdk_error
@@ -346,17 +340,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u32 bi3, next3;
       u8 error0, error1, error2, error3;
       u64 or_ol_flags;
-//////////////////////////////////////////////
-      u8  drop0,drop1,drop2,drop3 ;
-      u8 classip0, classip1, classip2, classip3;
-      u8 classipv60, classipv61, classipv62, classipv63;
-      u8 classl20, classl21, classl22, classl23;
-      u8 modulo0,modulo1,modulo2,modulo3;
-      u8 first=1;
-      update_costs(vm,cpu_index);
-      update_vstate(vm,cpu_index);
-      old_t[cpu_index] = t[cpu_index];
-//////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
 
@@ -390,14 +373,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	      if (PREDICT_FALSE (mb3->nb_segs > 1))
 		dpdk_prefetch_buffer (mb3->next);
 	    }
-
-/////////////////////////////////
-    if(PREDICT_FALSE(first==1)){
-      t[cpu_index] = mb0->udata64;
-      departure(cpu_index);
-      first=0;
-    }
-/////////////////////////////////
 
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 	  b1 = vlib_buffer_from_rte_mbuf (mb1);
@@ -463,54 +438,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	      b2->error = node->errors[error2];
 	      b3->error = node->errors[error3];
 	    }
-
-////////////////////////////////////////////////////////////
-	classip0 = vlib_buffer_is_ip4(b0);
-	classipv60 = vlib_buffer_is_ip6(b0);
-	classl20 = ~((classip0) | (classipv60)) & 00000001;
-
-	classip1 = vlib_buffer_is_ip4(b1);
-	classipv61 = vlib_buffer_is_ip6(b1);
-	classl21 = ~((classip1) | (classipv61)) & 00000001;
-
-	classip2 = vlib_buffer_is_ip4(b2);
-	classipv62 = vlib_buffer_is_ip6(b2);
-	classl22 = ~((classip2) | (classipv62)) & 00000001;
-
-    classip3 = vlib_buffer_is_ip4(b3);
-    classipv63 = vlib_buffer_is_ip6(b3);
-    classl23 = ~((classip3) | (classipv63)) & 00000001;
-
-  	modulo0 = (classip0)*0 + (classipv60)*1 + (classl20)*2;
-  	modulo1 = (classip1)*0 + (classipv61)*1 + (classl21)*2;
-  	modulo2 = (classip2)*0 + (classipv62)*1 + (classl22)*2;
-  	modulo3 = (classip3)*0 + (classipv63)*1 + (classl23)*2;
-    drop0 = /*0*modulo0;*/fq(modulo0,cpu_index);
-    drop1 = /*0*modulo1;*/fq(modulo1,cpu_index);
-    drop2 = /*0*modulo2;*/fq(modulo2,cpu_index);
-    drop3 = /*0*modulo3;*/fq(modulo3,cpu_index);
-
-    if(PREDICT_FALSE(drop0 == 1)){
-        next0 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b0->error = node->errors[error0];
-    }
-    if(PREDICT_FALSE(drop1 == 1)){
-        next1 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error1 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b1->error = node->errors[error1];
-    }
-    if(PREDICT_FALSE(drop2 == 1)){
-        next2 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error2 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b2->error = node->errors[error2];
-    }
-    if(PREDICT_FALSE(drop3 == 1)){
-        next3 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error3 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b3->error = node->errors[error3];
-    }
-////////////////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
 	  vlib_buffer_advance (b1, device_input_next_node_advance[next1]);
@@ -591,20 +518,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 	  dpdk_rx_error_from_mb (mb0, &next0, &error0);
 	  b0->error = node->errors[error0];
-
-//////////////////////////////////////////////////////////
-    classip0 = vlib_buffer_is_ip4(b0);
-    classipv60 = vlib_buffer_is_ip6(b0);
-    classl20 = ~((classip0) | (classipv60)) & 00000001;
-
-  	modulo0 = (classip0)*0 + (classipv60)*1 + (classl20)*2;
-    drop0 = /*0*modulo0;*/fq(modulo0,cpu_index);
-    if(PREDICT_FALSE(drop0 == 1)){
-        next0 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b0->error = node->errors[error0];
-    }
-/////////////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
 
