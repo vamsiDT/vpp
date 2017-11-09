@@ -32,15 +32,6 @@
 #include <dpdk/device/flow_table_cpu.h>
 #include <dpdk/device/flow_table_var.h>
 #include <vppinfra/elog.h>
-
-
-//#define WEIGHT_IP   320
-//#define WEIGHT_IP6  416
-#define WEIGHT_L2   (224)
-#define DEFAULT_CREDIT (80000)
-#define HELLO 1
-
-
 //////////////////////////////////////////////////////////////////////////
 
 static char *dpdk_error_strings[] = {
@@ -356,15 +347,12 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u8 error0, error1, error2, error3;
       u64 or_ol_flags;
 //////////////////////////////////////////////
-      // u16 pktlen0,pktlen1,pktlen2,pktlen3;
       u8  drop0,drop1,drop2,drop3 ;
       u8 classip0, classip1, classip2, classip3;
       u8 classipv60, classipv61, classipv62, classipv63;
       u8 classl20, classl21, classl22, classl23;
       u8 modulo0,modulo1,modulo2,modulo3;
       u8 first=1;
-    //u8 initfirst=1;
-	  //printf("%lu\n",s_total[cpu_index]);
       update_costs(vm,cpu_index);
       update_vstate(vm,cpu_index);
       old_t[cpu_index] = t[cpu_index];
@@ -660,16 +648,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
-//	u64 t1,t2,t3;
-//	t1 = clib_cpu_time_now();
-//	t2 = clib_cpu_time_now();
-//	sleep_now(t[cpu_index],old_t[cpu_index]);
-//	t3 = clib_cpu_time_now();
-//	printf("%d\n",abs((t3-t2)-(t2-t1)));
-//	int abc=0;
-//	while(abc<1000000){
-//	abc++;
-//	}
   return mb_index;
 }
 
