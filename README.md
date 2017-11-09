@@ -5,3 +5,5 @@
 
 ---
 ### Current work on vpp at Telecom-paristech.
+
+> This branch has the implementation of fairdrop algorithm for cpu resource.
