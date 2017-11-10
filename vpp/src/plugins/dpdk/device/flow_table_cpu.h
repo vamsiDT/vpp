@@ -14,7 +14,7 @@
 #include <vppinfra/time.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHACPU 0.95
+#define ALPHACPU 0.97
 #define THRESHOLD 1280000
 
 #define WEIGHT_IP4	255
