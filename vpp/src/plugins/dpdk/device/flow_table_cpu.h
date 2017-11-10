@@ -14,12 +14,12 @@
 #include <vppinfra/time.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHACPU 1.0
+#define ALPHACPU 0.95
 #define THRESHOLD 1280000
 
-#define WEIGHT_IP4	320
-#define WEIGHT_IP6	417
-
+#define WEIGHT_IP4	255
+#define WEIGHT_IP6	510
+#define WEIGHT_DROP 40
 typedef struct flowcount{
     u32 n_packets;
     u32 vqueue;
@@ -48,6 +48,7 @@ extern u64 old_t[24];
 extern u8 hello_world[24];
 extern u64 s[24];
 extern u64 s_total[24];
+extern u8 n_drops[24];
 
 /* Flow/class classification function */
 always_inline flowcount_t *
@@ -138,6 +139,7 @@ u8 drop;
     }
     else {
         drop = 1;
+		n_drops[cpu_index]++;
     }
 return drop;
 }
@@ -162,13 +164,13 @@ always_inline void update_costs(vlib_main_t *vm,u32 index){
 
     if(nodet[0][index]!=NULL && nodet[1][index]!=NULL){
 		if (nodet[0][index]->n_packets > 0){
-			cost->costip4 =  ((f64)(WEIGHT_IP4*s_total[index]))/((f64)((WEIGHT_IP4*nodet[0][index]->n_packets)+(WEIGHT_IP6*nodet[1][index]->n_packets)));
+			cost->costip4 =  ((f64)(WEIGHT_IP4*(s_total[index]-(n_drops[index]*WEIGHT_DROP))))/((f64)((WEIGHT_IP4*nodet[0][index]->n_packets)+(WEIGHT_IP6*nodet[1][index]->n_packets)));
 			//printf("%lf\t",cost->costip4);
 		}
 		else
             cost->costip4 = 0;
 		if (nodet[1][index]->n_packets > 0){
-			cost->costip6 =  ((f64)(WEIGHT_IP6*s_total[index]))/((f64)((WEIGHT_IP4*nodet[0][index]->n_packets)+(WEIGHT_IP6*nodet[1][index]->n_packets)));
+			cost->costip6 =  ((f64)(WEIGHT_IP6*(s_total[index]-(n_drops[index]*WEIGHT_DROP))))/((f64)((WEIGHT_IP4*nodet[0][index]->n_packets)+(WEIGHT_IP6*nodet[1][index]->n_packets)));
 			//printf("%lf\n",cost->costip6);
 		}
 		else
@@ -176,7 +178,7 @@ always_inline void update_costs(vlib_main_t *vm,u32 index){
 	}
     else if(nodet[0][index]!=NULL && nodet[1][index]==NULL){
 		if (nodet[0][index]->n_packets > 0){
-			cost->costip4 = (s_total[index]/nodet[0][index]->n_packets);
+			cost->costip4 = ((s_total[index]-(n_drops[index]*WEIGHT_DROP))/((nodet[0][index]->n_packets)));
 			//printf("Hello:%lf\t",cost->costip4);
 		}
 		else
@@ -184,10 +186,11 @@ always_inline void update_costs(vlib_main_t *vm,u32 index){
 	}
 	else if(nodet[0][index]==NULL && nodet[1][index]!=NULL){
 		if (nodet[1][index]->n_packets > 0)
-			cost->costip6 = (s_total[index]/nodet[1][index]->n_packets);
+			cost->costip6 = ((s_total[index]-(n_drops[index]*WEIGHT_DROP))/((nodet[1][index]->n_packets)));
 		else
             cost->costip6 = 0;
 	}
+	n_drops[index]=0;
 }
 
 /*function to increment vqueues using the updated costs*/
