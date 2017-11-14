@@ -16,7 +16,7 @@
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define MAXCPU 24
-#define ALPHACPU 0.1
+#define ALPHACPU 0.95
 #define THRESHOLD 1280000
 
 #define WEIGHT_IP4	255
