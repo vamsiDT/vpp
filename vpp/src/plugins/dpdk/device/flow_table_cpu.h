@@ -16,7 +16,7 @@
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define MAXCPU 24
-#define ALPHACPU 0.97
+#define ALPHACPU 0.1
 #define THRESHOLD 1280000
 
 #define WEIGHT_IP4	255
@@ -77,18 +77,16 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * flow;
 
     if (PREDICT_FALSE(head[cpu_index] == NULL)){
-        numflows = 0;
         nbl[cpu_index] = 0;
         nodet[modulox][cpu_index] = malloc(4*sizeof(flowcount_t));
         (nodet[modulox][cpu_index] + 0)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 2)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 3)->branchnext = NULL;
-        numflows++;
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
-        head = nodet[modulox][cpu_index] + 0;
+        head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
     }
 
@@ -98,7 +96,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 2)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 3)->branchnext = NULL;
-        numflows++;
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
@@ -109,7 +106,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     {
         if  ( (nodet[modulox][cpu_index] + 0)->hash != hashx0 )
         {
-            numflows++;
             (nodet[modulox][cpu_index] + 1)->hash = hashx0;
             (nodet[modulox][cpu_index] + 1)->weight = pktlenx;
             (nodet[modulox][cpu_index] + 0)->branchnext = (nodet[modulox][cpu_index] + 1);
@@ -126,7 +122,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         if ( (nodet[modulox][cpu_index] + 0)->hash != hashx0 ) {
             if ( (nodet[modulox][cpu_index] + 1)->hash != hashx0 ) {
 
-                numflows++;
                 (nodet[modulox][cpu_index] + 2)->hash = hashx0;
                 (nodet[modulox][cpu_index] + 2)->weight = pktlenx;
                 (nodet[modulox][cpu_index] + 1)->branchnext = nodet[modulox][cpu_index] + 2;
@@ -148,7 +143,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             if ( (nodet[modulox][cpu_index] + 1)->hash != hashx0 ) {
                 if ( (nodet[modulox][cpu_index] + 2)->hash != hashx0 ) {
 
-                    numflows++;
                     (nodet[modulox][cpu_index] + 3)->hash = hashx0;
                     (nodet[modulox][cpu_index] + 3)->weight = pktlenx;
                     (nodet[modulox][cpu_index] + 2)->branchnext = nodet[modulox][cpu_index] + 3;
@@ -309,13 +303,13 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
     costlist = head_af[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-        flow->cost = ((f64)((flow->weight)*(s_total[index]-(n_drops[index]*WEIGHT_DROP))))/ sum;
+        flow->cost = ((f64)((flow->weight)*(s_total[cpu_index]-(n_drops[cpu_index]*WEIGHT_DROP))))/ sum;
         costlist = costlist->next;
     }
 }
 
 /*function to increment vqueues using the updated costs*/
-always_inline void update_vstate(vlib_main_t * vm,u32 index){
+always_inline void update_vstate(vlib_main_t * vm,u32 cpu_index){
     activelist_t * costlist = head_af[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
