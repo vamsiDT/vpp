@@ -14,15 +14,27 @@
 #include <vppinfra/time.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
+#define TABLESIZE 4096
+#define MAXCPU 24
 #define ALPHACPU 0.97
 #define THRESHOLD 1280000
 
 #define WEIGHT_IP4	255
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 40
+// typedef struct flowcount{
+//     u32 n_packets;
+//     u32 vqueue;
+// }flowcount_t;
+
 typedef struct flowcount{
-    u32 n_packets;
+    u32 hash;
     u32 vqueue;
+    u16 weight;
+    u16 cost;
+    u32 n_packets;
+    struct flowcount * branchnext;
+    struct flowcount * update;
 }flowcount_t;
 
 typedef struct activelist{
@@ -30,41 +42,174 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-typedef struct costlen{
-    f64 costip4;
-    f64 costip6;
-}costlen_t;
-
-extern flowcount_t *  nodet[256][24];
-extern activelist_t * head_af[24];
-extern activelist_t * tail_af[24];
-extern flowcount_t *  head [24];
-extern costlen_t * costtable[24];
-extern int numflows;
+extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
+extern activelist_t * head_af[MAXCPU];
+extern activelist_t * tail_af[MAXCPU];
+extern flowcount_t *  head [MAXCPU];
 extern u32 r_qtotal;
-extern u32 nbl[24];
-extern u64 t[24];
-extern u64 old_t[24];
-extern u8 hello_world[24];
-extern u64 s[24];
-extern u64 s_total[24];
-extern u8 n_drops[24];
+extern u32 nbl[MAXCPU];
+extern u64 t[MAXCPU];
+extern u64 old_t[MAXCPU];
+extern u8 hello_world[MAXCPU];
+extern u64 s[MAXCPU];
+extern u64 s_total[MAXCPU];
+extern u8 n_drops[MAXCPU];
 
 /* Flow/class classification function */
+// always_inline flowcount_t *
+// flow_table_classify(u8 modulox,u32 cpu_index){
+
+//     flowcount_t * flow;
+
+//     if(PREDICT_FALSE(nodet[modulox][cpu_index]==NULL)){
+//         nodet[modulox][cpu_index] = malloc(sizeof(flowcount_t));
+//         nodet[modulox][cpu_index]->vqueue=0;
+//         nodet[modulox][cpu_index]->n_packets=0;
+//     }
+//         flow = nodet[modulox][cpu_index];
+
+//     return flow;
+// }
+
 always_inline flowcount_t *
-flow_table_classify(u8 modulox,u32 cpu_index){
+flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
     flowcount_t * flow;
 
-    if(PREDICT_FALSE(nodet[modulox][cpu_index]==NULL)){
-        nodet[modulox][cpu_index] = malloc(sizeof(flowcount_t));
-        nodet[modulox][cpu_index]->vqueue=0;
-        nodet[modulox][cpu_index]->n_packets=0;
+    if (PREDICT_FALSE(head[cpu_index] == NULL)){
+        numflows = 0;
+        nbl[cpu_index] = 0;
+        nodet[modulox][cpu_index] = malloc(4*sizeof(flowcount_t));
+        (nodet[modulox][cpu_index] + 0)->branchnext = NULL;
+        (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
+        (nodet[modulox][cpu_index] + 2)->branchnext = NULL;
+        (nodet[modulox][cpu_index] + 3)->branchnext = NULL;
+        numflows++;
+        (nodet[modulox][cpu_index] + 0)->hash = hashx0;
+        (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
+        (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
+        head = nodet[modulox][cpu_index] + 0;
+        flow = nodet[modulox][cpu_index] + 0;
     }
-        flow = nodet[modulox][cpu_index];
+
+    else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
+        nodet[modulox][cpu_index] = malloc(4*sizeof(flowcount_t));
+        (nodet[modulox][cpu_index] + 0)->branchnext = NULL;
+        (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
+        (nodet[modulox][cpu_index] + 2)->branchnext = NULL;
+        (nodet[modulox][cpu_index] + 3)->branchnext = NULL;
+        numflows++;
+        (nodet[modulox][cpu_index] + 0)->hash = hashx0;
+        (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
+        (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
+        flow = nodet[modulox][cpu_index] + 0;
+    }
+
+    else if  ((nodet[modulox][cpu_index] + 0)->branchnext == NULL)
+    {
+        if  ( (nodet[modulox][cpu_index] + 0)->hash != hashx0 )
+        {
+            numflows++;
+            (nodet[modulox][cpu_index] + 1)->hash = hashx0;
+            (nodet[modulox][cpu_index] + 1)->weight = pktlenx;
+            (nodet[modulox][cpu_index] + 0)->branchnext = (nodet[modulox][cpu_index] + 1);
+            flow = nodet[modulox][cpu_index] + 1;
+        }
+        else
+        {
+            flow = nodet[modulox][cpu_index] + 0;
+        }
+    }
+
+    else if ( (nodet[modulox][cpu_index] + 1)->branchnext == NULL )
+    {
+        if ( (nodet[modulox][cpu_index] + 0)->hash != hashx0 ) {
+            if ( (nodet[modulox][cpu_index] + 1)->hash != hashx0 ) {
+
+                numflows++;
+                (nodet[modulox][cpu_index] + 2)->hash = hashx0;
+                (nodet[modulox][cpu_index] + 2)->weight = pktlenx;
+                (nodet[modulox][cpu_index] + 1)->branchnext = nodet[modulox][cpu_index] + 2;
+                flow = nodet[modulox][cpu_index] + 2;
+            }
+            else
+            {
+                flow = nodet[modulox][cpu_index] + 1;
+            }
+        }
+        else
+        {
+            flow = nodet[modulox][cpu_index] + 0;
+        }
+    }
+
+    else if ( (nodet[modulox][cpu_index] + 2)->branchnext == NULL ){
+        if ( (nodet[modulox][cpu_index] + 0)->hash != hashx0 ) {
+            if ( (nodet[modulox][cpu_index] + 1)->hash != hashx0 ) {
+                if ( (nodet[modulox][cpu_index] + 2)->hash != hashx0 ) {
+
+                    numflows++;
+                    (nodet[modulox][cpu_index] + 3)->hash = hashx0;
+                    (nodet[modulox][cpu_index] + 3)->weight = pktlenx;
+                    (nodet[modulox][cpu_index] + 2)->branchnext = nodet[modulox][cpu_index] + 3;
+                    (nodet[modulox][cpu_index] + 3)->branchnext = nodet[modulox][cpu_index] + 0;
+                    flow = nodet[modulox][cpu_index] + 3;
+                }
+                else
+                {
+                    flow = nodet[modulox][cpu_index] + 2;
+                }
+            }
+            else
+            {
+                flow = nodet[modulox][cpu_index] + 1;
+            }
+        }
+        else
+        {
+            flow = nodet[modulox][cpu_index] + 0;
+        }
+    }
+
+    else
+    {
+        if ( (nodet[modulox][cpu_index] + 0)->hash != hashx0 ) {
+
+            if ( (nodet[modulox][cpu_index] + 1)->hash != hashx0 ) {
+
+                if ( (nodet[modulox][cpu_index] + 2)->hash != hashx0 ) {
+
+                    if ( (nodet[modulox][cpu_index] + 3)->hash != hashx0 ) {
+
+                        ((nodet[modulox][cpu_index] + 0)->update)->hash = hashx0;
+                        ((nodet[modulox][cpu_index] + 0)->update)->weight = pktlenx;
+                        flow = (nodet[modulox][cpu_index] + 0)->update;
+                        (nodet[modulox][cpu_index] + 0)->update = ((nodet[modulox][cpu_index] + 0)->update)->branchnext ;
+                    }
+                    else
+                    {
+                        flow = nodet[modulox][cpu_index] + 3;
+                    }
+                }
+                else
+                {
+                    flow = nodet[modulox][cpu_index] + 2;
+                }
+            }
+            else
+            {
+                flow = nodet[modulox][cpu_index] + 1;
+            }
+        }
+        else
+        {
+            flow = nodet[modulox][cpu_index] + 0;
+        }
+    }
 
     return flow;
 }
+
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
 void flowin(flowcount_t * flow,u32 cpu_index){
@@ -144,65 +289,39 @@ u8 drop;
 return drop;
 }
 
-always_inline u8 fq (u8 modulox,u32 cpu_index){
+always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * i;
     u8 drop;
-    i = flow_table_classify(modulox,cpu_index);
+    i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
     drop = arrival(i,cpu_index);
     return drop;
 }
 
 /*Function to update costs*/
-always_inline void update_costs(vlib_main_t *vm,u32 index){
-
-
-    if(PREDICT_FALSE(costtable[index]==NULL)){
-        costtable[index] = malloc(sizeof(costlen_t));
-        memset(costtable[index], 0, sizeof (costlen_t));
+always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
+    activelist_t * costlist = head_af[cpu_index];
+    f64 sum = 0;
+    while (costlist != NULL){
+        flowcount_t * flow = costlist->flow;
+        sum += (flow->weight)*(flow->n_packets);
+        costlist = costlist->next;
     }
-    costlen_t *cost = costtable[index];
-
-    if(nodet[0][index]!=NULL && nodet[1][index]!=NULL){
-		if (nodet[0][index]->n_packets > 0){
-			cost->costip4 =  ((f64)(WEIGHT_IP4*(s_total[index]-(n_drops[index]*WEIGHT_DROP))))/((f64)((WEIGHT_IP4*nodet[0][index]->n_packets)+(WEIGHT_IP6*nodet[1][index]->n_packets)));
-			//printf("%lf\t",cost->costip4);
-		}
-		else
-            cost->costip4 = 0;
-		if (nodet[1][index]->n_packets > 0){
-			cost->costip6 =  ((f64)(WEIGHT_IP6*(s_total[index]-(n_drops[index]*WEIGHT_DROP))))/((f64)((WEIGHT_IP4*nodet[0][index]->n_packets)+(WEIGHT_IP6*nodet[1][index]->n_packets)));
-			//printf("%lf\n",cost->costip6);
-		}
-		else
-            cost->costip6 = 0;
-	}
-    else if(nodet[0][index]!=NULL && nodet[1][index]==NULL){
-		if (nodet[0][index]->n_packets > 0){
-			cost->costip4 = ((s_total[index]-(n_drops[index]*WEIGHT_DROP))/((nodet[0][index]->n_packets)));
-			//printf("Hello:%lf\t",cost->costip4);
-		}
-		else
-			cost->costip4 = 0;
-	}
-	else if(nodet[0][index]==NULL && nodet[1][index]!=NULL){
-		if (nodet[1][index]->n_packets > 0)
-			cost->costip6 = ((s_total[index]-(n_drops[index]*WEIGHT_DROP))/((nodet[1][index]->n_packets)));
-		else
-            cost->costip6 = 0;
-	}
-	n_drops[index]=0;
+    costlist = head_af[cpu_index];
+    while(costlist != NULL){
+        flowcount_t * flow = costlist->flow;
+        flow->cost = ((f64)((flow->weight)*(s_total[index]-(n_drops[index]*WEIGHT_DROP))))/ sum;
+        costlist = costlist->next;
+    }
 }
 
 /*function to increment vqueues using the updated costs*/
 always_inline void update_vstate(vlib_main_t * vm,u32 index){
-    costlen_t *cost = costtable[index];
-    if(PREDICT_TRUE(nodet[0][index]!=NULL)){
-    nodet[0][index]->vqueue += nodet[0][index]->n_packets*(cost->costip4);
-    nodet[0][index]->n_packets=0;
-    }
-    if(PREDICT_TRUE(nodet[1][index]!=NULL)){
-    nodet[1][index]->vqueue += nodet[1][index]->n_packets*(cost->costip6);
-    nodet[1][index]->n_packets=0;
+    activelist_t * costlist = head_af[cpu_index];
+    while(costlist != NULL){
+        flowcount_t * flow = costlist->flow;
+        flow->vqueue += (flow->n_packets)*(flow->cost);
+        flow->n_packets = 0;
+        costlist = costlist->next;
     }
 }
 
