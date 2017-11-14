@@ -466,6 +466,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     drop1 = fq(modulo1,hash1,pktlen1);
     drop2 = fq(modulo2,hash2,pktlen2);
     drop3 = fq(modulo3,hash3,pktlen3);
+
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
         error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
