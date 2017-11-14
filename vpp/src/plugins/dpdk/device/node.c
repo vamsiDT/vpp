@@ -379,6 +379,11 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  ASSERT (mb2);
 	  ASSERT (mb3);
 
+//	printf("%u\n",mb0->timesync);
+//	printf("%u\n",mb1->timesync);
+//	printf("%u\n",mb2->timesync);
+//	printf("%u\n",mb3->timesync);
+
 	  if (maybe_multiseg)
 	    {
 	      if (PREDICT_FALSE (mb0->nb_segs > 1))
@@ -565,6 +570,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 	  ASSERT (mb0);
+
+    printf("%u\n",mb0->timesync);
 
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 
