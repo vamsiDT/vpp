@@ -76,9 +76,9 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
 
     for (i = 0; i < nb_pkts; i++){
         pkts[i]->udata64 = rx_timestamp;
-//		printf("%u\n",pkts[i]->hash.rss);
-		if (pkts[i]->hash.rss==4157820474)
-		pkts[i]->timesync = 300;
+		//printf("%u\n",pkts[i]->hash.rss);
+		//if (pkts[i]->hash.rss==4157820474)
+		//pkts[i]->timesync = 420;
 	}
     return nb_pkts;
 }

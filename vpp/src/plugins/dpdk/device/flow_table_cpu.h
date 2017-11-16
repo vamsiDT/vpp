@@ -16,12 +16,12 @@
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define MAXCPU 24
-#define ALPHACPU 0.1
-#define THRESHOLD 1280000
+#define ALPHACPU 1.0
+#define THRESHOLD 420//12800
 
-#define WEIGHT_IP4	255
+#define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
-#define WEIGHT_DROP 40
+#define WEIGHT_DROP 90
 // typedef struct flowcount{
 //     u32 n_packets;
 //     u32 vqueue;
@@ -71,6 +71,8 @@ extern u8 n_drops[MAXCPU];
 //     return flow;
 // }
 
+extern u32 flows[MAXCPU];
+
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -79,6 +81,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     if (PREDICT_FALSE(head[cpu_index] == NULL)){
         nbl[cpu_index] = 0;
         nodet[modulox][cpu_index] = malloc(4*sizeof(flowcount_t));
+		flows[cpu_index]++;
         (nodet[modulox][cpu_index] + 0)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 2)->branchnext = NULL;
@@ -92,6 +95,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
     else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
         nodet[modulox][cpu_index] = malloc(4*sizeof(flowcount_t));
+		flows[cpu_index]++;
         (nodet[modulox][cpu_index] + 0)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 2)->branchnext = NULL;
@@ -109,6 +113,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             (nodet[modulox][cpu_index] + 1)->hash = hashx0;
             (nodet[modulox][cpu_index] + 1)->weight = pktlenx;
             (nodet[modulox][cpu_index] + 0)->branchnext = (nodet[modulox][cpu_index] + 1);
+			flows[cpu_index]++;
             flow = nodet[modulox][cpu_index] + 1;
         }
         else
@@ -125,6 +130,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                 (nodet[modulox][cpu_index] + 2)->hash = hashx0;
                 (nodet[modulox][cpu_index] + 2)->weight = pktlenx;
                 (nodet[modulox][cpu_index] + 1)->branchnext = nodet[modulox][cpu_index] + 2;
+				flows[cpu_index]++;
                 flow = nodet[modulox][cpu_index] + 2;
             }
             else
@@ -147,6 +153,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                     (nodet[modulox][cpu_index] + 3)->weight = pktlenx;
                     (nodet[modulox][cpu_index] + 2)->branchnext = nodet[modulox][cpu_index] + 3;
                     (nodet[modulox][cpu_index] + 3)->branchnext = nodet[modulox][cpu_index] + 0;
+					flows[cpu_index]++;
                     flow = nodet[modulox][cpu_index] + 3;
                 }
                 else
@@ -234,12 +241,12 @@ flowcount_t * flowout(u32 cpu_index){
 
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
-
+//printf("%u\n",flows[cpu_index]);
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-        credit = ((t[cpu_index]-old_t[cpu_index])*ALPHACPU);
+        credit = ((t[cpu_index]-old_t[cpu_index])*ALPHACPU) - (n_drops[cpu_index]*WEIGHT_DROP);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -262,6 +269,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if (flow != NULL){
         if (flow->vqueue == 0){
             nbl[cpu_index]++;
+			//printf("%u\n",nbl[cpu_index]);
             flowin(flow,cpu_index);
 			flow->vqueue = 1;
         }
@@ -297,15 +305,20 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
     f64 sum = 0;
     while (costlist != NULL){
         flowcount_t * flow = costlist->flow;
-        sum += (flow->weight)*(flow->n_packets);
+        sum += ((u32)(flow->weight))*(flow->n_packets);
+//		printf("%u:%u ",flow->weight,flow->n_packets);
         costlist = costlist->next;
     }
+	sum += (n_drops[cpu_index]*WEIGHT_DROP);
+//	printf("drops:%u\t",((u32)n_drops[cpu_index]));
+//	printf("sum:%lf\n",sum);
     costlist = head_af[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-        flow->cost = ((f64)((flow->weight)*(s_total[cpu_index]-(n_drops[cpu_index]*WEIGHT_DROP))))/ sum;
+        flow->cost = ((f64)((flow->weight)*(s_total[cpu_index]/*-(n_drops[cpu_index]*WEIGHT_DROP)*/)))/ sum;
         costlist = costlist->next;
     }
+//	printf("s_total:%lf\tsum:%lf\n",(f64)(s_total[cpu_index]/*-(n_drops[cpu_index]*WEIGHT_DROP)*/),sum);
 }
 
 /*function to increment vqueues using the updated costs*/
@@ -321,6 +334,8 @@ always_inline void update_vstate(vlib_main_t * vm,u32 cpu_index){
 
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
+	n_drops[cpu_index]=0;
+//	printf("%u\n",nbl[cpu_index]);
 }
 
 always_inline void sleep_now (u64 t1,u64 old_t1){

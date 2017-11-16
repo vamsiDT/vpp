@@ -469,10 +469,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 ////////////////////////////////////////////////////////////
-	pktlen0 = mb0->timesync;
-	pktlen1 = mb1->timesync;
-	pktlen2 = mb1->timesync;
-	pktlen3 = mb1->timesync;
+	pktlen0 = WEIGHT_IP4;//mb0->timesync;
+	pktlen1 = WEIGHT_IP4;//mb1->timesync;
+	pktlen2 = WEIGHT_IP4;//mb1->timesync;
+	pktlen3 = WEIGHT_IP4;//mb1->timesync;
 
 	hash0 = mb0->hash.rss;
 	hash1 = mb0->hash.rss;
@@ -593,7 +593,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 //////////////////////////////////////////////////////////
-	pktlen0 = mb0->timesync;
+	pktlen0 = WEIGHT_IP4;//mb0->timesync;
 	hash0 = mb0->hash.rss;
   	modulo0 = hash0%TABLESIZE;
     drop0 = /*0*modulo0;*/fq(modulo0,hash0,pktlen0,cpu_index);
