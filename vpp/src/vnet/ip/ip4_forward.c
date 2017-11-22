@@ -51,6 +51,7 @@
 #include <vnet/dpo/load_balance.h>
 #include <vnet/dpo/classify_dpo.h>
 #include <vnet/mfib/mfib_table.h>	/* for mFIB table and entry creation */
+#include <plugins/dpdk/device/flow_table_cpu.h>
 
 /**
  * @file
@@ -2333,6 +2334,10 @@ ip4_rewrite_inline (vlib_main_t * vm,
   n_left_from = frame->n_vectors;
   next_index = node->cached_next_index;
   u32 cpu_index = os_get_cpu_number ();
+
+	sleep_now(busyloop[cpu_index]);
+    busyloop[cpu_index]=0;
+
 
   while (n_left_from > 0)
     {
