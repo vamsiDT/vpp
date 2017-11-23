@@ -17,7 +17,8 @@
 #define TABLESIZE 4096
 #define MAXCPU 24
 #define ALPHACPU 1.0
-#define THRESHOLD 64800//14000//12800
+#define THRESHOLD 15000//14000//12800
+#define THRESHOLD1 10000
 
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
@@ -25,7 +26,7 @@
 
 // 0 1 4 6 8 9 12 13 18 19
 
-#define FLOW_HASH_4157820474	350
+#define FLOW_HASH_4157820474	750
 #define FLOW_HASH_1526211368	1500
 #define FLOW_HASH_2705782963	600 //
 #define FLOW_HASH_208508321		550 //
@@ -363,7 +364,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 		credit = ((old_t[cpu_index]-veryold_t[cpu_index])) /*- (n_drops[cpu_index]*WEIGHT_DROP)*/;
 //		else
 //		credit = ((old_t[cpu_index]-t[cpu_index]))/*- (n_drops[cpu_index]*WEIGHT_DROP)*/;
-//		printf("%lf\t",credit);
+		printf("%lf\n",credit);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -395,6 +396,18 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 		flow->n_packets++;
 //		flow->vqueue += flow->cost;
     }
+}
+
+/*Drop Probability*/
+always_inline void prob(u32 vq){
+	f64 proba;
+	if(vq >=THRESHOLD1 && vq <= 4*THRESHOLD1)
+	proba = 10*( ( ((f64)(vq)) / (f64)(3*THRESHOLD1) ) - ( ((f64)(1)) / ((f64)(3)) ) );
+	else if (vq <THRESHOLD1)
+		proba = 0;
+	else if (vq > 4*THRESHOLD1)
+		proba = 1;
+	printf("%lf\t",proba);
 }
 
 /* arrival function for each packet */
@@ -457,13 +470,18 @@ always_inline void update_vstate(vlib_main_t * vm,u32 cpu_index){
 	u32 totalvqueue=0;
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
+//		prob(flow->vqueue);
+//		printf("%u\n",flow->weight);
+        totalvqueue+= flow->vqueue;
         flow->vqueue += (flow->n_packets)*(flow->cost);
+		//prob(flow->vqueue);
+		//printf("%u\n",flow->weight);
 		totalvqueue+= flow->vqueue;
 //		printf("%u:%u\n",flow->n_packets,flow->hash);
         flow->n_packets = 0;
         costlist = costlist->next;
     }
-	//printf("%u\t",totalvqueue);
+	printf("%u\t",totalvqueue);
 }
 
 always_inline void departure (u32 cpu_index){
