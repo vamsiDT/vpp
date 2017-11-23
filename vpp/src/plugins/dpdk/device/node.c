@@ -351,9 +351,11 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u32 hash0,hash1,hash2,hash3;
       u32 pktlen0,pktlen1,pktlen2,pktlen3;
       u8 modulo0,modulo1,modulo2,modulo3;
-      u8 first=1;
+      //u8 first=1;
       update_costs(vm,cpu_index);
-      update_vstate(vm,cpu_index);
+//      update_vstate(vm,cpu_index);
+		veryold_t[cpu_index] = old_t[cpu_index];
+        old_t[cpu_index] = t[cpu_index];
 //////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
@@ -393,7 +395,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	      if (PREDICT_FALSE (mb3->nb_segs > 1))
 		dpdk_prefetch_buffer (mb3->next);
 	    }
-
+/*
 /////////////////////////////////
     if(PREDICT_FALSE(first==1)){
 		veryold_t[cpu_index] = old_t[cpu_index];
@@ -404,7 +406,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       	first=0;
     }
 /////////////////////////////////
-
+*/
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 	  b1 = vlib_buffer_from_rte_mbuf (mb1);
 	  b2 = vlib_buffer_from_rte_mbuf (mb2);
@@ -565,6 +567,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  n_buffers -= 4;
 	  mb_index += 4;
 	}
+
       while (n_buffers > 0 && n_left_to_next > 0)
 	{
 	  struct rte_mbuf *mb0 = xd->rx_vectors[queue_id][mb_index];
@@ -577,8 +580,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 	  ASSERT (mb0);
+	t[cpu_index] = mb0->udata64;
 	//printf("%lu\n",mb0->udata64);
 
+/*
 	    if(PREDICT_FALSE(first==1)){
 			veryold_t[cpu_index] = old_t[cpu_index];
         	old_t[cpu_index] = t[cpu_index];
@@ -587,6 +592,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       		departure(cpu_index);
       		first=0;
     	}
+*/
 
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 
@@ -673,6 +679,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
      cpu_index, xd->vlib_sw_if_index, mb_index, n_rx_bytes);
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
+
+departure(cpu_index);
 
   return mb_index;
 }
