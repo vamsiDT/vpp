@@ -32,6 +32,7 @@
 #include <dpdk/device/flow_table_cpu.h>
 #include <dpdk/device/flow_table_var.h>
 #include <vppinfra/elog.h>
+#include "generic/rte_cycles.h" //for rdtsc()
 //////////////////////////////////////////////////////////////////////////
 
 static char *dpdk_error_strings[] = {
@@ -442,6 +443,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next[3] = bi3;
 	  to_next += 4;
 	  n_left_to_next -= 4;
+
+	if(PREDICT_FALSE(n_left_to_next==0))
+		t[cpu_index] = mb3->udata64;
 
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    {

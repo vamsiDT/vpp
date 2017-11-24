@@ -12,12 +12,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <vppinfra/time.h>
+//#include <vppinfra/elog.h>
+//#include "generic/rte_cycles.h" //for rdtsc()
+
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define MAXCPU 24
 #define ALPHACPU 1.0
-#define THRESHOLD 44800//15000//14000//12800
+#define THRESHOLD 44800//44800//15000//14000//12800
 #define THRESHOLD1 10000
 
 #define WEIGHT_IP4	320
@@ -25,6 +28,7 @@
 #define WEIGHT_DROP 60
 
 // 0 1 4 6 8 9 12 13 18 19
+
 
 #define FLOW_HASH_4157820474	750
 #define FLOW_HASH_1526211368	1500
@@ -121,6 +125,7 @@ u16 cost;
 	}
 return cost;
 }
+
 typedef struct flowcount{
     u32 hash;
     u32 vqueue;
@@ -325,7 +330,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             flow = nodet[modulox][cpu_index] + 0;
         }
     }
-
+//	printf("FLOW-HASH: %u  CORE:%u\n",flow->hash,cpu_index);
     return flow;
 }
 
@@ -397,7 +402,6 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             nbl[cpu_index]++;
 			//printf("%u\n",nbl[cpu_index]);
             flowin(flow,cpu_index);
-			flow->vqueue = 1;
         }
 		flow->n_packets++;
 		flow->vqueue += flow->cost;
@@ -429,7 +433,27 @@ u8 drop;
         drop = 1;
 		n_drops[cpu_index]++;
     }
+
+         ELOG_TYPE_DECLARE (e) = {
+    .format = "Flow Hash: %u Flow Vqueue = %u Flow Cost = %u",
+    .format_args = "i4i4i2",
+  };
+  struct {u32 flow_hash; u32 flow_vqueue;u16 cost;} *ed;
+  ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+  ed->flow_hash = flow->hash;
+  ed->flow_vqueue = flow->vqueue;
+  ed->cost = flow->cost;
+
+
 //	printf("%u\t%u\t%u\t%u\n",drop,flow->vqueue,THRESHOLD,flow->hash);
+// ELOG_TYPE_DECLARE (e) = {
+//    .format = "Flow Hash: %u Flow Vqueue = %u",
+//    .format_args = "i4i4",
+//  };
+//  struct {u32 flow_hash; u32 flow_vqueue;} *ed;
+//  ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+//  ed->flow_hash = flow->hash;
+//  ed->flow_vqueue = flow->vqueue;
 return drop;
 }
 
