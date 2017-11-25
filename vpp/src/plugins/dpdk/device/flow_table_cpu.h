@@ -27,11 +27,8 @@
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 60
 
-// 0 1 4 6 8 9 12 13 18 19
-
-
 #define FLOW_HASH_4157820474	750
-#define FLOW_HASH_1526211368	1500
+#define FLOW_HASH_2122681738	1500
 #define FLOW_HASH_2705782963	600 //
 #define FLOW_HASH_208508321		550 //
 #define FLOW_HASH_1553569150	700
@@ -174,6 +171,7 @@ extern u64 veryold_t[MAXCPU];
 // }
 
 extern u32 flows[MAXCPU];
+
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -330,7 +328,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             flow = nodet[modulox][cpu_index] + 0;
         }
     }
-//	printf("FLOW-HASH: %u  CORE:%u\n",flow->hash,cpu_index);
+	printf("FLOW-HASH: %u CORE:%u\n",flow->hash,cpu_index);
     return flow;
 }
 
