@@ -27,26 +27,26 @@
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 60
 
-#define FLOW_HASH_4157820474	750
-#define FLOW_HASH_2122681738	1500
-#define FLOW_HASH_2705782963	600 //
-#define FLOW_HASH_208508321		550 //
-#define FLOW_HASH_1553569150	700
-#define FLOW_HASH_168567799		450 //
-#define FLOW_HASH_4055038060	400
-#define FLOW_HASH_2804371173	350 //
-#define FLOW_HASH_578167704		340
-#define FLOW_HASH_2405256842	350
-#define FLOW_HASH_3653826563	360 //
-#define FLOW_HASH_1961071889	370 //
-#define FLOW_HASH_2302474460	750
-#define FLOW_HASH_605525454		700
-#define FLOW_HASH_1921131335	650 //
-#define FLOW_HASH_3752414805	600 //
-#define FLOW_HASH_808097273		550 //
-#define FLOW_HASH_2634152171	500 //
-#define FLOW_HASH_1723802480	400
-#define FLOW_HASH_3415494242	350
+#define FLOW_HASH_4157820474	750    //192.168.0.1
+#define FLOW_HASH_2122681738	1500   //192.168.0.3
+#define FLOW_HASH_3010998242	600    //192.168.0.5
+#define FLOW_HASH_976153682		550    //192.168.0.7
+#define FLOW_HASH_1434910422	700    //192.168.0.9
+#define FLOW_HASH_3704634726	450    //192.168.0.11
+#define FLOW_HASH_288202510	    400    //192.168.0.13
+#define FLOW_HASH_2558221502	350    //192.168.0.15
+#define FLOW_HASH_653891148		340    //192.168.0.17
+#define FLOW_HASH_2947503612	350    //192.168.0.19
+#define FLOW_HASH_1649604500	360    //192.168.0.21
+#define FLOW_HASH_3942921252	370    //192.168.0.23
+#define FLOW_HASH_2225874592	750    //192.168.0.25
+#define FLOW_HASH_234546448		700    //192.168.0.27
+#define FLOW_HASH_3221702520	650    //192.168.0.29
+#define FLOW_HASH_1230079176	600    //192.168.0.31
+#define FLOW_HASH_2381030752	550    //192.168.0.32
+#define FLOW_HASH_79521488	    500    //192.168.0.34
+#define FLOW_HASH_3376465080	400    //192.168.0.36
+#define FLOW_HASH_1075185416	350    //192.168.0.38
 #define FLOW_HASH_DEFAULT		320
 
 #define FLOW_COST(hash) (FLOW_HASH_##hash)
@@ -61,59 +61,59 @@ u16 cost;
 		case 1526211368:
             cost = FLOW_COST(1526211368);
             break;
-        case 2705782963:
-            cost = FLOW_COST(2705782963);
+        case 3010998242:
+            cost = FLOW_COST(3010998242);
             break;
-        case 208508321:
-            cost = FLOW_COST(208508321);
+        case 976153682:
+            cost = FLOW_COST(976153682);
             break;
-        case 1553569150:
-            cost = FLOW_COST(1553569150);
+        case 1434910422:
+            cost = FLOW_COST(1434910422);
             break;
-        case 168567799:
-            cost = FLOW_COST(168567799);
+        case 3704634726:
+            cost = FLOW_COST(3704634726);
             break;
-        case 4055038060:
-            cost = FLOW_COST(4055038060);
+        case 288202510:
+            cost = FLOW_COST(288202510);
             break;
-        case 2804371173:
-            cost = FLOW_COST(2804371173);
+        case 2558221502:
+            cost = FLOW_COST(2558221502);
             break;
-        case 578167704:
-            cost = FLOW_COST(578167704);
+        case 653891148:
+            cost = FLOW_COST(653891148);
             break;
-        case 2405256842:
-            cost = FLOW_COST(2405256842);
+        case 2947503612:
+            cost = FLOW_COST(2947503612);
             break;
-        case 3653826563:
-            cost = FLOW_COST(3653826563);
+        case 1649604500:
+            cost = FLOW_COST(1649604500);
             break;
-        case 1961071889:
-            cost = FLOW_COST(1961071889);
+        case 3942921252:
+            cost = FLOW_COST(3942921252);
             break;
-        case 2302474460:
-            cost = FLOW_COST(2302474460);
+        case 2225874592:
+            cost = FLOW_COST(2225874592);
             break;
-        case 605525454:
-            cost = FLOW_COST(605525454);
+        case 234546448:
+            cost = FLOW_COST(234546448);
             break;
-        case 1921131335:
-            cost = FLOW_COST(1921131335);
+        case 3221702520:
+            cost = FLOW_COST(3221702520);
             break;
-        case 3752414805:
-            cost = FLOW_COST(3752414805);
+        case 1230079176:
+            cost = FLOW_COST(1230079176);
             break;
-        case 808097273:
-            cost = FLOW_COST(808097273);
+        case 2381030752:
+            cost = FLOW_COST(2381030752);
             break;
-        case 2634152171:
-            cost = FLOW_COST(2634152171);
+        case 79521488:
+            cost = FLOW_COST(79521488);
             break;
-        case 1723802480:
-            cost = FLOW_COST(1723802480);
+        case 3376465080:
+            cost = FLOW_COST(3376465080);
             break;
-        case 3415494242:
-            cost = FLOW_COST(3415494242);
+        case 1075185416:
+            cost = FLOW_COST(1075185416);
             break;
 		case 0:
 			cost = FLOW_COST(DEFAULT);
