@@ -49,7 +49,7 @@
 #define FLOW_HASH_79521488	    370    //192.168.0.34
 #define FLOW_HASH_3376465080	360    //192.168.0.36
 #define FLOW_HASH_1075185416	350    //192.168.0.38
-#define FLOW_HASH_DEFAULT		320
+#define FLOW_HASH_DEFAULT		350
 
 #define FLOW_COST(hash) (FLOW_HASH_##hash)
 //#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
@@ -381,7 +381,7 @@ u8 drop;
 		n_drops[cpu_index]++;
     }
 
-
+//	printf("WEIGHT: %u\tCOST:%u\n",flow->weight,flow->cost);
 	ELOG_TYPE_DECLARE (e) = {
     .format = "Flow Hash: %u Flow Vqueue = %u Flow Cost = %u",
     .format_args = "i4i2i2",
@@ -391,6 +391,7 @@ u8 drop;
   	ed->flow_hash = flow->hash;
   	ed->flow_weight = flow->weight;
   	ed->cost = flow->cost;
+
 	return drop;
 }
 
@@ -413,9 +414,22 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
         costlist = costlist->next;
     }
     costlist = head_af[cpu_index];
+/*
+	    ELOG_TYPE_DECLARE (e) = {
+    .format = "Flow Hash: %lf Flow Vqueue = %lf Flow Cost = %u",
+    .format_args = "i8i8i2",
+    };
+    struct {f64 flow_hash; f64 flow_weight;u16 cost;} *ed;
+    ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+    ed->flow_hash = s_total[cpu_index];
+    ed->flow_weight = sum;
+    ed->cost = 0;
+*/
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-        flow->cost = ((f64)((flow->weight)*(s_total[cpu_index] /*-(n_drops[cpu_index]*WEIGHT_DROP)*/)))/ sum;
+		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*WEIGHT_DROP);
+        flow->cost = (flow->weight)*(total/sum);
+//		printf("Total: %lf\tSum: %lf\tRatio %lf\n",total,sum,(total-(n_drops[cpu_index]*WEIGHT_DROP))/sum);
 		flow->n_packets = 0;
         costlist = costlist->next;
     }
