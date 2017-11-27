@@ -352,18 +352,6 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
                     j->vqueue = 0;
                     nbl[cpu_index]--;
                 }
-
-/*
-		ELOG_TYPE_DECLARE (e) = {
-		    .format = "Flow Hash: %u Flow Vqueue = %u Flow Cost = %u",
-		    .format_args = "i4i4i2",
-		};
-  		struct {u32 flow_hash; u32 flow_vqueue;u16 cost;} *ed;
-  		ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-  		ed->flow_hash = j->hash;
-  		ed->flow_vqueue = j->vqueue;
-  		ed->cost = j->cost;
-*/
             }
         }
 //	inst_threshold = MAX_THRESHOLD/nbl[cpu_index];
@@ -403,8 +391,6 @@ u8 drop;
   	ed->flow_hash = flow->hash;
   	ed->flow_weight = flow->weight;
   	ed->cost = flow->cost;
-
-//	printf("Weight: %u\tCost: %u\n",flow->weight,flow->cost);
 	return drop;
 }
 
