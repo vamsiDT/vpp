@@ -347,21 +347,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u8 error0, error1, error2, error3;
       u64 or_ol_flags;
 //////////////////////////////////////////////
-      u8  drop0,drop1,drop2,drop3;
       u32 hash0,hash1,hash2,hash3;
       u32 pktlen0,pktlen1,pktlen2,pktlen3;
-      u8 modulo0,modulo1,modulo2,modulo3;
-
-		update_costs(vm,cpu_index);
-		departure(cpu_index);
-      //u8 first=1;
-//      update_vstate(vm,cpu_index);
-		veryold_t[cpu_index] = old_t[cpu_index];
-//		if(PREDICT_FALSE(hello_world[cpu_index] == 0)){
-//			t[cpu_index] = rte_rdtsc();
-//			hello_world[cpu_index]=1;
-//		}
-        old_t[cpu_index] = t[cpu_index];
 //////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
@@ -396,18 +383,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	      if (PREDICT_FALSE (mb3->nb_segs > 1))
 		dpdk_prefetch_buffer (mb3->next);
 	    }
-/*
-/////////////////////////////////
-    if(PREDICT_FALSE(first==1)){
-		veryold_t[cpu_index] = old_t[cpu_index];
-		old_t[cpu_index] = t[cpu_index];
-		t[cpu_index] = mb0->udata64;
-//		printf("%lu\n",t[cpu_index]-old_t[cpu_index]);
-      	departure(cpu_index);
-      	first=0;
-    }
-/////////////////////////////////
-*/
+
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 	  b1 = vlib_buffer_from_rte_mbuf (mb1);
 	  b2 = vlib_buffer_from_rte_mbuf (mb2);
@@ -443,9 +419,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next[3] = bi3;
 	  to_next += 4;
 	  n_left_to_next -= 4;
-
-	if(PREDICT_FALSE(n_left_to_next == 0))
-		t[cpu_index] = mb3->udata64;
 
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    {
@@ -487,46 +460,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     pktlen2 = flow_costvalue(hash2);
     pktlen3 = flow_costvalue(hash3);
 
-  	modulo0 = hash0%TABLESIZE;
-  	modulo1 = hash1%TABLESIZE;
-  	modulo2 = hash2%TABLESIZE;
-  	modulo3 = hash3%TABLESIZE;
-    drop0 = /*0*modulo0;*/fq(modulo0,hash0,pktlen0,cpu_index);
-    drop1 = /*0*modulo1;*/fq(modulo1,hash1,pktlen1,cpu_index);
-    drop2 = /*0*modulo2;*/fq(modulo2,hash2,pktlen2,cpu_index);
-    drop3 = /*0*modulo3;*/fq(modulo3,hash3,pktlen3,cpu_index);
-
-    if(PREDICT_FALSE(drop0 == 1)){
-        next0 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b0->error = node->errors[error0];
-    }
-	else
-		busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
-
-    if(PREDICT_FALSE(drop1 == 1)){
-        next1 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error1 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b1->error = node->errors[error1];
-    }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash1)-flow_costvalue(0);
-
-    if(PREDICT_FALSE(drop2 == 1)){
-        next2 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error2 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b2->error = node->errors[error2];
-    }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash2)-flow_costvalue(0);
-
-    if(PREDICT_FALSE(drop3 == 1)){
-        next3 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error3 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b3->error = node->errors[error3];
-    }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash3)-flow_costvalue(0);
+    busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
+    busyloop[cpu_index]+=flow_costvalue(hash1)-flow_costvalue(0);
+    busyloop[cpu_index]+=flow_costvalue(hash2)-flow_costvalue(0);
+    busyloop[cpu_index]+=flow_costvalue(hash3)-flow_costvalue(0);
 
 ////////////////////////////////////////////////////////////
 
@@ -584,19 +521,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 	  ASSERT (mb0);
-	t[cpu_index] = mb0->udata64;
-	//printf("%lu\n",mb0->udata64);
-
-/*
-	    if(PREDICT_FALSE(first==1)){
-			veryold_t[cpu_index] = old_t[cpu_index];
-        	old_t[cpu_index] = t[cpu_index];
-			t[cpu_index] = mb0->udata64;
-			//printf("%lu\n",t[cpu_index]-old_t[cpu_index]);
-      		departure(cpu_index);
-      		first=0;
-    	}
-*/
 
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 
@@ -625,19 +549,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 //////////////////////////////////////////////////////////
-//	pktlen0 = WEIGHT_IP4;//mb0->timesync;
 	hash0 = mb0->hash.rss;
 	pktlen0 = flow_costvalue(hash0);
-  	modulo0 = hash0%TABLESIZE;
-    drop0 = /*0*modulo0;*/fq(modulo0,hash0,pktlen0,cpu_index);
-
-    if(PREDICT_FALSE(drop0 == 1)){
-        next0 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b0->error = node->errors[error0];
-    }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
+  busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
 /////////////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
@@ -665,8 +579,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  mb_index++;
 	}
       vlib_put_next_frame (vm, node, next_index, n_left_to_next);
-//	sleep_now(busyloop);
-//	printf("%u\n",busyloop);
+
     }
 
   if (PREDICT_FALSE (vec_len (xd->d_trace_buffers[cpu_index]) > 0))
@@ -683,10 +596,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
      cpu_index, xd->vlib_sw_if_index, mb_index, n_rx_bytes);
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
-
-//  update_costs(vm,cpu_index);
-//  departure(cpu_index);
-
 
   return mb_index;
 }
