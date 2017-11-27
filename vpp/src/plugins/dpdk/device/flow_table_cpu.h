@@ -20,17 +20,17 @@
 #define TABLESIZE 4096
 #define MAXCPU 24
 #define ALPHACPU 1.0
-#define THRESHOLD 44800//44800//15000//14000//12800
+#define THRESHOLD 4480//44800//15000//14000//12800
 #define MAX_THRESHOLD 89600
 
 #define THRESHOLD1 10000
 
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
-#define WEIGHT_DROP 60
+#define WEIGHT_DROP 40
 
-#define FLOW_HASH_4157820474	750    //192.168.0.1
-#define FLOW_HASH_2122681738	1500   //192.168.0.3
+#define FLOW_HASH_4157820474	540    //192.168.0.1
+#define FLOW_HASH_2122681738	530   //192.168.0.3
 #define FLOW_HASH_3010998242	520    //192.168.0.5
 #define FLOW_HASH_976153682		510    //192.168.0.7
 #define FLOW_HASH_1434910422	500    //192.168.0.9
@@ -153,10 +153,11 @@ extern u64 t1[MAXCPU];
 extern u8 hello_world[MAXCPU];
 extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
+extern u64 olds_total[MAXCPU];
 extern u8 n_drops[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern u64 veryold_t[MAXCPU];
-
+extern u64 totalvqueue;
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -335,6 +336,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = ((t[cpu_index]-old_t[cpu_index])) /*- (n_drops[cpu_index]*WEIGHT_DROP)*/;
+//		printf("CREDIT: %lf\t",credit);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -350,6 +352,18 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
                     j->vqueue = 0;
                     nbl[cpu_index]--;
                 }
+
+/*
+		ELOG_TYPE_DECLARE (e) = {
+		    .format = "Flow Hash: %u Flow Vqueue = %u Flow Cost = %u",
+		    .format_args = "i4i4i2",
+		};
+  		struct {u32 flow_hash; u32 flow_vqueue;u16 cost;} *ed;
+  		ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+  		ed->flow_hash = j->hash;
+  		ed->flow_vqueue = j->vqueue;
+  		ed->cost = j->cost;
+*/
             }
         }
 //	inst_threshold = MAX_THRESHOLD/nbl[cpu_index];
@@ -365,18 +379,6 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     }
 }
 
-/*Drop Probability*/
-always_inline void prob(u32 vq){
-	f64 proba;
-	if(vq >=THRESHOLD1 && vq <= 4*THRESHOLD1)
-	proba = 10*( ( ((f64)(vq)) / (f64)(3*THRESHOLD1) ) - ( ((f64)(1)) / ((f64)(3)) ) );
-	else if (vq <THRESHOLD1)
-		proba = 0;
-	else if (vq > 4*THRESHOLD1)
-		proba = 1;
-//	printf("%lf\t",proba);
-}
-
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index){
 u8 drop;
@@ -384,22 +386,25 @@ u8 drop;
         vstate(flow,0,cpu_index);
 		flow->total_packets++;
         drop = 0;
+		totalvqueue+=flow->cost;
     }
     else {
         drop = 1;
 		n_drops[cpu_index]++;
     }
 
+
 	ELOG_TYPE_DECLARE (e) = {
     .format = "Flow Hash: %u Flow Vqueue = %u Flow Cost = %u",
-    .format_args = "i4i4i2",
+    .format_args = "i4i2i2",
 	};
-  	struct {u32 flow_hash; u32 flow_vqueue;u16 cost;} *ed;
+  	struct {u32 flow_hash; u16 flow_weight;u16 cost;} *ed;
   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
   	ed->flow_hash = flow->hash;
-  	ed->flow_vqueue = flow->vqueue;
+  	ed->flow_weight = flow->weight;
   	ed->cost = flow->cost;
 
+//	printf("Weight: %u\tCost: %u\n",flow->weight,flow->cost);
 	return drop;
 }
 
@@ -408,7 +413,6 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     u8 drop;
     i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
     drop = arrival(i,cpu_index);
-	//printf("%u\n",i->hash);
     return drop;
 }
 
@@ -416,6 +420,7 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
     activelist_t * costlist = head_af[cpu_index];
     f64 sum = 0;
+	//u32 i =0;
     while (costlist != NULL){
         flowcount_t * flow = costlist->flow;
         sum += ((u32)(flow->weight))*(flow->n_packets);
@@ -438,7 +443,7 @@ always_inline void update_vstate(vlib_main_t * vm,u32 cpu_index){
         flowcount_t * flow = costlist->flow;
         totalvqueue+= flow->vqueue;
         flow->vqueue += (flow->n_packets)*(flow->cost);
-		totalvqueue+= flow->vqueue;
+	totalvqueue+= flow->vqueue;
         flow->n_packets = 0;
         costlist = costlist->next;
     }
@@ -447,6 +452,8 @@ always_inline void update_vstate(vlib_main_t * vm,u32 cpu_index){
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
 	n_drops[cpu_index]=0;
+	//printf("TOTAL_VQUEUE:%lu\n",totalvqueue);
+	totalvqueue=0;
 }
 
 always_inline void sleep_now (u32 t){
