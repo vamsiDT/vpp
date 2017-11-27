@@ -348,7 +348,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u64 or_ol_flags;
 //////////////////////////////////////////////
       u32 hash0,hash1,hash2,hash3;
-      u32 pktlen0,pktlen1,pktlen2,pktlen3;
 //////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
@@ -455,15 +454,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	hash2 = mb2->hash.rss;
 	hash3 = mb3->hash.rss;
 
-	pktlen0 = flow_costvalue(hash0);
-    pktlen1 = flow_costvalue(hash1);
-    pktlen2 = flow_costvalue(hash2);
-    pktlen3 = flow_costvalue(hash3);
-
-    busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
-    busyloop[cpu_index]+=flow_costvalue(hash1)-flow_costvalue(0);
-    busyloop[cpu_index]+=flow_costvalue(hash2)-flow_costvalue(0);
-    busyloop[cpu_index]+=flow_costvalue(hash3)-flow_costvalue(0);
+    	busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
+    	busyloop[cpu_index]+=flow_costvalue(hash1)-flow_costvalue(0);
+    	busyloop[cpu_index]+=flow_costvalue(hash2)-flow_costvalue(0);
+    	busyloop[cpu_index]+=flow_costvalue(hash3)-flow_costvalue(0);
 
 ////////////////////////////////////////////////////////////
 
@@ -550,8 +544,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 //////////////////////////////////////////////////////////
 	hash0 = mb0->hash.rss;
-	pktlen0 = flow_costvalue(hash0);
-  busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
+	busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
 /////////////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
