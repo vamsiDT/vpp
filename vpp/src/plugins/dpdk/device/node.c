@@ -32,6 +32,7 @@
 #include <dpdk/device/flow_table_cpu.h>
 #include <dpdk/device/flow_table_var.h>
 #include <vppinfra/elog.h>
+#define FLOW_COST_DEFAULT       460
 //////////////////////////////////////////////////////////////////////////
 
 static char *dpdk_error_strings[] = {
@@ -495,32 +496,24 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
         error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b0->error = node->errors[error0];
     }
-	else
-		busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
 
     if(PREDICT_FALSE(drop1 == 1)){
         next1 = VNET_DEVICE_INPUT_NEXT_DROP;
         error1 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b1->error = node->errors[error1];
     }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash1)-flow_costvalue(0);
 
     if(PREDICT_FALSE(drop2 == 1)){
         next2 = VNET_DEVICE_INPUT_NEXT_DROP;
         error2 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b2->error = node->errors[error2];
     }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash2)-flow_costvalue(0);
 
     if(PREDICT_FALSE(drop3 == 1)){
         next3 = VNET_DEVICE_INPUT_NEXT_DROP;
         error3 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b3->error = node->errors[error3];
     }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash3)-flow_costvalue(0);
 
 ////////////////////////////////////////////////////////////
 
@@ -578,7 +571,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 	  ASSERT (mb0);
-	t[cpu_index] = mb0->udata64;
 
 /*
 	    if(PREDICT_FALSE(first==1)){
@@ -609,6 +601,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next++;
 	  n_left_to_next--;
 
+    if(PREDICT_FALSE(n_left_to_next == 0))
+        t[cpu_index] = mb0->udata64;
+
+
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    next0 = xd->per_interface_next_index;
 	  else
@@ -629,8 +625,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
         error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b0->error = node->errors[error0];
     }
-	else
-        busyloop[cpu_index]+=flow_costvalue(hash0)-flow_costvalue(0);
 /////////////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);

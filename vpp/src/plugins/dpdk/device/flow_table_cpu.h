@@ -50,6 +50,7 @@
 #define FLOW_HASH_3376465080	460    //192.168.0.36
 #define FLOW_HASH_1075185416	460    //192.168.0.38
 #define FLOW_HASH_DEFAULT		460
+#define FLOW_COST_DEFAULT       460
 
 #define FLOW_COST(hash) (FLOW_HASH_##hash)
 //#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
@@ -360,11 +361,12 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(flowcount_t * flow,u32 cpu_index){
+always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 u8 drop;
     if(flow->vqueue <= THRESHOLD /*&& r_qtotal < BUFFER*/){
         vstate(flow,0,cpu_index);
         drop = 0;
+		busyloop[cpu_index]+=pktlenx-FLOW_COST_DEFAULT;
     }
     else {
         drop = 1;
@@ -389,7 +391,7 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * i;
     u8 drop;
     i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
-    drop = arrival(i,cpu_index);
+    drop = arrival(i,cpu_index,pktlenx);
     return drop;
 }
 
