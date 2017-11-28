@@ -20,14 +20,14 @@
 #define ALPHACPU 1.0
 #define THRESHOLD 5888//44800//15000//14000//12800
 
-//#define ELOG
+#define ELOG_FAIRDROP
 //#define BUSYLOOP
 
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 40
 
-#ifdef ELOG
+#ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 250
 #else
 #define WEIGHT_DPDK 190//185
@@ -57,11 +57,14 @@
 #define FLOW_HASH_3376465080    460    //192.168.0.36
 #define FLOW_HASH_1075185416    460    //192.168.0.38
 #endif
+
 #define FLOW_HASH_DEFAULT       (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
 #define FLOW_COST(hash) (FLOW_HASH_##hash)
-#else FLOW_COST(hash) FLOW_HASH_DEFAULT
+#else
+#define FLOW_COST(hash) (FLOW_HASH_DEFAULT)
+#endif
 //#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
 
 always_inline u16 flow_costvalue(u32 hash){
@@ -305,7 +308,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-void flowin(flowcount_t * flow,u32 cpu_index){
+always_inline void flowin(flowcount_t * flow,u32 cpu_index){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
     temp->flow = flow;
@@ -321,7 +324,7 @@ void flowin(flowcount_t * flow,u32 cpu_index){
 }
 
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-flowcount_t * flowout(u32 cpu_index){
+always_inline flowcount_t * flowout(u32 cpu_index){
     flowcount_t * temp;
     activelist_t * next;
     temp = head_af[cpu_index]->flow;
@@ -381,7 +384,7 @@ u8 drop;
 		n_drops[cpu_index]++;
     }
 
-#ifdef ELOG
+#ifdef ELOG_FAIRDROP
 	ELOG_TYPE_DECLARE (e) = {
     .format = "Flow Hash: %u Flow Vqueue = %u Flow Weight = %u Flow Cost = %u",
     .format_args = "i4i4i2i2",
