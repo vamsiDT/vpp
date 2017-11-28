@@ -66,6 +66,103 @@ dpdk_main_t dpdk_main;
 #include <vlibapi/api_helper_macros.h>
 
 
+#define FLOW_HASH_4157820474	920    //192.168.0.1
+#define FLOW_HASH_2122681738	920   //192.168.0.3
+#define FLOW_HASH_3010998242	920    //192.168.0.5
+#define FLOW_HASH_976153682		920    //192.168.0.7
+#define FLOW_HASH_1434910422	920    //192.168.0.9
+#define FLOW_HASH_3704634726	920    //192.168.0.11
+#define FLOW_HASH_288202510	    920    //192.168.0.13
+#define FLOW_HASH_2558221502	920    //192.168.0.15
+#define FLOW_HASH_653891148		920    //192.168.0.17
+#define FLOW_HASH_2947503612	920    //192.168.0.19
+#define FLOW_HASH_1649604500	460    //192.168.0.21
+#define FLOW_HASH_3942921252	460    //192.168.0.23
+#define FLOW_HASH_2225874592	460    //192.168.0.25
+#define FLOW_HASH_234546448		460    //192.168.0.27
+#define FLOW_HASH_3221702520	460    //192.168.0.29
+#define FLOW_HASH_1230079176	460    //192.168.0.31
+#define FLOW_HASH_2381030752	460    //192.168.0.32
+#define FLOW_HASH_79521488	    460    //192.168.0.34
+#define FLOW_HASH_3376465080	460    //192.168.0.36
+#define FLOW_HASH_1075185416	460    //192.168.0.38
+#define FLOW_HASH_DEFAULT		460
+
+#define FLOW_COST(hash) (FLOW_HASH_##hash)
+//#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
+
+always_inline u16 flow_costvalue(u32 hash){
+u16 cost;
+	switch(hash){
+		case 4157820474:
+			cost = FLOW_COST(4157820474);
+			break;
+		case 2122681738:
+            cost = FLOW_COST(2122681738);
+            break;
+        case 3010998242:
+            cost = FLOW_COST(3010998242);
+            break;
+        case 976153682:
+            cost = FLOW_COST(976153682);
+            break;
+        case 1434910422:
+            cost = FLOW_COST(1434910422);
+            break;
+        case 3704634726:
+            cost = FLOW_COST(3704634726);
+            break;
+        case 288202510:
+            cost = FLOW_COST(288202510);
+            break;
+        case 2558221502:
+            cost = FLOW_COST(2558221502);
+            break;
+        case 653891148:
+            cost = FLOW_COST(653891148);
+            break;
+        case 2947503612:
+            cost = FLOW_COST(2947503612);
+            break;
+        case 1649604500:
+            cost = FLOW_COST(1649604500);
+            break;
+        case 3942921252:
+            cost = FLOW_COST(3942921252);
+            break;
+        case 2225874592:
+            cost = FLOW_COST(2225874592);
+            break;
+        case 234546448:
+            cost = FLOW_COST(234546448);
+            break;
+        case 3221702520:
+            cost = FLOW_COST(3221702520);
+            break;
+        case 1230079176:
+            cost = FLOW_COST(1230079176);
+            break;
+        case 2381030752:
+            cost = FLOW_COST(2381030752);
+            break;
+        case 79521488:
+            cost = FLOW_COST(79521488);
+            break;
+        case 3376465080:
+            cost = FLOW_COST(3376465080);
+            break;
+        case 1075185416:
+            cost = FLOW_COST(1075185416);
+            break;
+		case 0:
+			cost = FLOW_COST(DEFAULT);
+        default:
+            cost = FLOW_COST(DEFAULT);
+	}
+return cost;
+}
+
+
 static uint16_t
 add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
         struct rte_mbuf **pkts, uint16_t nb_pkts,
@@ -76,9 +173,7 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
 
     for (i = 0; i < nb_pkts; i++){
         pkts[i]->udata64 = /*rte_rdtsc();*/rx_timestamp;
-		//printf("%u\n",pkts[i]->hash.rss);
-		//if (pkts[i]->hash.rss==4157820474)
-		//pkts[i]->timesync = 420;
+        pkts[i]->timesync = flow_costvalue(pkts[i]->hash.rss);
 	}
     return nb_pkts;
 }

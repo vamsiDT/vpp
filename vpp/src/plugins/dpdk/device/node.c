@@ -476,10 +476,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	hash2 = mb2->hash.rss;
 	hash3 = mb3->hash.rss;
 
-	pktlen0 = flow_costvalue(hash0);
-    pktlen1 = flow_costvalue(hash1);
-    pktlen2 = flow_costvalue(hash2);
-    pktlen3 = flow_costvalue(hash3);
+	pktlen0 = mb0->timesync;//flow_costvalue(hash0);
+    pktlen1 = mb1->timesync;//flow_costvalue(hash1);
+    pktlen2 = mb2->timesync;//flow_costvalue(hash2);
+    pktlen3 = mb3->timesync;//flow_costvalue(hash3);
 
   	modulo0 = hash0%TABLESIZE;
   	modulo1 = hash1%TABLESIZE;
@@ -620,7 +620,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 //////////////////////////////////////////////////////////
 //	pktlen0 = WEIGHT_IP4;//mb0->timesync;
 	hash0 = mb0->hash.rss;
-	pktlen0 = flow_costvalue(hash0);
+	pktlen0 = mb0->timesync;//flow_costvalue(hash0);
   	modulo0 = hash0%TABLESIZE;
     drop0 = /*0*modulo0;*/fq(modulo0,hash0,pktlen0,cpu_index);
 
