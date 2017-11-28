@@ -354,13 +354,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 		update_costs(vm,cpu_index);
 		departure(cpu_index);
-      //u8 first=1;
-//      update_vstate(vm,cpu_index);
-		veryold_t[cpu_index] = old_t[cpu_index];
-//		if(PREDICT_FALSE(hello_world[cpu_index] == 0)){
-//			t[cpu_index] = rte_rdtsc();
-//			hello_world[cpu_index]=1;
-//		}
+//		veryold_t[cpu_index] = old_t[cpu_index];
         old_t[cpu_index] = t[cpu_index];
 //////////////////////////////////////////////
 
@@ -585,7 +579,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 	  ASSERT (mb0);
 	t[cpu_index] = mb0->udata64;
-	//printf("%lu\n",mb0->udata64);
 
 /*
 	    if(PREDICT_FALSE(first==1)){
@@ -665,8 +658,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  mb_index++;
 	}
       vlib_put_next_frame (vm, node, next_index, n_left_to_next);
-//	sleep_now(busyloop);
-//	printf("%u\n",busyloop);
     }
 
   if (PREDICT_FALSE (vec_len (xd->d_trace_buffers[cpu_index]) > 0))
@@ -683,10 +674,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
      cpu_index, xd->vlib_sw_if_index, mb_index, n_rx_bytes);
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
-
-//  update_costs(vm,cpu_index);
-//  departure(cpu_index);
-
 
   return mb_index;
 }
