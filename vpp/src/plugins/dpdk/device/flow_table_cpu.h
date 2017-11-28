@@ -20,7 +20,7 @@
 #define TABLESIZE 4096
 #define MAXCPU 24
 #define ALPHACPU 1.0
-#define THRESHOLD 4480//44800//15000//14000//12800
+#define THRESHOLD 5785//44800//15000//14000//12800
 #define MAX_THRESHOLD 89600
 
 #define THRESHOLD1 10000
@@ -28,28 +28,30 @@
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 40
+#define WEIGHT_DPDK 268
+#define WEIGHT_IP4E 192
 
-#define FLOW_HASH_4157820474	540    //192.168.0.1
-#define FLOW_HASH_2122681738	530   //192.168.0.3
-#define FLOW_HASH_3010998242	520    //192.168.0.5
-#define FLOW_HASH_976153682		510    //192.168.0.7
-#define FLOW_HASH_1434910422	500    //192.168.0.9
-#define FLOW_HASH_3704634726	490    //192.168.0.11
-#define FLOW_HASH_288202510	    480    //192.168.0.13
-#define FLOW_HASH_2558221502	470    //192.168.0.15
-#define FLOW_HASH_653891148		460    //192.168.0.17
-#define FLOW_HASH_2947503612	450    //192.168.0.19
-#define FLOW_HASH_1649604500	440    //192.168.0.21
-#define FLOW_HASH_3942921252	430    //192.168.0.23
-#define FLOW_HASH_2225874592	420    //192.168.0.25
-#define FLOW_HASH_234546448		410    //192.168.0.27
-#define FLOW_HASH_3221702520	400    //192.168.0.29
-#define FLOW_HASH_1230079176	390    //192.168.0.31
-#define FLOW_HASH_2381030752	380    //192.168.0.32
-#define FLOW_HASH_79521488	    370    //192.168.0.34
-#define FLOW_HASH_3376465080	360    //192.168.0.36
-#define FLOW_HASH_1075185416	350    //192.168.0.38
-#define FLOW_HASH_DEFAULT		350
+#define FLOW_HASH_4157820474	920    //192.168.0.1
+#define FLOW_HASH_2122681738	920   //192.168.0.3
+#define FLOW_HASH_3010998242	920    //192.168.0.5
+#define FLOW_HASH_976153682		920    //192.168.0.7
+#define FLOW_HASH_1434910422	920    //192.168.0.9
+#define FLOW_HASH_3704634726	920    //192.168.0.11
+#define FLOW_HASH_288202510	    920    //192.168.0.13
+#define FLOW_HASH_2558221502	920    //192.168.0.15
+#define FLOW_HASH_653891148		920    //192.168.0.17
+#define FLOW_HASH_2947503612	920    //192.168.0.19
+#define FLOW_HASH_1649604500	460    //192.168.0.21
+#define FLOW_HASH_3942921252	460    //192.168.0.23
+#define FLOW_HASH_2225874592	460    //192.168.0.25
+#define FLOW_HASH_234546448		460    //192.168.0.27
+#define FLOW_HASH_3221702520	460    //192.168.0.29
+#define FLOW_HASH_1230079176	460    //192.168.0.31
+#define FLOW_HASH_2381030752	460    //192.168.0.32
+#define FLOW_HASH_79521488	    460    //192.168.0.34
+#define FLOW_HASH_3376465080	460    //192.168.0.36
+#define FLOW_HASH_1075185416	460    //192.168.0.38
+#define FLOW_HASH_DEFAULT		460
 
 #define FLOW_COST(hash) (FLOW_HASH_##hash)
 //#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
@@ -131,7 +133,6 @@ typedef struct flowcount{
     u16 weight;
     u16 cost;
     u32 n_packets;
-	u64 total_packets;
     struct flowcount * branchnext;
     struct flowcount * update;
 }flowcount_t;
@@ -173,7 +174,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
 		(nodet[modulox][cpu_index] + 0)->cost = pktlenx;
-		(nodet[modulox][cpu_index] + 0)->total_packets = 0;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
@@ -188,7 +188,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
 		(nodet[modulox][cpu_index] + 0)->cost = pktlenx;
-		(nodet[modulox][cpu_index] + 0)->total_packets = 0;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         flow = nodet[modulox][cpu_index] + 0;
     }
@@ -200,7 +199,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             (nodet[modulox][cpu_index] + 1)->hash = hashx0;
             (nodet[modulox][cpu_index] + 1)->weight = pktlenx;
 			(nodet[modulox][cpu_index] + 1)->weight = pktlenx;
-			(nodet[modulox][cpu_index] + 1)->total_packets = 0;
             (nodet[modulox][cpu_index] + 0)->branchnext = (nodet[modulox][cpu_index] + 1);
             flow = nodet[modulox][cpu_index] + 1;
         }
@@ -218,7 +216,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                 (nodet[modulox][cpu_index] + 2)->hash = hashx0;
                 (nodet[modulox][cpu_index] + 2)->weight = pktlenx;
 				(nodet[modulox][cpu_index] + 2)->cost = pktlenx;
-				(nodet[modulox][cpu_index] + 2)->total_packets = 0;
                 (nodet[modulox][cpu_index] + 1)->branchnext = nodet[modulox][cpu_index] + 2;
                 flow = nodet[modulox][cpu_index] + 2;
             }
@@ -241,7 +238,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                     (nodet[modulox][cpu_index] + 3)->hash = hashx0;
                     (nodet[modulox][cpu_index] + 3)->weight = pktlenx;
 					(nodet[modulox][cpu_index] + 3)->cost = pktlenx;
-					(nodet[modulox][cpu_index] + 3)->total_packets = 0;
                     (nodet[modulox][cpu_index] + 2)->branchnext = nodet[modulox][cpu_index] + 3;
                     (nodet[modulox][cpu_index] + 3)->branchnext = nodet[modulox][cpu_index] + 0;
                     flow = nodet[modulox][cpu_index] + 3;
@@ -335,7 +331,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-		credit = ((t[cpu_index]-old_t[cpu_index])) /*- (n_drops[cpu_index]*WEIGHT_DROP)*/;
+		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(WEIGHT_DROP+WEIGHT_DPDK));
 //		printf("CREDIT: %lf\t",credit);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -372,7 +368,6 @@ always_inline u8 arrival(flowcount_t * flow,u32 cpu_index){
 u8 drop;
     if(flow->vqueue <= THRESHOLD /*&& r_qtotal < BUFFER*/){
         vstate(flow,0,cpu_index);
-		flow->total_packets++;
         drop = 0;
 		totalvqueue+=flow->cost;
     }
@@ -383,13 +378,14 @@ u8 drop;
 
 //	printf("WEIGHT: %u\tCOST:%u\n",flow->weight,flow->cost);
 	ELOG_TYPE_DECLARE (e) = {
-    .format = "Flow Hash: %u Flow Vqueue = %u Flow Cost = %u",
-    .format_args = "i4i2i2",
+    .format = "Flow Hash: %u Flow Vqueue = %u Flow Weight = %u Flow Cost = %u",
+    .format_args = "i4i4i2i2",
 	};
-  	struct {u32 flow_hash; u16 flow_weight;u16 cost;} *ed;
+  	struct {u32 flow_hash; u32 flow_vqueue;u16 weight;u16 cost;} *ed;
   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
   	ed->flow_hash = flow->hash;
-  	ed->flow_weight = flow->weight;
+  	ed->flow_vqueue = flow->vqueue;
+	ed->weight = flow->weight;
   	ed->cost = flow->cost;
 
 	return drop;
@@ -427,7 +423,7 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 */
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*WEIGHT_DROP);
+		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(WEIGHT_DPDK+WEIGHT_DROP));
         flow->cost = (flow->weight)*(total/sum);
 //		printf("Total: %lf\tSum: %lf\tRatio %lf\n",total,sum,(total-(n_drops[cpu_index]*WEIGHT_DROP))/sum);
 		flow->n_packets = 0;
