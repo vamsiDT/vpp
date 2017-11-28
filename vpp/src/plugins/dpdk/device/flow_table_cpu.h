@@ -18,113 +18,22 @@
 #define TABLESIZE 128
 #define MAXCPU 4
 #define ALPHACPU 1.0
-#define THRESHOLD 5785//44800//15000//14000//12800
-#define MAX_THRESHOLD 89600
+#define THRESHOLD 5888//44800//15000//14000//12800
 
-#define THRESHOLD1 10000
+#define ELOG
 
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 40
-#define WEIGHT_DPDK 268
+
+#ifdef ELOG
+#define WEIGHT_DPDK 250//185
+#else
+#define WEIGHT_DPDK 190
+#endif
+
 #define WEIGHT_IP4E 192
-
-#define FLOW_HASH_4157820474	920    //192.168.0.1
-#define FLOW_HASH_2122681738	920   //192.168.0.3
-#define FLOW_HASH_3010998242	920    //192.168.0.5
-#define FLOW_HASH_976153682		920    //192.168.0.7
-#define FLOW_HASH_1434910422	920    //192.168.0.9
-#define FLOW_HASH_3704634726	920    //192.168.0.11
-#define FLOW_HASH_288202510	    920    //192.168.0.13
-#define FLOW_HASH_2558221502	920    //192.168.0.15
-#define FLOW_HASH_653891148		920    //192.168.0.17
-#define FLOW_HASH_2947503612	920    //192.168.0.19
-#define FLOW_HASH_1649604500	460    //192.168.0.21
-#define FLOW_HASH_3942921252	460    //192.168.0.23
-#define FLOW_HASH_2225874592	460    //192.168.0.25
-#define FLOW_HASH_234546448		460    //192.168.0.27
-#define FLOW_HASH_3221702520	460    //192.168.0.29
-#define FLOW_HASH_1230079176	460    //192.168.0.31
-#define FLOW_HASH_2381030752	460    //192.168.0.32
-#define FLOW_HASH_79521488	    460    //192.168.0.34
-#define FLOW_HASH_3376465080	460    //192.168.0.36
-#define FLOW_HASH_1075185416	460    //192.168.0.38
-#define FLOW_HASH_DEFAULT		460
-#define FLOW_COST_DEFAULT       460
-
-#define FLOW_COST(hash) (FLOW_HASH_##hash)
-//#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
-
-always_inline u16 flow_costvalue(u32 hash){
-u16 cost;
-	switch(hash){
-		case 4157820474:
-			cost = FLOW_COST(4157820474);
-			break;
-		case 2122681738:
-            cost = FLOW_COST(2122681738);
-            break;
-        case 3010998242:
-            cost = FLOW_COST(3010998242);
-            break;
-        case 976153682:
-            cost = FLOW_COST(976153682);
-            break;
-        case 1434910422:
-            cost = FLOW_COST(1434910422);
-            break;
-        case 3704634726:
-            cost = FLOW_COST(3704634726);
-            break;
-        case 288202510:
-            cost = FLOW_COST(288202510);
-            break;
-        case 2558221502:
-            cost = FLOW_COST(2558221502);
-            break;
-        case 653891148:
-            cost = FLOW_COST(653891148);
-            break;
-        case 2947503612:
-            cost = FLOW_COST(2947503612);
-            break;
-        case 1649604500:
-            cost = FLOW_COST(1649604500);
-            break;
-        case 3942921252:
-            cost = FLOW_COST(3942921252);
-            break;
-        case 2225874592:
-            cost = FLOW_COST(2225874592);
-            break;
-        case 234546448:
-            cost = FLOW_COST(234546448);
-            break;
-        case 3221702520:
-            cost = FLOW_COST(3221702520);
-            break;
-        case 1230079176:
-            cost = FLOW_COST(1230079176);
-            break;
-        case 2381030752:
-            cost = FLOW_COST(2381030752);
-            break;
-        case 79521488:
-            cost = FLOW_COST(79521488);
-            break;
-        case 3376465080:
-            cost = FLOW_COST(3376465080);
-            break;
-        case 1075185416:
-            cost = FLOW_COST(1075185416);
-            break;
-		case 0:
-			cost = FLOW_COST(DEFAULT);
-        default:
-            cost = FLOW_COST(DEFAULT);
-	}
-return cost;
-}
+#define FLOW_COST_DEFAULT       (WEIGHT_DPDK+WEIGHT_IP4E)
 
 typedef struct flowcount{
     u32 hash;
@@ -145,7 +54,6 @@ extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
 extern flowcount_t *  head [MAXCPU];
-extern u32 r_qtotal;
 extern u32 nbl[MAXCPU];
 extern u64 t[MAXCPU];
 extern u64 old_t[MAXCPU];
@@ -373,6 +281,7 @@ u8 drop;
 		n_drops[cpu_index]++;
     }
 
+#ifdef ELOG
 	ELOG_TYPE_DECLARE (e) = {
     .format = "Flow Hash: %u Flow Vqueue = %u Flow Weight = %u Flow Cost = %u",
     .format_args = "i4i4i2i2",
@@ -383,6 +292,7 @@ u8 drop;
   	ed->flow_vqueue = flow->vqueue;
 	ed->weight = flow->weight;
   	ed->cost = flow->cost;
+#endif
 
 	return drop;
 }
@@ -398,27 +308,7 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 /*Function to update costs*/
 always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
     activelist_t * costlist = head_af[cpu_index];
-//    f64 sum = 0;
 
-/*
-    while (costlist != NULL){
-        flowcount_t * flow = costlist->flow;
-        sum += ((u32)(flow->weight))*(flow->n_packets);
-        costlist = costlist->next;
-    }
-    costlist = head_af[cpu_index];
-*/
-/*
-	    ELOG_TYPE_DECLARE (e) = {
-    .format = "Flow Hash: %lf Flow Vqueue = %lf Flow Cost = %u",
-    .format_args = "i8i8i2",
-    };
-    struct {f64 flow_hash; f64 flow_weight;u16 cost;} *ed;
-    ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-    ed->flow_hash = s_total[cpu_index];
-    ed->flow_weight = sum;
-    ed->cost = 0;
-*/
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
 		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(WEIGHT_DPDK+WEIGHT_DROP));
@@ -428,19 +318,6 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
     }
 }
 
-/*function to increment vqueues using the updated costs*/
-/*
-always_inline void update_vstate(vlib_main_t * vm,u32 cpu_index){
-    activelist_t * costlist = head_af[cpu_index];
-    while(costlist != NULL){
-        flowcount_t * flow = costlist->flow;
-        totalvqueue+= flow->vqueue;
-        flow->vqueue += (flow->n_packets)*(flow->cost);
-        flow->n_packets = 0;
-        costlist = costlist->next;
-    }
-}
-*/
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
 	n_drops[cpu_index]=0;
