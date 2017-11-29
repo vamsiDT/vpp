@@ -153,10 +153,17 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
+typedef struct dpdk_node
+    {
+        u64 clocks;
+        u64 vectors;
+    }dpdk_node_t;
+
 extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
 extern flowcount_t *  head [MAXCPU];
+extern dpdk_node_t * dpdk_cost[MAXCPU];
 extern u32 nbl[MAXCPU];
 extern u64 t[MAXCPU];
 extern u64 old_t[MAXCPU];
@@ -168,6 +175,7 @@ extern u8 n_drops[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern u64 veryold_t[MAXCPU];
 extern f64 sum[MAXCPU];
+extern u64 dpdk_cost_total[MAXCPU];
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -340,7 +348,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(WEIGHT_DROP+WEIGHT_DPDK));
+		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(WEIGHT_DROP+dpdk_cost_total[cpu_index]));
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -410,11 +418,22 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
 /*Function to update costs*/
 always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
+
+	// if(PREDICT_FALSE(dpdk_node[cpu_index]==NULL)){
+	// 	dpdk_node[cpu_index]=malloc(sizeof(dpdk_node_t));
+	// 	memset(dpdk_node[cpu_index],0,sizeof(dpdk_node_t));
+	// }
+
+	// vlib_node_t *dpdk_cost = vlib_get_node_by_name (vm, (u8 *) "dpdk-input");
+	// vlib_node_sync_stats (vm, dpdk_cost);
+	// dpdk = (f64)(dpdk_cost->stats_total.clocks - cost_node->inout.dpdk_input.clocks)/(f64)(dpdk_cost->stats_total.vectors - cost_node->inout.dpdk_input.vectors);
+
+
     activelist_t * costlist = head_af[cpu_index];
 
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(WEIGHT_DPDK+WEIGHT_DROP));
+		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+WEIGHT_DROP));
         flow->cost = (flow->weight)*(total/sum[cpu_index]);
 //		flow->n_packets = 0;
         costlist = costlist->next;

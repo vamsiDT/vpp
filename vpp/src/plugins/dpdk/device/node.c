@@ -292,6 +292,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   vlib_node_runtime_t * node, u32 cpu_index, u16 queue_id,
 		   int maybe_multiseg)
 {
+
+  u64 dpdk_cost_begin = rte_rdtsc();
   u32 n_buffers;
   u32 next_index = VNET_DEVICE_INPUT_NEXT_ETHERNET_INPUT;
   u32 n_left_to_next, *to_next;
@@ -667,7 +669,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
      cpu_index, xd->vlib_sw_if_index, mb_index, n_rx_bytes);
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
-
+  dpdk_cost_total[cpu_index]=rte_rdtsc() - dpdk_cost_begin;
   return mb_index;
 }
 
