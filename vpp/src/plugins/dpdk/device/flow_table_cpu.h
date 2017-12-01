@@ -18,9 +18,10 @@
 #define TABLESIZE 128
 #define MAXCPU 4
 #define ALPHACPU 1.0
-#define THRESHOLD 5888//44800//15000//14000//12800
+#define THRESHOLD 4096//44800//15000//14000//12800
 
 #define ELOG_FAIRDROP
+//#define ELOG_DPDK_COST
 //#define BUSYLOOP
 
 #define WEIGHT_IP4	320
@@ -30,7 +31,7 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 250
 #else
-#define WEIGHT_DPDK 190//185
+#define WEIGHT_DPDK 200//185
 #endif
 
 #define WEIGHT_IP4E 192
@@ -153,17 +154,10 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-typedef struct dpdk_node
-    {
-        u64 clocks;
-        u64 vectors;
-    }dpdk_node_t;
-
 extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
 extern flowcount_t *  head [MAXCPU];
-extern dpdk_node_t * dpdk_cost[MAXCPU];
 extern u32 nbl[MAXCPU];
 extern u64 t[MAXCPU];
 extern u64 old_t[MAXCPU];
@@ -385,7 +379,9 @@ u8 drop;
     if(flow->vqueue <= THRESHOLD /*&& r_qtotal < BUFFER*/){
         vstate(flow,0,cpu_index);
         drop = 0;
-		busyloop[cpu_index]+=pktlenx-FLOW_HASH_DEFAULT;
+#ifdef BUSYLOOP
+		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
+#endif
     }
     else {
         drop = 1;

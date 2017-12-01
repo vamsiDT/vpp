@@ -617,7 +617,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 //////////////////////////////////////////////////////////
-//	pktlen0 = WEIGHT_IP4;//mb0->timesync;
 	hash0 = mb0->hash.rss;
 	pktlen0 = mb0->timesync;//flow_costvalue(hash0);
   	modulo0 = hash0%TABLESIZE;
@@ -671,7 +670,20 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
      cpu_index, xd->vlib_sw_if_index, mb_index, n_rx_bytes);
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
-  dpdk_cost_total[cpu_index]=((f64)rte_rdtsc() - (f64)dpdk_cost_begin)/(f64)n_packets;
+
+#ifdef ELOG_DPDK_COST
+    ELOG_TYPE_DECLARE (e) = {
+    .format = "DPDK_COST: %u CPU: %u",
+    .format_args = "i4i4",
+    };
+    struct {u32 dpdk_cost;u32 cpu_index;} *ed;
+    ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+    ed->dpdk_cost = dpdk_cost_total[cpu_index];
+	ed->cpu_index = cpu_index;
+#endif
+
+dpdk_cost_total[cpu_index]=((f64)rte_rdtsc() - (f64)dpdk_cost_begin)/(f64)n_packets;
+
   return mb_index;
 }
 
