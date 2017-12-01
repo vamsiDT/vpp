@@ -20,7 +20,7 @@
 #define ALPHACPU 1.0
 #define THRESHOLD 4096//44800//15000//14000//12800
 
-#define ELOG_FAIRDROP
+//#define ELOG_FAIRDROP
 //#define ELOG_DPDK_COST
 //#define BUSYLOOP
 
