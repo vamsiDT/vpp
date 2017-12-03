@@ -176,7 +176,7 @@ extern u64 veryold_t[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 extern u16 error_cost[MAXCPU];
-extern error_cost_t * cost_node[MAXCPU];
+extern error_cost_t * cost_node;
 extern f32 threshold[MAXCPU];
 
 always_inline flowcount_t *
@@ -196,6 +196,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
+		cost_node = malloc(MAXCPU*(sizeof(error_cost_t)));
     }
 
     else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
@@ -429,15 +430,18 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 	// 	dpdk_node[cpu_index]=malloc(sizeof(dpdk_node_t));
 	// 	memset(dpdk_node[cpu_index],0,sizeof(dpdk_node_t));
 	// }
+
+	if (PREDICT_FALSE((cost_node+cpu_index)!=NULL)){
 	u16 error_drop_cost;
 	vlib_node_t *drop_cost = vlib_get_node_by_name (vm, (u8 *) "error-drop");
 	vlib_node_sync_stats (vm, drop_cost);
-	error_drop_cost = (f64)(drop_cost->stats_total.clocks - cost_node[cpu_index]->clocks)/(f64)(drop_cost->stats_total.vectors - cost_node[cpu_index]->vectors);
-	cost_node[cpu_index]->clocks = drop_cost->stats_total.clocks;
-	cost_node[cpu_index]->vectors = drop_cost->stats_total.vectors;
+	error_drop_cost = (f64)(drop_cost->stats_total.clocks - (cost_node+cpu_index)->clocks)/(f64)(drop_cost->stats_total.vectors - (cost_node+cpu_index)->vectors);
+	(cost_node+cpu_index)->clocks = drop_cost->stats_total.clocks;
+	(cost_node+cpu_index)->vectors = drop_cost->stats_total.vectors;
 	error_cost[cpu_index]=error_drop_cost;
+	}
 
-    activelist_t * costlist = head_af[cpu_index];
+	 activelist_t * costlist = head_af[cpu_index];
 
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
