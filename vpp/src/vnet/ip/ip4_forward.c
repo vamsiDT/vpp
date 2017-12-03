@@ -2337,8 +2337,8 @@ ip4_rewrite_inline (vlib_main_t * vm,
 
 #ifdef BUSYLOOP
 	sleep_now(busyloop[cpu_index]);
-#endif
     busyloop[cpu_index]=0;
+#endif
 
 
   while (n_left_from > 0)
