@@ -293,8 +293,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   int maybe_multiseg)
 {
 
+#ifdef FAIRDROP_ALGORITHM
   u64 dpdk_cost_begin = rte_rdtsc();
   u32 n_packets;
+#endif
   u32 n_buffers;
   u32 next_index = VNET_DEVICE_INPUT_NEXT_ETHERNET_INPUT;
   u32 n_left_to_next, *to_next;
@@ -350,7 +352,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u32 bi3, next3;
       u8 error0, error1, error2, error3;
       u64 or_ol_flags;
-//////////////////////////////////////////////
+
+///////////////////////////////////////////////////
       u8  drop0,drop1,drop2,drop3;
       u32 hash0,hash1,hash2,hash3;
       u32 pktlen0,pktlen1,pktlen2,pktlen3;
@@ -360,7 +363,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		departure(cpu_index);
 //		veryold_t[cpu_index] = old_t[cpu_index];
         old_t[cpu_index] = t[cpu_index];
-//////////////////////////////////////////////
+///////////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
 
@@ -442,8 +445,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next += 4;
 	  n_left_to_next -= 4;
 
+#ifdef FAIRDROP_ALGORITHM
 	if(PREDICT_FALSE(n_left_to_next == 0))
 		t[cpu_index] = mb3->udata64;
+#endif
 
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    {
@@ -475,12 +480,12 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 ////////////////////////////////////////////////////////////
-	hash0 = mb0->hash.rss;
-	hash1 = mb1->hash.rss;
-	hash2 = mb2->hash.rss;
-	hash3 = mb3->hash.rss;
+    hash0 = mb0->hash.rss;
+    hash1 = mb1->hash.rss;
+    hash2 = mb2->hash.rss;
+    hash3 = mb3->hash.rss;
 
-	pktlen0 = mb0->timesync;//flow_costvalue(hash0);
+    pktlen0 = mb0->timesync;//flow_costvalue(hash0);
     pktlen1 = mb1->timesync;//flow_costvalue(hash1);
     pktlen2 = mb2->timesync;//flow_costvalue(hash2);
     pktlen3 = mb3->timesync;//flow_costvalue(hash3);
@@ -489,6 +494,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   	modulo1 = hash1%TABLESIZE;
   	modulo2 = hash2%TABLESIZE;
   	modulo3 = hash3%TABLESIZE;
+
     drop0 = /*0*modulo0;*/fq(modulo0,hash0,pktlen0,cpu_index);
     drop1 = /*0*modulo1;*/fq(modulo1,hash1,pktlen1,cpu_index);
     drop2 = /*0*modulo2;*/fq(modulo2,hash2,pktlen2,cpu_index);

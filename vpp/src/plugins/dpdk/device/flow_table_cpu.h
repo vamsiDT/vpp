@@ -20,9 +20,9 @@
 #define ALPHACPU 1.0
 #define THRESHOLD 4096//44800//15000//14000//12800
 
-#define ELOG_FAIRDROP
+//#define ELOG_FAIRDROP
 //#define ELOG_DPDK_COST
-//#define BUSYLOOP
+#define BUSYLOOP
 
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
@@ -37,16 +37,16 @@
 #define WEIGHT_IP4E 192
 
 #ifdef BUSYLOOP
-#define FLOW_HASH_4157820474    920    //192.168.0.1
-#define FLOW_HASH_2122681738    920 //192.168.0.3
-#define FLOW_HASH_3010998242    920    //192.168.0.5
-#define FLOW_HASH_976153682     920   //192.168.0.7
-#define FLOW_HASH_1434910422    920    //192.168.0.9
-#define FLOW_HASH_3704634726    920   //192.168.0.11
-#define FLOW_HASH_288202510     920    //192.168.0.13
-#define FLOW_HASH_2558221502    920    //192.168.0.15
-#define FLOW_HASH_653891148     920    //192.168.0.17
-#define FLOW_HASH_2947503612    920    //192.168.0.19
+#define FLOW_HASH_4157820474    1200    //192.168.0.1
+#define FLOW_HASH_2122681738    1200 //192.168.0.3
+#define FLOW_HASH_3010998242    460    //192.168.0.5
+#define FLOW_HASH_976153682     460   //192.168.0.7
+#define FLOW_HASH_1434910422    460    //192.168.0.9
+#define FLOW_HASH_3704634726    460   //192.168.0.11
+#define FLOW_HASH_288202510     460    //192.168.0.13
+#define FLOW_HASH_2558221502    460    //192.168.0.15
+#define FLOW_HASH_653891148     460    //192.168.0.17
+#define FLOW_HASH_2947503612    460    //192.168.0.19
 #define FLOW_HASH_1649604500    460   //192.168.0.21
 #define FLOW_HASH_3942921252    460    //192.168.0.23
 #define FLOW_HASH_2225874592    460    //192.168.0.25
@@ -154,6 +154,11 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
+typedef struct cost_node{
+	u64 clocks;
+	u64 vectors;
+}error_cost_t;
+
 extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
@@ -170,6 +175,9 @@ extern u32 busyloop[MAXCPU];
 extern u64 veryold_t[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
+extern u16 error_cost[MAXCPU];
+extern error_cost_t * cost_node[MAXCPU];
+extern f32 threshold[MAXCPU];
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -342,7 +350,8 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(WEIGHT_DROP+dpdk_cost_total[cpu_index]));
+		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index]));
+		threshold[cpu_index]=credit/nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -376,10 +385,11 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 u8 drop;
-    if(flow->vqueue <= THRESHOLD /*&& r_qtotal < BUFFER*/){
+    if(flow->vqueue <= threshold[cpu_index] /*&& r_qtotal < BUFFER*/){
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
+        if(PREDICT_FALSE(pktlenx > 500))
 		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 #endif
     }
@@ -419,17 +429,19 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 	// 	dpdk_node[cpu_index]=malloc(sizeof(dpdk_node_t));
 	// 	memset(dpdk_node[cpu_index],0,sizeof(dpdk_node_t));
 	// }
-
-	// vlib_node_t *dpdk_cost = vlib_get_node_by_name (vm, (u8 *) "dpdk-input");
-	// vlib_node_sync_stats (vm, dpdk_cost);
-	// dpdk = (f64)(dpdk_cost->stats_total.clocks - cost_node->inout.dpdk_input.clocks)/(f64)(dpdk_cost->stats_total.vectors - cost_node->inout.dpdk_input.vectors);
-
+	u16 error_drop_cost;
+	vlib_node_t *drop_cost = vlib_get_node_by_name (vm, (u8 *) "error-drop");
+	vlib_node_sync_stats (vm, drop_cost);
+	error_drop_cost = (f64)(drop_cost->stats_total.clocks - cost_node[cpu_index]->clocks)/(f64)(drop_cost->stats_total.vectors - cost_node[cpu_index]->vectors);
+	cost_node[cpu_index]->clocks = drop_cost->stats_total.clocks;
+	cost_node[cpu_index]->vectors = drop_cost->stats_total.vectors;
+	error_cost[cpu_index]=error_drop_cost;
 
     activelist_t * costlist = head_af[cpu_index];
 
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+WEIGHT_DROP));
+		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));
         flow->cost = (flow->weight)*(total/sum[cpu_index]);
 //		flow->n_packets = 0;
         costlist = costlist->next;

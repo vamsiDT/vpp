@@ -1603,12 +1603,12 @@ vlib_main_or_worker_loop (vlib_main_t * vm, int is_main)
 
       /* Record time stamp in case there are no enabled nodes and above
          calls do not update time stamp. */
-	//sleep_now(busyloop[os_get_cpu_number()]);
-	//busyloop[os_get_cpu_number()]=0;
+///////////////////////////////////////////     
 	cpu_time_now = clib_cpu_time_now ();
-	olds_total[os_get_cpu_number()]=s_total[os_get_cpu_number()];
+	//olds_total[os_get_cpu_number()]=s_total[os_get_cpu_number()];
     s_total[os_get_cpu_number()] = (cpu_time_now-s[os_get_cpu_number()]);
 	//clib_warning("%lu\n",s_total[os_get_cpu_number()]);
+//////////////////////////////////////////
     }
 }
 
