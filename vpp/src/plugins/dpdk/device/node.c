@@ -293,10 +293,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   int maybe_multiseg)
 {
 
-#ifdef FAIRDROP_ALGORITHM
   u64 dpdk_cost_begin = rte_rdtsc();
   u32 n_packets;
-#endif
   u32 n_buffers;
   u32 next_index = VNET_DEVICE_INPUT_NEXT_ETHERNET_INPUT;
   u32 n_left_to_next, *to_next;
