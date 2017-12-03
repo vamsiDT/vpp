@@ -445,10 +445,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next += 4;
 	  n_left_to_next -= 4;
 
-#ifdef FAIRDROP_ALGORITHM
 	if(PREDICT_FALSE(n_left_to_next == 0))
 		t[cpu_index] = mb3->udata64;
-#endif
 
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    {
