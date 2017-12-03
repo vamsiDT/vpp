@@ -431,7 +431,7 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 	// 	memset(dpdk_node[cpu_index],0,sizeof(dpdk_node_t));
 	// }
 
-	if (PREDICT_FALSE((cost_node+cpu_index)!=NULL)){
+	if (PREDICT_FALSE(cost_node!=NULL)){
 	u16 error_drop_cost;
 	vlib_node_t *drop_cost = vlib_get_node_by_name (vm, (u8 *) "error-drop");
 	vlib_node_sync_stats (vm, drop_cost);
