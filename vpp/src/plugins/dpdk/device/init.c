@@ -66,6 +66,7 @@ dpdk_main_t dpdk_main;
 #include <vlibapi/api_helper_macros.h>
 
 
+#include <dpdk/device/flow_table_cpu.h>
 static uint16_t
 add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
         struct rte_mbuf **pkts, uint16_t nb_pkts,
@@ -76,6 +77,7 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
 
     for (i = 0; i < nb_pkts; i++){
         pkts[i]->udata64 = /*rte_rdtsc();*/rx_timestamp;
+		pkts[i]->timesync = flow_costvalue(pkts[i]->hash.rss);
 		//printf("%u\n",pkts[i]->hash.rss);
 		//if (pkts[i]->hash.rss==4157820474)
 		//pkts[i]->timesync = 420;

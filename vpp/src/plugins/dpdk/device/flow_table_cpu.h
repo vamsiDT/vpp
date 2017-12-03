@@ -28,28 +28,29 @@
 #define WEIGHT_IP4	320
 #define WEIGHT_IP6	510
 #define WEIGHT_DROP 40
+#define WEIGHT_IP4E 192
 
-#define FLOW_HASH_4157820474	540    //192.168.0.1
-#define FLOW_HASH_2122681738	530   //192.168.0.3
-#define FLOW_HASH_3010998242	520    //192.168.0.5
-#define FLOW_HASH_976153682		510    //192.168.0.7
-#define FLOW_HASH_1434910422	500    //192.168.0.9
-#define FLOW_HASH_3704634726	490    //192.168.0.11
-#define FLOW_HASH_288202510	    480    //192.168.0.13
-#define FLOW_HASH_2558221502	470    //192.168.0.15
-#define FLOW_HASH_653891148		460    //192.168.0.17
-#define FLOW_HASH_2947503612	450    //192.168.0.19
-#define FLOW_HASH_1649604500	440    //192.168.0.21
-#define FLOW_HASH_3942921252	430    //192.168.0.23
-#define FLOW_HASH_2225874592	420    //192.168.0.25
-#define FLOW_HASH_234546448		410    //192.168.0.27
-#define FLOW_HASH_3221702520	400    //192.168.0.29
-#define FLOW_HASH_1230079176	390    //192.168.0.31
-#define FLOW_HASH_2381030752	380    //192.168.0.32
-#define FLOW_HASH_79521488	    370    //192.168.0.34
-#define FLOW_HASH_3376465080	360    //192.168.0.36
-#define FLOW_HASH_1075185416	350    //192.168.0.38
-#define FLOW_HASH_DEFAULT		350
+#define FLOW_HASH_4157820474    1200    //192.168.0.1
+#define FLOW_HASH_2122681738    1200 //192.168.0.3
+#define FLOW_HASH_3010998242    460    //192.168.0.5
+#define FLOW_HASH_976153682     460   //192.168.0.7
+#define FLOW_HASH_1434910422    460    //192.168.0.9
+#define FLOW_HASH_3704634726    460   //192.168.0.11
+#define FLOW_HASH_288202510     460    //192.168.0.13
+#define FLOW_HASH_2558221502    460    //192.168.0.15
+#define FLOW_HASH_653891148     460    //192.168.0.17
+#define FLOW_HASH_2947503612    460    //192.168.0.19
+#define FLOW_HASH_1649604500    460   //192.168.0.21
+#define FLOW_HASH_3942921252    460    //192.168.0.23
+#define FLOW_HASH_2225874592    460    //192.168.0.25
+#define FLOW_HASH_234546448     460    //192.168.0.27
+#define FLOW_HASH_3221702520    460    //192.168.0.29
+#define FLOW_HASH_1230079176    460    //192.168.0.31
+#define FLOW_HASH_2381030752    460    //192.168.0.32
+#define FLOW_HASH_79521488      460    //192.168.0.34
+#define FLOW_HASH_3376465080    460    //192.168.0.36
+#define FLOW_HASH_1075185416    460    //192.168.0.38
+#define FLOW_HASH_DEFAULT		400
 
 #define FLOW_COST(hash) (FLOW_HASH_##hash)
 //#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
@@ -158,6 +159,7 @@ extern u8 n_drops[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern u64 veryold_t[MAXCPU];
 extern u64 totalvqueue;
+extern u64 dpdk_cost_total[MAXCPU];
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -303,7 +305,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-void flowin(flowcount_t * flow,u32 cpu_index){
+always_inline void flowin(flowcount_t * flow,u32 cpu_index){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
     temp->flow = flow;
@@ -319,7 +321,7 @@ void flowin(flowcount_t * flow,u32 cpu_index){
 }
 
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-flowcount_t * flowout(u32 cpu_index){
+always_inline flowcount_t * flowout(u32 cpu_index){
     flowcount_t * temp;
     activelist_t * next;
     temp = head_af[cpu_index]->flow;

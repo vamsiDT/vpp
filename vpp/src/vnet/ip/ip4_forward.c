@@ -2335,9 +2335,10 @@ ip4_rewrite_inline (vlib_main_t * vm,
   next_index = node->cached_next_index;
   u32 cpu_index = os_get_cpu_number ();
 
-	sleep_now(busyloop[cpu_index]);
-    busyloop[cpu_index]=0;
-
+if(PREDICT_FALSE(busyloop[cpu_index] > 0)){
+  		sleep_now(busyloop[cpu_index]);
+    	busyloop[cpu_index]=0;
+  	}
 
   while (n_left_from > 0)
     {
