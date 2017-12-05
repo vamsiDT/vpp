@@ -144,7 +144,7 @@ typedef struct flowcount{
     u32 vqueue;
     u16 weight;
     u16 cost;
-    u32 threshold;
+//    u32 threshold;
 //    u32 n_packets;
     struct flowcount * branchnext;
     struct flowcount * update;
@@ -353,21 +353,20 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index]));
-//		threshold[cpu_index]=credit/nbl[cpu_index];
+		threshold[cpu_index]=credit/nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
+			//threshold[cpu_index]+=served;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout(cpu_index);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-		    j->threshold+=served;
                     flowin(j,cpu_index);
                 }
                 else{
                     credit += served - j->vqueue;
-		    j->threshold+=j->vqueue;
                     j->vqueue = 0;
                     nbl[cpu_index]--;
                 }
@@ -389,7 +388,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 u8 drop;
-    if(flow->vqueue <= flow->threshold/*threshold[cpu_index]*/ /*&& r_qtotal < BUFFER*/){
+    if(flow->vqueue <= threshold[cpu_index] /*&& r_qtotal < BUFFER*/){
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
@@ -445,13 +444,13 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 	}
 
 	 activelist_t * costlist = head_af[cpu_index];
-
+	//threshold[cpu_index]=sum[cpu_index]/nbl[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
 		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));
         flow->cost = (flow->weight)*(total/sum[cpu_index]);
 //		flow->n_packets = 0;
-	flow->threshold=0;
+	//flow->threshold=0;
         costlist = costlist->next;
     }
 }
