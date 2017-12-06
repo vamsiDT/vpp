@@ -352,8 +352,10 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-		credit = ((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index]));
-		threshold[cpu_index]=credit/nbl[cpu_index];
+		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
+		threshold[cpu_index] = credit/nbl[cpu_index];
+		threshold[cpu_index+1] = credit;
+		nbl[cpu_index+1]=nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -403,15 +405,15 @@ u8 drop;
 
 #ifdef ELOG_FAIRDROP
 	ELOG_TYPE_DECLARE (e) = {
-    .format = "Flow Hash: %u Flow Vqueue = %u Flow Weight = %u Flow Cost = %u",
-    .format_args = "i4i4i2i2",
+    .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u Error Cost = %u",
+    .format_args = "i4i4i4i4",
 	};
-  	struct {u32 flow_hash; u32 flow_vqueue;u16 weight;u16 cost;} *ed;
+  	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u32 cost;} *ed;
   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-  	ed->flow_hash = flow->hash;
-  	ed->flow_vqueue = flow->vqueue;
-	ed->weight = flow->weight;
-  	ed->cost = flow->cost;
+  	ed->flow_hash = threshold[cpu_index+1];
+  	ed->flow_vqueue = nbl[cpu_index+1];
+	ed->threshold = threshold[cpu_index];
+  	ed->cost = nbl[cpu_index];
 #endif
 
 	return drop;
@@ -444,7 +446,6 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 	}
 
 	 activelist_t * costlist = head_af[cpu_index];
-	//threshold[cpu_index]=sum[cpu_index]/nbl[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
 		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));

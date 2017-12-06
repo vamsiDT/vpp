@@ -356,11 +356,12 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u32 hash0,hash1,hash2,hash3;
       u32 pktlen0,pktlen1,pktlen2,pktlen3;
       u8 modulo0,modulo1,modulo2,modulo3;
+	 u8 hello=0;
 
 		update_costs(vm,cpu_index);
-		departure(cpu_index);
+//		departure(cpu_index);
 //		veryold_t[cpu_index] = old_t[cpu_index];
-        old_t[cpu_index] = t[cpu_index];
+//        old_t[cpu_index] = t[cpu_index];
 ///////////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
@@ -407,6 +408,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     }
 /////////////////////////////////
 */
+
+	if(PREDICT_FALSE(hello==0)){
+        old_t[cpu_index] = t[cpu_index];
+        t[cpu_index] = mb0->udata64;
+        departure(cpu_index);
+        hello=1;
+	}
+
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 	  b1 = vlib_buffer_from_rte_mbuf (mb1);
 	  b2 = vlib_buffer_from_rte_mbuf (mb2);
@@ -443,9 +452,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next += 4;
 	  n_left_to_next -= 4;
 
+/*
 	if(PREDICT_FALSE(n_left_to_next == 0))
 		t[cpu_index] = mb3->udata64;
-
+*/
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    {
 	      next0 = next1 = next2 = next3 = xd->per_interface_next_index;
@@ -476,6 +486,11 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 ////////////////////////////////////////////////////////////
+//printf("%lu\n",mb0->udata64);
+//printf("%lu\n",mb1->udata64);
+//printf("%lu\n",mb2->udata64);
+//printf("%lu\n",mb3->udata64);
+
     hash0 = mb0->hash.rss;
     hash1 = mb1->hash.rss;
     hash2 = mb2->hash.rss;
@@ -605,10 +620,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  to_next[0] = bi0;
 	  to_next++;
 	  n_left_to_next--;
-
+/*
     if(PREDICT_FALSE(n_left_to_next == 0))
         t[cpu_index] = mb0->udata64;
-
+*/
 
 	  if (PREDICT_FALSE (xd->per_interface_next_index != ~0))
 	    next0 = xd->per_interface_next_index;
@@ -619,6 +634,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 //////////////////////////////////////////////////////////
+//printf("%lu\n",mb0->udata64);
 	hash0 = mb0->hash.rss;
 	pktlen0 = mb0->timesync;//flow_costvalue(hash0);
   	modulo0 = hash0%TABLESIZE;
