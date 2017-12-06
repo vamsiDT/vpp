@@ -458,16 +458,16 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 //	hash2 = mb2->hash.rss;
 //	hash3 = mb3->hash.rss;
 
-if(PREDICT_FALSE(mb0->timesync > 500))
+if(PREDICT_FALSE(mb0->timesync >= 500))
 		busyloop[cpu_index]+=mb0->timesync -(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 
-if(PREDICT_FALSE(mb1->timesync > 500))
+if(PREDICT_FALSE(mb1->timesync >= 500))
         busyloop[cpu_index]+=mb1->timesync -(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 
-if(PREDICT_FALSE(mb2->timesync > 500))
+if(PREDICT_FALSE(mb2->timesync >= 500))
         busyloop[cpu_index]+=mb2->timesync -(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 
-if(PREDICT_FALSE(mb3->timesync > 500))
+if(PREDICT_FALSE(mb3->timesync >= 500))
         busyloop[cpu_index]+=mb3->timesync -(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 ////////////////////////////////////////////////////////////
 
@@ -554,7 +554,7 @@ if(PREDICT_FALSE(mb3->timesync > 500))
 
 //////////////////////////////////////////////////////////
 //	hash0 = mb0->hash.rss;
-if(PREDICT_FALSE(mb0->timesync > 500))
+if(PREDICT_FALSE(mb0->timesync >= 500))
         busyloop[cpu_index]+=mb0->timesync -(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 /////////////////////////////////////////////////////////
 
