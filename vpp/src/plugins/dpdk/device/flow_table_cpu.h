@@ -37,8 +37,8 @@
 #define WEIGHT_IP4E 192
 
 #ifdef BUSYLOOP
-#define FLOW_HASH_4157820474    2000    //192.168.0.1
-#define FLOW_HASH_2122681738    2000 //192.168.0.3
+#define FLOW_HASH_4157820474    5000    //192.168.0.1
+#define FLOW_HASH_2122681738    5000 //192.168.0.3
 #define FLOW_HASH_3010998242    500    //192.168.0.5
 #define FLOW_HASH_976153682     500   //192.168.0.7
 #define FLOW_HASH_1434910422    500    //192.168.0.9
@@ -57,7 +57,6 @@
 #define FLOW_HASH_79521488      500    //192.168.0.34
 #define FLOW_HASH_3376465080    500    //192.168.0.36
 #define FLOW_HASH_1075185416    500    //192.168.0.38
-#define FLOW_HASH_DEFAULT       500
 #endif
 
 #define FLOW_HASH_DEFAULT       (WEIGHT_DPDK+WEIGHT_IP4E)
@@ -395,7 +394,7 @@ u8 drop;
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
-        if(PREDICT_FALSE(pktlenx > 500))
+        if(PREDICT_FALSE(pktlenx >= 500))
 		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 #endif
     }
