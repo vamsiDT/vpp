@@ -15,17 +15,16 @@
 
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
+
 #define TABLESIZE 128
 #define MAXCPU 4
 #define ALPHACPU 1.0
-#define THRESHOLD 48640//44800//15000//14000//12800
 
 //#define ELOG_FAIRDROP
 //#define ELOG_DPDK_COST
 #define BUSYLOOP
+#define JIM_APPROX
 
-#define WEIGHT_IP4	320
-#define WEIGHT_IP6	510
 #define WEIGHT_DROP 40
 
 #ifdef ELOG_FAIRDROP
@@ -66,7 +65,6 @@
 #else
 #define FLOW_COST(hash) (FLOW_HASH_DEFAULT)
 #endif
-//#define FLOW_BUSY(hash) (FLOW_HASH_##hash - FLOW_HASH_DEFAULT)
 
 always_inline u16 flow_costvalue(u32 hash){
 u16 cost;
@@ -144,8 +142,6 @@ typedef struct flowcount{
     u32 vqueue;
     u16 weight;
     u16 cost;
-//    u32 threshold;
-//    u32 n_packets;
     struct flowcount * branchnext;
     struct flowcount * update;
 }flowcount_t;
@@ -167,17 +163,18 @@ extern flowcount_t *  head [MAXCPU];
 extern u32 nbl[MAXCPU];
 extern u64 t[MAXCPU];
 extern u64 old_t[MAXCPU];
+extern u64 veryold_t[MAXCPU];
 extern u8 hello_world[MAXCPU];
 extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
-extern u64 olds_total[MAXCPU];
-extern u8 n_drops[MAXCPU];
 extern u32 busyloop[MAXCPU];
-extern u64 veryold_t[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
+#ifndef JIM_APPROX
 extern u16 error_cost[MAXCPU];
 extern error_cost_t * cost_node;
+extern u8 n_drops[MAXCPU];
+#endif
 extern f32 threshold[MAXCPU];
 
 always_inline flowcount_t *
@@ -194,10 +191,13 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
 		(nodet[modulox][cpu_index] + 0)->cost = pktlenx;
+//		(nodet[modulox][cpu_index] + 0)->vqueue = 1;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
+#ifndef JIM_APPROX
 		cost_node = malloc(MAXCPU*(sizeof(error_cost_t)));
+#endif
     }
 
     else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
@@ -209,6 +209,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
 		(nodet[modulox][cpu_index] + 0)->cost = pktlenx;
+//		(nodet[modulox][cpu_index] + 0)->vqueue = 1;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         flow = nodet[modulox][cpu_index] + 0;
     }
@@ -220,6 +221,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             (nodet[modulox][cpu_index] + 1)->hash = hashx0;
             (nodet[modulox][cpu_index] + 1)->weight = pktlenx;
 			(nodet[modulox][cpu_index] + 1)->cost = pktlenx;
+//			(nodet[modulox][cpu_index] + 1)->vqueue = 1;
             (nodet[modulox][cpu_index] + 0)->branchnext = (nodet[modulox][cpu_index] + 1);
             flow = nodet[modulox][cpu_index] + 1;
         }
@@ -237,6 +239,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                 (nodet[modulox][cpu_index] + 2)->hash = hashx0;
                 (nodet[modulox][cpu_index] + 2)->weight = pktlenx;
 				(nodet[modulox][cpu_index] + 2)->cost = pktlenx;
+//				(nodet[modulox][cpu_index] + 2)->vqueue = 1;
                 (nodet[modulox][cpu_index] + 1)->branchnext = nodet[modulox][cpu_index] + 2;
                 flow = nodet[modulox][cpu_index] + 2;
             }
@@ -259,6 +262,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                     (nodet[modulox][cpu_index] + 3)->hash = hashx0;
                     (nodet[modulox][cpu_index] + 3)->weight = pktlenx;
 					(nodet[modulox][cpu_index] + 3)->cost = pktlenx;
+//					(nodet[modulox][cpu_index] + 3)->vqueue = 1;
                     (nodet[modulox][cpu_index] + 2)->branchnext = nodet[modulox][cpu_index] + 3;
                     (nodet[modulox][cpu_index] + 3)->branchnext = nodet[modulox][cpu_index] + 0;
                     flow = nodet[modulox][cpu_index] + 3;
@@ -292,6 +296,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                         ((nodet[modulox][cpu_index] + 0)->update)->hash = hashx0;
                         ((nodet[modulox][cpu_index] + 0)->update)->weight = pktlenx;
 						((nodet[modulox][cpu_index] + 0)->update)->cost = pktlenx;
+//						((nodet[modulox][cpu_index] + 0)->update)->vqueue = 1;
                         flow = (nodet[modulox][cpu_index] + 0)->update;
                         (nodet[modulox][cpu_index] + 0)->update = ((nodet[modulox][cpu_index] + 0)->update)->branchnext ;
                     }
@@ -352,14 +357,15 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
+#ifdef JIM_APPROX /*The exact calculation is not necessary as the drop cost gets cancelled between vq increments and decrements*/
+		credit = (t[cpu_index]-old_t[cpu_index]);
+#else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
+#endif
 		threshold[cpu_index] = credit/nbl[cpu_index];
-		threshold[cpu_index+1] = credit;
-		nbl[cpu_index+1]=nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
-			//threshold[cpu_index]+=served;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout(cpu_index);
@@ -381,7 +387,6 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             nbl[cpu_index]++;
             flowin(flow,cpu_index);
         }
-//		flow->n_packets++;
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;
     }
@@ -394,26 +399,28 @@ u8 drop;
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
-        if(PREDICT_FALSE(pktlenx >= 500))
-		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
+        if(PREDICT_FALSE(pktlenx > 1000))
+		busyloop[cpu_index]+=pktlenx; //-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 #endif
     }
     else {
         drop = 1;
+#ifndef JIM_APPROX
 		n_drops[cpu_index]++;
+#endif
     }
 
 #ifdef ELOG_FAIRDROP
 	ELOG_TYPE_DECLARE (e) = {
-    .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u Error Cost = %u",
+    .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u nbl = %u",
     .format_args = "i4i4i4i4",
 	};
-  	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u32 cost;} *ed;
+  	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u32 nbl;} *ed;
   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
   	ed->flow_hash = threshold[cpu_index+1];
   	ed->flow_vqueue = nbl[cpu_index+1];
 	ed->threshold = threshold[cpu_index];
-  	ed->cost = nbl[cpu_index];
+  	ed->nbl = nbl[cpu_index];
 #endif
 
 	return drop;
@@ -430,11 +437,7 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 /*Function to update costs*/
 always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 
-	// if(PREDICT_FALSE(dpdk_node[cpu_index]==NULL)){
-	// 	dpdk_node[cpu_index]=malloc(sizeof(dpdk_node_t));
-	// 	memset(dpdk_node[cpu_index],0,sizeof(dpdk_node_t));
-	// }
-
+#ifndef JIM_APPROX
 	if (PREDICT_FALSE(cost_node!=NULL)){
 	u16 error_drop_cost;
 	vlib_node_t *drop_cost = vlib_get_node_by_name (vm, (u8 *) "error-drop");
@@ -444,21 +447,25 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 	(cost_node+cpu_index)->vectors = drop_cost->stats_total.vectors;
 	error_cost[cpu_index]=error_drop_cost;
 	}
-
+#endif
 	 activelist_t * costlist = head_af[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
+#ifdef JIM_APPROX
+		f64 total = s_total[cpu_index];
+#else /*Clock cycles spent in dropping the packets is subtracted from total clock clock cycles spent for a vector */
 		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));
+#endif
         flow->cost = (flow->weight)*(total/sum[cpu_index]);
-//		flow->n_packets = 0;
-	//flow->threshold=0;
         costlist = costlist->next;
     }
 }
 
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
+#ifndef JIM_APPROX
 	n_drops[cpu_index]=0;
+#endif
 	sum[cpu_index]=0;
 }
 
