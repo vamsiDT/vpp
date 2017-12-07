@@ -38,24 +38,24 @@
 #ifdef BUSYLOOP
 #define FLOW_HASH_4157820474    5000    //192.168.0.1
 #define FLOW_HASH_2122681738    5000 //192.168.0.3
-#define FLOW_HASH_3010998242    500    //192.168.0.5
-#define FLOW_HASH_976153682     500   //192.168.0.7
-#define FLOW_HASH_1434910422    500    //192.168.0.9
-#define FLOW_HASH_3704634726    500   //192.168.0.11
-#define FLOW_HASH_288202510     500    //192.168.0.13
-#define FLOW_HASH_2558221502    500    //192.168.0.15
-#define FLOW_HASH_653891148     500    //192.168.0.17
-#define FLOW_HASH_2947503612    500    //192.168.0.19
-#define FLOW_HASH_1649604500    500   //192.168.0.21
-#define FLOW_HASH_3942921252    500    //192.168.0.23
-#define FLOW_HASH_2225874592    500    //192.168.0.25
-#define FLOW_HASH_234546448     500    //192.168.0.27
-#define FLOW_HASH_3221702520    500    //192.168.0.29
-#define FLOW_HASH_1230079176    500    //192.168.0.31
-#define FLOW_HASH_2381030752    500    //192.168.0.32
-#define FLOW_HASH_79521488      500    //192.168.0.34
-#define FLOW_HASH_3376465080    500    //192.168.0.36
-#define FLOW_HASH_1075185416    500    //192.168.0.38
+#define FLOW_HASH_3010998242    400    //192.168.0.5
+#define FLOW_HASH_976153682     400   //192.168.0.7
+#define FLOW_HASH_1434910422    400    //192.168.0.9
+#define FLOW_HASH_3704634726    400   //192.168.0.11
+#define FLOW_HASH_288202510     400    //192.168.0.13
+#define FLOW_HASH_2558221502    400    //192.168.0.15
+#define FLOW_HASH_653891148     400    //192.168.0.17
+#define FLOW_HASH_2947503612    400    //192.168.0.19
+#define FLOW_HASH_1649604500    400   //192.168.0.21
+#define FLOW_HASH_3942921252    400    //192.168.0.23
+#define FLOW_HASH_2225874592    400    //192.168.0.25
+#define FLOW_HASH_234546448     400    //192.168.0.27
+#define FLOW_HASH_3221702520    400    //192.168.0.29
+#define FLOW_HASH_1230079176    400    //192.168.0.31
+#define FLOW_HASH_2381030752    400    //192.168.0.32
+#define FLOW_HASH_79521488      400    //192.168.0.34
+#define FLOW_HASH_3376465080    400    //192.168.0.36
+#define FLOW_HASH_1075185416    400    //192.168.0.38
 #endif
 
 #define FLOW_HASH_DEFAULT       (WEIGHT_DPDK+WEIGHT_IP4E)
@@ -169,8 +169,8 @@ extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
-#ifndef JIM_APPROX
 extern u64 dpdk_cost_total[MAXCPU];
+#ifndef JIM_APPROX
 extern u16 error_cost[MAXCPU];
 extern error_cost_t * cost_node;
 extern u8 n_drops[MAXCPU];
@@ -393,12 +393,8 @@ u8 drop;
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
-        if(PREDICT_FALSE(pktlenx > 500))
-#ifdef JIM_APPROX
-		busyloop[cpu_index]+=pktlenx;
-#else
+        //if(PREDICT_FALSE(pktlenx > 500))
 		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
-#endif
 #endif
     }
     else {

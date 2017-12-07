@@ -292,10 +292,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   vlib_node_runtime_t * node, u32 cpu_index, u16 queue_id,
 		   int maybe_multiseg)
 {
-#ifndef JIM_APPROX
   u64 dpdk_cost_begin = rte_rdtsc();
   u32 n_packets;
-#endif
   u32 n_buffers;
   u32 next_index = VNET_DEVICE_INPUT_NEXT_ETHERNET_INPUT;
   u32 n_left_to_next, *to_next;
@@ -310,9 +308,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
-#ifndef JIM_APPROX
   n_packets = n_buffers;
-#endif
 
   if (n_buffers == 0)
     {
@@ -692,7 +688,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
-#ifndef JIM_APPROX
 #ifdef ELOG_DPDK_COST
     ELOG_TYPE_DECLARE (e) = {
     .format = "DPDK_COST: %u CPU: %u",
@@ -705,7 +700,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 #endif
 
 dpdk_cost_total[cpu_index]=((f64)rte_rdtsc() - (f64)dpdk_cost_begin)/(f64)n_packets;
-#endif
 
   return mb_index;
 }
