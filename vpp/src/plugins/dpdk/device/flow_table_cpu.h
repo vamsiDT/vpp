@@ -169,8 +169,8 @@ extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
-extern u64 dpdk_cost_total[MAXCPU];
 #ifndef JIM_APPROX
+extern u64 dpdk_cost_total[MAXCPU];
 extern u16 error_cost[MAXCPU];
 extern error_cost_t * cost_node;
 extern u8 n_drops[MAXCPU];
@@ -191,7 +191,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
 		(nodet[modulox][cpu_index] + 0)->cost = pktlenx;
-//		(nodet[modulox][cpu_index] + 0)->vqueue = 1;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
@@ -209,7 +208,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->weight = pktlenx;
 		(nodet[modulox][cpu_index] + 0)->cost = pktlenx;
-//		(nodet[modulox][cpu_index] + 0)->vqueue = 1;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         flow = nodet[modulox][cpu_index] + 0;
     }
@@ -221,7 +219,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
             (nodet[modulox][cpu_index] + 1)->hash = hashx0;
             (nodet[modulox][cpu_index] + 1)->weight = pktlenx;
 			(nodet[modulox][cpu_index] + 1)->cost = pktlenx;
-//			(nodet[modulox][cpu_index] + 1)->vqueue = 1;
             (nodet[modulox][cpu_index] + 0)->branchnext = (nodet[modulox][cpu_index] + 1);
             flow = nodet[modulox][cpu_index] + 1;
         }
@@ -239,7 +236,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                 (nodet[modulox][cpu_index] + 2)->hash = hashx0;
                 (nodet[modulox][cpu_index] + 2)->weight = pktlenx;
 				(nodet[modulox][cpu_index] + 2)->cost = pktlenx;
-//				(nodet[modulox][cpu_index] + 2)->vqueue = 1;
                 (nodet[modulox][cpu_index] + 1)->branchnext = nodet[modulox][cpu_index] + 2;
                 flow = nodet[modulox][cpu_index] + 2;
             }
@@ -262,7 +258,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                     (nodet[modulox][cpu_index] + 3)->hash = hashx0;
                     (nodet[modulox][cpu_index] + 3)->weight = pktlenx;
 					(nodet[modulox][cpu_index] + 3)->cost = pktlenx;
-//					(nodet[modulox][cpu_index] + 3)->vqueue = 1;
                     (nodet[modulox][cpu_index] + 2)->branchnext = nodet[modulox][cpu_index] + 3;
                     (nodet[modulox][cpu_index] + 3)->branchnext = nodet[modulox][cpu_index] + 0;
                     flow = nodet[modulox][cpu_index] + 3;
@@ -296,7 +291,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
                         ((nodet[modulox][cpu_index] + 0)->update)->hash = hashx0;
                         ((nodet[modulox][cpu_index] + 0)->update)->weight = pktlenx;
 						((nodet[modulox][cpu_index] + 0)->update)->cost = pktlenx;
-//						((nodet[modulox][cpu_index] + 0)->update)->vqueue = 1;
                         flow = (nodet[modulox][cpu_index] + 0)->update;
                         (nodet[modulox][cpu_index] + 0)->update = ((nodet[modulox][cpu_index] + 0)->update)->branchnext ;
                     }
@@ -399,8 +393,12 @@ u8 drop;
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
-        if(PREDICT_FALSE(pktlenx > 1000))
-		busyloop[cpu_index]+=pktlenx; //-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
+        if(PREDICT_FALSE(pktlenx > 500))
+#ifdef JIM_APPROX
+		busyloop[cpu_index]+=pktlenx;
+#else
+		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
+#endif
 #endif
     }
     else {
