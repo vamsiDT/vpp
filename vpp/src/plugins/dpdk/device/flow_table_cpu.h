@@ -30,7 +30,7 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 250
 #else
-#define WEIGHT_DPDK 200//185
+#define WEIGHT_DPDK 158//185
 #endif
 
 #define WEIGHT_IP4E 192
@@ -38,24 +38,24 @@
 #ifdef BUSYLOOP
 #define FLOW_HASH_4157820474    5000    //192.168.0.1
 #define FLOW_HASH_2122681738    5000 //192.168.0.3
-#define FLOW_HASH_3010998242    400    //192.168.0.5
-#define FLOW_HASH_976153682     400   //192.168.0.7
-#define FLOW_HASH_1434910422    400    //192.168.0.9
-#define FLOW_HASH_3704634726    400   //192.168.0.11
-#define FLOW_HASH_288202510     400    //192.168.0.13
-#define FLOW_HASH_2558221502    400    //192.168.0.15
-#define FLOW_HASH_653891148     400    //192.168.0.17
-#define FLOW_HASH_2947503612    400    //192.168.0.19
-#define FLOW_HASH_1649604500    400   //192.168.0.21
-#define FLOW_HASH_3942921252    400    //192.168.0.23
-#define FLOW_HASH_2225874592    400    //192.168.0.25
-#define FLOW_HASH_234546448     400    //192.168.0.27
-#define FLOW_HASH_3221702520    400    //192.168.0.29
-#define FLOW_HASH_1230079176    400    //192.168.0.31
-#define FLOW_HASH_2381030752    400    //192.168.0.32
-#define FLOW_HASH_79521488      400    //192.168.0.34
-#define FLOW_HASH_3376465080    400    //192.168.0.36
-#define FLOW_HASH_1075185416    400    //192.168.0.38
+#define FLOW_HASH_3010998242    380    //192.168.0.5
+#define FLOW_HASH_976153682     380   //192.168.0.7
+#define FLOW_HASH_1434910422    380    //192.168.0.9
+#define FLOW_HASH_3704634726    380   //192.168.0.11
+#define FLOW_HASH_288202510     380    //192.168.0.13
+#define FLOW_HASH_2558221502    380    //192.168.0.15
+#define FLOW_HASH_653891148     380    //192.168.0.17
+#define FLOW_HASH_2947503612    380    //192.168.0.19
+#define FLOW_HASH_1649604500    380   //192.168.0.21
+#define FLOW_HASH_3942921252    380    //192.168.0.23
+#define FLOW_HASH_2225874592    380    //192.168.0.25
+#define FLOW_HASH_234546448     380    //192.168.0.27
+#define FLOW_HASH_3221702520    380    //192.168.0.29
+#define FLOW_HASH_1230079176    380    //192.168.0.31
+#define FLOW_HASH_2381030752    380    //192.168.0.32
+#define FLOW_HASH_79521488      380    //192.168.0.34
+#define FLOW_HASH_3376465080    380    //192.168.0.36
+#define FLOW_HASH_1075185416    380    //192.168.0.38
 #endif
 
 #define FLOW_HASH_DEFAULT       (WEIGHT_DPDK+WEIGHT_IP4E)
@@ -393,8 +393,9 @@ u8 drop;
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
-        //if(PREDICT_FALSE(pktlenx > 500))
+        if(PREDICT_FALSE(pktlenx > 500))
 		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
+//		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
     }
     else {
