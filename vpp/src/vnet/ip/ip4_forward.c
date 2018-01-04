@@ -2338,7 +2338,8 @@ ip4_rewrite_inline (vlib_main_t * vm,
 
 #ifdef BUSYLOOP
   	if(PREDICT_FALSE(busyloop[cpu_index] > 0)){
-  		sleep_now(busyloop[cpu_index]);
+  		//sleep_now(busyloop[cpu_index]);
+		clib_cpu_time_wait(busyloop[cpu_index]);
     	busyloop[cpu_index]=0;
   	}
 #endif

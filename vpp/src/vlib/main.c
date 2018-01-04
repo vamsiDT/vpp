@@ -1474,7 +1474,10 @@ vlib_main_or_worker_loop (vlib_main_t * vm, int is_main)
 
   while (1)
     {
-	s[os_get_cpu_number()] = clib_cpu_time_now ();
+	u64 cpu_time_now = clib_cpu_time_now ();
+	s_total[os_get_cpu_number()]= cpu_time_now - s[os_get_cpu_number()];
+	s[os_get_cpu_number()] = cpu_time_now;
+
       vlib_node_runtime_t *n;
 
       if (!is_main)
@@ -1604,9 +1607,9 @@ vlib_main_or_worker_loop (vlib_main_t * vm, int is_main)
       /* Record time stamp in case there are no enabled nodes and above
          calls do not update time stamp. */
 ///////////////////////////////////////////     
-	cpu_time_now = clib_cpu_time_now ();
+	//cpu_time_now = clib_cpu_time_now ();
 	//olds_total[os_get_cpu_number()]=s_total[os_get_cpu_number()];
-    s_total[os_get_cpu_number()] = (cpu_time_now-s[os_get_cpu_number()]);
+    //s_total[os_get_cpu_number()] = (cpu_time_now-s[os_get_cpu_number()]);
 	//clib_warning("%lu\n",s_total[os_get_cpu_number()]);
 //////////////////////////////////////////
     }

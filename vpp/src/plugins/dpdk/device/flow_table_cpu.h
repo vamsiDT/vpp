@@ -34,7 +34,7 @@
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 4900
+#define WEIGHT_CLASS_1 3500
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
@@ -358,7 +358,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = credit*((f32)1.2)/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
+		threshold[cpu_index] = credit*((f32)1.15)/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//veryold_t[cpu_index] = nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -397,8 +397,8 @@ u8 drop;
         drop = 0;
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
-		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
-//		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
+//		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
+		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
     }
     else {
@@ -450,7 +450,7 @@ always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
 #ifdef JIM_APPROX
-		f64 total = s_total[cpu_index];
+		f64 total = (f64)s_total[cpu_index];
 #else /*Clock cycles spent in dropping the packets is subtracted from total clock clock cycles spent for a vector */
 		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));
 #endif
