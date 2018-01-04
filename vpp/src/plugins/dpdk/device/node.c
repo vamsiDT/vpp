@@ -458,10 +458,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     modulo1 = (hash1)%TABLESIZE;
     modulo2 = (hash2)%TABLESIZE;
     modulo3 = (hash3)%TABLESIZE;
-    pktlen0 = mb0->data_len + 4;
-    pktlen1 = mb1->data_len + 4;
-    pktlen2 = mb2->data_len + 4;
-    pktlen3 = mb3->data_len + 4;
+    pktlen0 = (mb0->data_len + 4)*8;
+    pktlen1 = (mb1->data_len + 4)*8;
+    pktlen2 = (mb2->data_len + 4)*8;
+    pktlen3 = (mb3->data_len + 4)*8;
     drop0 = fq(modulo0,hash0,pktlen0);
     drop1 = fq(modulo1,hash1,pktlen1);
     drop2 = fq(modulo2,hash2,pktlen2);
@@ -572,7 +572,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 ////////////////////////////////////////////////
     hash0 = (unsigned)mb0->hash.rss;
     modulo0 = (hash0)%TABLESIZE;
-    pktlen0 = mb0->data_len + 4;
+    pktlen0 = (mb0->data_len + 4)*8;
     drop0 = fq(modulo0,hash0,pktlen0);
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -627,7 +627,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 old_t = t;
 t = (u64)(unix_time_now_nsec ());
 departure();
-	
+
   return mb_index;
 }
 

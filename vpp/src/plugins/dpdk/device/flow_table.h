@@ -210,7 +210,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         flowcount_t * j;
         u32 served,credit;
         int oldnbl=nbl+1;
-        credit = (t - old_t)*ALPHA;
+        credit = (t - old_t)*10*ALPHA;
         while (oldnbl>nbl && nbl > 0){
             oldnbl = nbl;
             served = credit/nbl;
