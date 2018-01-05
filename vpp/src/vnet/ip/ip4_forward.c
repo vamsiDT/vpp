@@ -51,6 +51,8 @@
 #include <vnet/dpo/load_balance.h>
 #include <vnet/dpo/classify_dpo.h>
 #include <vnet/mfib/mfib_table.h>	/* for mFIB table and entry creation */
+#include <vnet/ip/fifo.h>
+#include <vnet/ip/fifo_var.h>
 
 /**
  * @file
@@ -2334,6 +2336,12 @@ ip4_rewrite_inline (vlib_main_t * vm,
   next_index = node->cached_next_index;
   u32 cpu_index = os_get_cpu_number ();
 
+//////////////start of extra code///////////////
+  old_t = t;
+  t = (u64)((vlib_time_now (vm))*1e9);
+  threshold=(t-old_t)*10*ALPHA;
+//////////////end of extra code///////////////
+
   while (n_left_from > 0)
     {
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
@@ -2343,6 +2351,11 @@ ip4_rewrite_inline (vlib_main_t * vm,
 	  ip_adjacency_t *adj0, *adj1;
 	  vlib_buffer_t *p0, *p1;
 	  ip4_header_t *ip0, *ip1;
+
+//////////////start of extra code///////////////
+      u16 pktlen0,pktlen1;
+//////////////end of extra code///////////////
+
 	  u32 pi0, rw_len0, next0, error0, checksum0, adj_index0;
 	  u32 pi1, rw_len1, next1, error1, checksum1, adj_index1;
 	  u32 tx_sw_if_index0, tx_sw_if_index1;
@@ -2524,6 +2537,21 @@ ip4_rewrite_inline (vlib_main_t * vm,
 	  vnet_rewrite_two_headers (adj0[0], adj1[0],
 				    ip0, ip1, sizeof (ethernet_header_t));
 
+//////////////start of extra code///////////////
+    u8 drop0,drop1;
+	pktlen0 = (p0->current_length + 4)*8;
+	pktlen1 = (p1->current_length + 4)*8;
+	drop0 = fifo(pktlen0);
+	drop1 = fifo(pktlen1);
+	if(PREDICT_FALSE(drop0 == 1)){
+		next0 = IP4_REWRITE_NEXT_DROP;
+	}
+	if(PREDICT_FALSE(drop1 == 1)){
+		next1 = IP4_REWRITE_NEXT_DROP;
+	}
+////////////end of extra code//////////////
+
+
 	  /*
 	   * Bump the per-adjacency counters
 	   */
@@ -2566,6 +2594,11 @@ ip4_rewrite_inline (vlib_main_t * vm,
 	  ip_adjacency_t *adj0;
 	  vlib_buffer_t *p0;
 	  ip4_header_t *ip0;
+
+//////////////start of extra code///////////////
+	u16 pktlen0;
+//////////////end of extra code///////////////
+
 	  u32 pi0, rw_len0, adj_index0, next0, error0, checksum0;
 	  u32 tx_sw_if_index0;
 
@@ -2682,6 +2715,15 @@ ip4_rewrite_inline (vlib_main_t * vm,
 	  to_next += 1;
 	  n_left_to_next -= 1;
 
+///////////////start of extra code///////////
+    u8 drop0;
+	pktlen0 = (p0->current_length + 4)*8;
+	drop0 = fifo(pktlen0);
+	if(PREDICT_FALSE(drop0 == 1)){
+		next0 = IP4_REWRITE_NEXT_DROP;
+	}
+///////////////end of extra code///////////
+
 	  vlib_validate_buffer_enqueue_x1 (vm, node, next_index,
 					   to_next, n_left_to_next,
 					   pi0, next0);
@@ -2693,6 +2735,9 @@ ip4_rewrite_inline (vlib_main_t * vm,
   /* Need to do trace after rewrites to pick up new packet data. */
   if (node->flags & VLIB_NODE_FLAG_TRACE)
     ip4_forward_next_trace (vm, node, frame, VLIB_TX);
+
+/*setting fifoqueue to zero after each vector */
+	fifoqueue = 0;
 
   return frame->n_vectors;
 }
