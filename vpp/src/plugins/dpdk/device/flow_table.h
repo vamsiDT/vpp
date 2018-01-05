@@ -14,7 +14,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.4   // ALPHA = Output/Input
+#define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD 384000 //just a random number. Update the value with proper theoritical approach.
 
@@ -40,6 +40,7 @@ extern u32 r_qtotal;
 extern u32 nbl;
 extern u64 t;
 extern u64 old_t;
+extern f32 threshold;
 
 /* Flow classification function */
 always_inline flowcount_t *
@@ -208,9 +209,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-        u32 served,credit;
+        f32 served,credit;
         int oldnbl=nbl+1;
         credit = (t - old_t)*10*ALPHA;
+		threshold = credit/nbl;
         while (oldnbl>nbl && nbl > 0){
             oldnbl = nbl;
             served = credit/nbl;
@@ -242,7 +244,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow, u16 pktlenx){
 u8 drop;
-    if(flow->vqueue <= THRESHOLD){
+    if(flow->vqueue <= threshold){
         vstate(flow,pktlenx,0);
         drop = 0;
     }

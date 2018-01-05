@@ -10,3 +10,4 @@ u32 r_qtotal;
 u32 nbl;
 u64 t = 0;
 u64 old_t;
+f32 threshold;
