@@ -16,7 +16,7 @@
 #define TABLESIZE 4096
 #define ALPHA 0.6
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD 153600 //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
@@ -211,7 +211,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl+1;
-        credit = (t - old_t)*10*ALPHA;
+        credit = (t - old_t)*ALPHA;
 //		threshold = 153600;//credit/nbl;
         while (oldnbl>nbl && nbl > 0){
             oldnbl = nbl;
