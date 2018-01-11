@@ -78,6 +78,7 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
     for (i = 0; i < nb_pkts; i++){
         pkts[i]->udata64 = rte_rdtsc();//rx_timestamp;
         pkts[i]->timesync = flow_costvalue(pkts[i]->hash.rss);
+		rte_pktmbuf_free(pkts[i]);
 	}
     return nb_pkts;
 }
