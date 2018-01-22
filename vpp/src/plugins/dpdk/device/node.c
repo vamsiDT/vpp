@@ -303,6 +303,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   u32 n_trace, trace_cnt __attribute__ ((unused));
   vlib_buffer_free_list_t *fl;
   vlib_buffer_t *bt = vec_elt_at_index (dm->buffer_templates, cpu_index);
+	        printf("HELLO\n");
+
 
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;

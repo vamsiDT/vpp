@@ -79,6 +79,7 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
         pkts[i]->udata64 = rte_rdtsc();//rx_timestamp;
         pkts[i]->timesync = flow_costvalue(pkts[i]->hash.rss);
 		rte_pktmbuf_free(pkts[i]);
+		printf("HELLO\n");
 	}
     return nb_pkts;
 }
@@ -1875,10 +1876,7 @@ dpdk_process (vlib_main_t * vm, vlib_node_runtime_t * rt, vlib_frame_t * f)
 	    xd = &dm->devices[i];
 	    ASSERT (i == xd->device_index);
 
-///////////////////////////////////////
-/* RX callback function which is added to the port/queue to timestamp each received packet */
-		rte_eth_add_rx_callback((uint8_t)(i), 0, add_timestamps, NULL);
-//////////////////////////////////////
+
 
 	    if (xd->pmd == VNET_DPDK_PMD_BOND)
 	      {
@@ -1960,6 +1958,10 @@ dpdk_process (vlib_main_t * vm, vlib_node_runtime_t * rt, vlib_frame_t * f)
 		      }
 		  }
 	      }
+	      ///////////////////////////////////////
+/* RX callback function which is added to the port/queue to timestamp each received packet */
+		rte_eth_add_rx_callback((uint8_t)(i), 0, add_timestamps, NULL);
+//////////////////////////////////////
 	  }
       }
   }
@@ -2102,3 +2104,4 @@ VLIB_INIT_FUNCTION (dpdk_init);
  * eval: (c-set-style "gnu")
  * End:
  */
+
