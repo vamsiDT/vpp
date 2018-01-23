@@ -73,15 +73,23 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
         uint16_t max_pkts __rte_unused, void *_ __rte_unused)
 {
     unsigned i;
+	uint16_t j=0;
+	uint16_t k;
 //    uint64_t rx_timestamp = rte_rdtsc();
 
     for (i = 0; i < nb_pkts; i++){
         pkts[i]->udata64 = rte_rdtsc();//rx_timestamp;
         pkts[i]->timesync = flow_costvalue(pkts[i]->hash.rss);
+
+		if(pkts[i]->hash.rss==(uint32_t)(4157820474)){
 		rte_pktmbuf_free(pkts[i]);
-		printf("HELLO\n");
+		j++;
+		}
+
 	}
-    return nb_pkts;
+	k=nb_pkts-j;
+	printf("%u\n",k);
+    return k;
 }
 
 
