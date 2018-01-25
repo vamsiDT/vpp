@@ -511,6 +511,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
     drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
     drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+    drop0 = 0;
+    drop1 = 0;
+    drop2 = 0;
+    drop3 = 0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -630,6 +634,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	pktlen0 = mb0->timesync;
   	modulo0 = hash0%TABLESIZE;
     drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+    drop0 = 0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
