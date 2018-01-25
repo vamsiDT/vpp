@@ -283,6 +283,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
     }
 }
 
+struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
 always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers){
   u16 i=0;
