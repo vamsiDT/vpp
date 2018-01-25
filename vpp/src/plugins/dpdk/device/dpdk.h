@@ -167,6 +167,8 @@ typedef struct
   u32 flush_count;
 } dpdk_device_hqos_per_hqos_thread_t;
 
+#define struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE]
+
 typedef struct
 {
   CLIB_CACHE_LINE_ALIGN_MARK (cacheline0);
