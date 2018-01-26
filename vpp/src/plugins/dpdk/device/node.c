@@ -170,6 +170,9 @@ dpdk_rx_trace (dpdk_main_t * dm,
     }
 }
 
+
+struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
+
 static inline u32
 dpdk_rx_burst (dpdk_main_t * dm, dpdk_device_t * xd, u16 queue_id)
 {
@@ -283,40 +286,120 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
     }
 }
 
-struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
+
 
 always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
+  u32 n_buf = n_buffers;
   u16 i=0;
   u16 j=0;
   u8 hello=0;
-  u32 n_buf = n_buffers;
-  u32 hash0;
-  u16 pktlen0;
-  u8 modulo0;
-  struct rte_mbuf *mb0;
-
   while(n_buf>0){
+    u32 hash0,hash1,hash2,hash3;
+    u16 pktlen0,pktlen1,pktlen2,pktlen3;
+    u8 modulo0,modulo1,modulo2,modulo3;
+    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
+
+    while(n_buf>=4){
+      
+      mb0 = xd->rx_vectors[queue_id][i];
+      mb1 = xd->rx_vectors[queue_id][i+1];
+      mb2 = xd->rx_vectors[queue_id][i+2];
+      mb3 = xd->rx_vectors[queue_id][i+3];
+      
+      if(PREDICT_FALSE(hello==0)){
+        old_t[cpu_index] = t[cpu_index];
+        t[cpu_index] = mb0->udata64;
+        departure(cpu_index);
+        hello=1;
+      }
+      
+      hash0 = mb0->hash.rss;
+      hash1 = mb1->hash.rss;
+      hash2 = mb2->hash.rss;
+      hash3 = mb3->hash.rss;
+      
+      pktlen0 = mb0->timesync;
+      pktlen1 = mb1->timesync;
+      pktlen2 = mb2->timesync;
+      pktlen3 = mb3->timesync;
+      
+      modulo0 = hash0%TABLESIZE;
+      modulo1 = hash1%TABLESIZE;
+      modulo2 = hash2%TABLESIZE;
+      modulo3 = hash3%TABLESIZE;
+      
+      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
+      drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
+      drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+      
+      if(PREDICT_TRUE(drop0 == 0)){
+        f_vectors[j]= mb0;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb0);
+      }
+      
+      if(PREDICT_TRUE(drop1 == 0)){
+        f_vectors[j]= mb1;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb1);
+      }
+      
+      if(PREDICT_TRUE(drop2 == 0)){
+        f_vectors[j]= mb2;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb2);
+      }
+      
+      if(PREDICT_TRUE(drop3 == 0)){
+        f_vectors[j]= mb3;
+        j++;
+      }
+      
+      else{
+        rte_pktmbuf_free(mb3);
+      }
+      
+      i+=4;
+      n_buf-=4;
+    }
+
+    while(n_buf>0){
+
+      mb0 = xd->rx_vectors[queue_id][i];
+      
+      if(PREDICT_FALSE(hello==0)){
+        old_t[cpu_index] = t[cpu_index];
+        t[cpu_index] = mb0->udata64;
+        departure(cpu_index);
+        hello=1;
+      }
     
-    mb0 = xd->rx_vectors[queue_id][i];
-    hash0 = mb0->hash.rss;
-    pktlen0 = mb0->timesync;
-    modulo0 = hash0%TABLESIZE;
-    if(PREDICT_FALSE(hello==0)){
-      old_t[cpu_index] = t[cpu_index];
-      t[cpu_index] = mb0->udata64;
-      departure(cpu_index);
-      hello=1;
+      hash0 = mb0->hash.rss;
+    
+      pktlen0 = mb0->timesync;
+    
+      modulo0 = hash0%TABLESIZE;
+      
+      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+    
+      if(PREDICT_TRUE(drop0 == 0)){
+        f_vectors[j]= mb0;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb0);
+      }
+      
+      i++;
+      n_buf--;
     }
-    drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-    if(drop0 == 0){
-      f_vectors[j]= mb0;
-      j++;
-    }
-    else{
-      rte_pktmbuf_free(mb0);
-    }
-    i++;
-    n_buf--;
   }
   return j;
 }
@@ -347,7 +430,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;
 
+  update_costs(vm,cpu_index);
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
+  n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+  
   n_packets = n_buffers;
 
   if (n_buffers == 0)
@@ -379,11 +465,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   bt->error = node->errors[DPDK_ERROR_NONE];
 
   mb_index = 0;
-
-  update_costs(vm,cpu_index);
-  n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-
-
 
   while (n_buffers > 0)
     {
