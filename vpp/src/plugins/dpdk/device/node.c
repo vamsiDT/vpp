@@ -297,6 +297,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     u32 hash0,hash1,hash2,hash3;
     u16 pktlen0,pktlen1,pktlen2,pktlen3;
     u8 modulo0,modulo1,modulo2,modulo3;
+	u8 drop0,drop1,drop2,drop3;
     struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
 
     while(n_buf>=4){
@@ -332,6 +333,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
       drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
       drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+	drop0=drop1=drop2=drop3=0;
       
       if(PREDICT_TRUE(drop0 == 0)){
         f_vectors[j]= mb0;
@@ -388,6 +390,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo0 = hash0%TABLESIZE;
       
       drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+	drop0=0;
     
       if(PREDICT_TRUE(drop0 == 0)){
         f_vectors[j]= mb0;
