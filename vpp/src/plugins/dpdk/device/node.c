@@ -300,8 +300,12 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 	u8 drop0,drop1,drop2,drop3;
     struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
 
-    while(n_buf>=4){
-      
+    while(n_buf>=8){
+      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
+      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
+      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
+      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
+
       mb0 = xd->rx_vectors[queue_id][i];
       mb1 = xd->rx_vectors[queue_id][i+1];
       mb2 = xd->rx_vectors[queue_id][i+2];
@@ -315,6 +319,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       
       hash0 = mb0->hash.rss;
+//	printf("hash0 = %u\n",hash0);
       hash1 = mb1->hash.rss;
       hash2 = mb2->hash.rss;
       hash3 = mb3->hash.rss;
@@ -328,12 +333,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo1 = hash1%TABLESIZE;
       modulo2 = hash2%TABLESIZE;
       modulo3 = hash3%TABLESIZE;
+
       
-      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-      drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
-      drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-	drop0=drop1=drop2=drop3=0;
+//      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+//      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
+//      drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
+//      drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+	drop0=drop1=drop2=drop3=0*pktlen0*pktlen1*pktlen2*pktlen3*modulo0*modulo1*modulo2*modulo3;
+	drop1=drop2=1;
       
       if(PREDICT_TRUE(drop0 == 0)){
         f_vectors[j]= mb0;
@@ -389,7 +396,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     
       modulo0 = hash0%TABLESIZE;
       
-      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+//      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 	drop0=0;
     
       if(PREDICT_TRUE(drop0 == 0)){
@@ -490,7 +497,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		update_costs(vm,cpu_index);
 ///////////////////////////////////////////////////
 */
-      vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next); 
+      vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
 
       while (n_buffers >= 12 && n_left_to_next >= 4)
 	{

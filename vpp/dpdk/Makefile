@@ -179,11 +179,11 @@ DPDK_DOWNLOADS += $(CURDIR)/$(ISA_L_CRYPTO_LIB_TARBALL)
 endif
 
 $(B)/.download.ok: $(DPDK_DOWNLOADS)
-	@mkdir -p $(B)
-	@openssl md5 $< | cut -f 2 -d " " - > $(B)/$(DPDK_TARBALL).md5sum
-	@([ "$$(<$(B)/$(DPDK_TARBALL).md5sum)" = "$(DPDK_$(DPDK_VERSION)_TARBALL_MD5_CKSUM)" ] || \
-	( echo "Bad Checksum! Please remove $< and retry" && \
-		rm $(B)/$(DPDK_TARBALL).md5sum && false ))
+#	@mkdir -p $(B)
+#	@openssl md5 $< | cut -f 2 -d " " - > $(B)/$(DPDK_TARBALL).md5sum
+#	@([ "$$(<$(B)/$(DPDK_TARBALL).md5sum)" = "$(DPDK_$(DPDK_VERSION)_TARBALL_MD5_CKSUM)" ] || \
+#	( echo "Bad Checksum! Please remove $< and retry" && \
+#		rm $(B)/$(DPDK_TARBALL).md5sum && false ))
 	@touch $@
 
 .PHONY: download
