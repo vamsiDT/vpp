@@ -299,13 +299,13 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     u8 modulo0,modulo1,modulo2,modulo3;
     u8 drop0,drop1,drop2,drop3;
     struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
-    flowcount_t * i0,*i1,*i2,*i3;
+//    flowcount_t * i0,*i1,*i2,*i3;
 
-    while(n_buf>=8){
-      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
-      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
-      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
-      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
+    while(n_buf>=4){
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
 
       mb0 = xd->rx_vectors[queue_id][i];
       mb1 = xd->rx_vectors[queue_id][i+1];
@@ -392,8 +392,8 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
     while(n_buf>0){
 
-      if(n_buf > 1)
-        CLIB_PREFETCH (xd->rx_vectors[queue_id][i+1], CLIB_CACHE_LINE_BYTES, LOAD);
+//      if(n_buf > 1)
+//        CLIB_PREFETCH (xd->rx_vectors[queue_id][i+1], CLIB_CACHE_LINE_BYTES, LOAD);
       mb0 = xd->rx_vectors[queue_id][i];
       
       if(PREDICT_FALSE(hello==0)){
