@@ -361,7 +361,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
      drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
      drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-	 drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
+	   drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
      drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
      drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
      drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
@@ -604,9 +604,12 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;
 
-  update_costs(vm,cpu_index);
+//  update_costs(vm,cpu_index);
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
-  n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+    if(n_buffers>0){
+        update_costs(cpu_index);
+  		n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+	}
   
   n_packets = n_buffers;
 

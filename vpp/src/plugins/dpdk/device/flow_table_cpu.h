@@ -433,19 +433,8 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 }
 
 /*Function to update costs*/
-always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
+always_inline void update_costs(u32 cpu_index){
 
-#ifndef JIM_APPROX
-	if (PREDICT_FALSE(cost_node!=NULL)){
-	u16 error_drop_cost;
-	vlib_node_t *drop_cost = vlib_get_node_by_name (vm, (u8 *) "error-drop");
-	vlib_node_sync_stats (vm, drop_cost);
-	error_drop_cost = (f64)(drop_cost->stats_total.clocks - (cost_node+cpu_index)->clocks)/(f64)(drop_cost->stats_total.vectors - (cost_node+cpu_index)->vectors);
-	(cost_node+cpu_index)->clocks = drop_cost->stats_total.clocks;
-	(cost_node+cpu_index)->vectors = drop_cost->stats_total.vectors;
-	error_cost[cpu_index]=error_drop_cost;
-	}
-#endif
 	 activelist_t * costlist = head_af[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
