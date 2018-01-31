@@ -294,14 +294,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u16 j=0;
   u8 hello=0;
   while(n_buf>0){
-    u32 hash0,hash1,hash2,hash3;
-    u16 pktlen0,pktlen1,pktlen2,pktlen3;
-    u8 modulo0,modulo1,modulo2,modulo3;
-    u8 drop0,drop1,drop2,drop3;
-    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
+    u32 hash0,hash1,hash2,hash3,hash4,hash5,hash6,hash7;
+    u16 pktlen0,pktlen1,pktlen2,pktlen3,pktlen4,pktlen5,pktlen6,pktlen7;
+    u8 modulo0,modulo1,modulo2,modulo3,modulo4,modulo5,modulo6,modulo7;
+    u8 drop0,drop1,drop2,drop3,drop4,drop5,drop6,drop7;
+    struct rte_mbuf *mb0,*mb1,*mb2,*mb3,*mb4,*mb5,*mb6,*mb7;
 //    flowcount_t * i0,*i1,*i2,*i3;
 
-    while(n_buf>=4){
+    while(n_buf>=8){
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
@@ -311,6 +311,10 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       mb1 = xd->rx_vectors[queue_id][i+1];
       mb2 = xd->rx_vectors[queue_id][i+2];
       mb3 = xd->rx_vectors[queue_id][i+3];
+      mb4 = xd->rx_vectors[queue_id][i+4];
+      mb5 = xd->rx_vectors[queue_id][i+5];
+      mb6 = xd->rx_vectors[queue_id][i+6];
+      mb7 = xd->rx_vectors[queue_id][i+7];
       
       if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
@@ -320,20 +324,32 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       
       hash0 = mb0->hash.rss;
-//	printf("hash0 = %u\n",hash0);
       hash1 = mb1->hash.rss;
       hash2 = mb2->hash.rss;
       hash3 = mb3->hash.rss;
-      
+      hash4 = mb4->hash.rss;
+      hash5 = mb5->hash.rss;
+      hash6 = mb6->hash.rss;
+      hash7 = mb7->hash.rss;
+      //  printf("hash0 = %u\n",hash0);
+
       pktlen0 = mb0->timesync;
       pktlen1 = mb1->timesync;
       pktlen2 = mb2->timesync;
       pktlen3 = mb3->timesync;
-      
+      pktlen4 = mb4->timesync;
+      pktlen5 = mb5->timesync;
+      pktlen6 = mb6->timesync;
+      pktlen7 = mb7->timesync;
+
       modulo0 = hash0%TABLESIZE;
       modulo1 = hash1%TABLESIZE;
       modulo2 = hash2%TABLESIZE;
       modulo3 = hash3%TABLESIZE;
+      modulo4 = hash4%TABLESIZE;
+      modulo5 = hash5%TABLESIZE;
+      modulo6 = hash6%TABLESIZE;
+      modulo7 = hash7%TABLESIZE;
 
       
      // drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
@@ -385,9 +401,42 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       else{
         rte_pktmbuf_free(mb3);
       }
+
+      if(PREDICT_TRUE(drop4 == 0)){
+        f_vectors[j]= mb4;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb4);
+      }
       
-      i+=4;
-      n_buf-=4;
+      if(PREDICT_TRUE(drop5 == 0)){
+        f_vectors[j]= mb5;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb5);
+      }
+      
+      if(PREDICT_TRUE(drop6 == 0)){
+        f_vectors[j]= mb6;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb6);
+      }
+      
+      if(PREDICT_TRUE(drop7 == 0)){
+        f_vectors[j]= mb7;
+        j++;
+      }
+      
+      else{
+        rte_pktmbuf_free(mb7);
+      }
+      
+      i+=8;
+      n_buf-=8;
     }
 
     while(n_buf>0){
