@@ -445,6 +445,96 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       n_buf-=8;
     }
 
+    while(n_buf>=4){
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
+
+      mb0 = xd->rx_vectors[queue_id][i];
+      mb1 = xd->rx_vectors[queue_id][i+1];
+      mb2 = xd->rx_vectors[queue_id][i+2];
+      mb3 = xd->rx_vectors[queue_id][i+3];
+      
+      if(PREDICT_FALSE(hello==0)){
+        old_t[cpu_index] = t[cpu_index];
+        t[cpu_index] = mb0->udata64;
+        departure(cpu_index);
+        hello=1;
+      }
+      
+      hash0 = mb0->hash.rss;
+      hash1 = mb1->hash.rss;
+      hash2 = mb2->hash.rss;
+      hash3 = mb3->hash.rss;
+      //  printf("hash0 = %u\n",hash0);
+
+      pktlen0 = mb0->timesync;
+      pktlen1 = mb1->timesync;
+      pktlen2 = mb2->timesync;
+      pktlen3 = mb3->timesync;
+
+      modulo0 = hash0%TABLESIZE;
+      modulo1 = hash1%TABLESIZE;
+      modulo2 = hash2%TABLESIZE;
+      modulo3 = hash3%TABLESIZE;
+
+      
+     // drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+     // drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
+     // drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
+     // drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+
+     // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
+     // i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
+     // i2 = flow_table_classify(modulo2, hash2, pktlen2, cpu_index);
+     // i3 = flow_table_classify(modulo3, hash3, pktlen3, cpu_index);
+     // drop0 = arrival(i0,cpu_index,pktlen0);
+     // drop1 = arrival(i1,cpu_index,pktlen1);
+     // drop2 = arrival(i2,cpu_index,pktlen2);
+     // drop3 = arrival(i3,cpu_index,pktlen3);
+
+      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0;*pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
+
+  
+      
+      if(PREDICT_TRUE(drop0 == 0)){
+        f_vectors[j]= mb0;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb0);
+      }
+      
+      if(PREDICT_TRUE(drop1 == 0)){
+        f_vectors[j]= mb1;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb1);
+      }
+      
+      if(PREDICT_TRUE(drop2 == 0)){
+        f_vectors[j]= mb2;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb2);
+      }
+      
+      if(PREDICT_TRUE(drop3 == 0)){
+        f_vectors[j]= mb3;
+        j++;
+      }
+      
+      else{
+        rte_pktmbuf_free(mb3);
+      }
+      
+      i+=4;
+      n_buf-=4;
+    }
+
     while(n_buf>0){
 
 //      if(n_buf > 1)
