@@ -294,11 +294,16 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u16 j=0;
   u8 hello=0;
   while(n_buf>0){
-    u32 hash0,hash1,hash2,hash3,hash4,hash5,hash6,hash7;
-    u16 pktlen0,pktlen1,pktlen2,pktlen3,pktlen4,pktlen5,pktlen6,pktlen7;
-    u8 modulo0,modulo1,modulo2,modulo3,modulo4,modulo5,modulo6,modulo7;
-    u8 drop0,drop1,drop2,drop3,drop4,drop5,drop6,drop7;
-    struct rte_mbuf *mb0,*mb1,*mb2,*mb3,*mb4,*mb5,*mb6,*mb7;
+    u32 hash0,hash1,hash2,hash3;
+    u32 hash4,hash5,hash6,hash7;
+    u16 pktlen0,pktlen1,pktlen2,pktlen3;
+    u16 pktlen4,pktlen5,pktlen6,pktlen7;
+    u8 modulo0,modulo1,modulo2,modulo3;
+    u8 modulo4,modulo5,modulo6,modulo7;
+    u8 drop0,drop1,drop2,drop3;
+    u8 drop4,drop5,drop6,drop7;
+    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
+    struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
 //    flowcount_t * i0,*i1,*i2,*i3;
 
     while(n_buf>=8){
@@ -366,7 +371,8 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
      // drop2 = arrival(i2,cpu_index,pktlen2);
      // drop3 = arrival(i3,cpu_index,pktlen3);
 
-      drop0=drop1=drop2=drop3=0*pktlen0*pktlen1*pktlen2*pktlen3*modulo0*modulo1*modulo2*modulo3;
+      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0*pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
+
 	
       
       if(PREDICT_TRUE(drop0 == 0)){
