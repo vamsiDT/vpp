@@ -357,10 +357,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo7 = hash7%TABLESIZE;
 
       
-     // drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-     // drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-     // drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
-     // drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+     drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+     drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
+     drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
+     drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+	 drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
+     drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
+     drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
+     drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
 
      // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
      // i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
@@ -444,7 +448,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       i+=8;
       n_buf-=8;
     }
-
+#if 0
     while(n_buf>=4){
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
@@ -494,7 +498,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
      // drop2 = arrival(i2,cpu_index,pktlen2);
      // drop3 = arrival(i3,cpu_index,pktlen3);
 
-      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0;*pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
+      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0;// *pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
 
   
       
@@ -534,7 +538,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       i+=4;
       n_buf-=4;
     }
-
+#endif
     while(n_buf>0){
 
 //      if(n_buf > 1)
@@ -556,7 +560,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       
       // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
       // drop0 = arrival(i0,cpu_index,pktlen0);
-      //drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 	drop0=0;
     
       if(PREDICT_TRUE(drop0 == 0)){
