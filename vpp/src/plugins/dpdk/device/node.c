@@ -356,7 +356,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo6 = hash6%TABLESIZE;
       modulo7 = hash7%TABLESIZE;
 
-      
      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
      drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
@@ -375,7 +374,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
      // drop2 = arrival(i2,cpu_index,pktlen2);
      // drop3 = arrival(i3,cpu_index,pktlen3);
 
-      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0*pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
+//      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0*pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
 
 	
       
@@ -568,7 +567,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
         j++;
       }
       else{
-        rte_pktmbuf_free(mb0);
+//        rte_pktmbuf_free(mb0);
       }
       
       i++;
@@ -605,12 +604,13 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
 //  update_costs(vm,cpu_index);
-  n_buffers = dpdk_rx_burst (dm, xd, queue_id);
-    if(n_buffers>0){
+  	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
+
+	if(n_buffers>0){
         update_costs(cpu_index);
   		n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
 	}
-  
+
   n_packets = n_buffers;
 
   if (n_buffers == 0)
