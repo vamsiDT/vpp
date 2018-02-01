@@ -421,7 +421,7 @@ always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
   	ed->cost = flow->cost;
 #endif
 
-	return drop;
+//	return drop;
 }
 
 always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
