@@ -358,7 +358,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = credit*((f32)(2))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
+		threshold[cpu_index] = credit*((f32)(4))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//veryold_t[cpu_index] = nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -392,7 +392,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 u8 drop;
-    if(flow->vqueue <= threshold[cpu_index] /*&& r_qtotal < BUFFER*/){
+    if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
         vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
@@ -424,11 +424,16 @@ u8 drop;
 	return drop;
 }
 
+always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
+    return 0;
+}
+
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * i;
     u8 drop;
     i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
-    drop = arrival(i,cpu_index,pktlenx);
+    //drop = arrival(i,cpu_index,pktlenx);
+    drop = fake_function(i,cpu_index,pktlenx);
     return drop;
 }
 
