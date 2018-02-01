@@ -30,11 +30,11 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 208
 #else
-#define WEIGHT_DPDK 190//185
+#define WEIGHT_DPDK 180//185
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 382
+#define WEIGHT_CLASS_1 3720
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
@@ -359,7 +359,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = (credit*((f32)(4.0)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
+		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//printf("%f\n",threshold[cpu_index]);
 		//veryold_t[cpu_index] = nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
