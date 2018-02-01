@@ -367,14 +367,23 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       i6 = flow_table_classify(modulo6, hash6, pktlen6, cpu_index);
       i7 = flow_table_classify(modulo7, hash7, pktlen7, cpu_index);
 
-     drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-     drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-     drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
-     drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-	   drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
-     drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
-     drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
-     drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
+      drop0 = arrival(i0,cpu_index,pktlen0);
+      drop1 = arrival(i1,cpu_index,pktlen1);
+      drop2 = arrival(i2,cpu_index,pktlen2);
+      drop3 = arrival(i3,cpu_index,pktlen3);
+      drop4 = arrival(i4,cpu_index,pktlen4);
+      drop5 = arrival(i5,cpu_index,pktlen5);
+      drop6 = arrival(i6,cpu_index,pktlen6);
+      drop7 = arrival(i7,cpu_index,pktlen7);
+
+    //  drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+    //  drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
+    //  drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
+    //  drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+	   // drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
+    //  drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
+    //  drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
+    //  drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
 
      // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
      // i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
