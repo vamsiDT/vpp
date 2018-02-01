@@ -367,14 +367,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       i6 = flow_table_classify(modulo6, hash6, pktlen6, cpu_index);
       i7 = flow_table_classify(modulo7, hash7, pktlen7, cpu_index);
 
-      drop0 = arrival(i0,cpu_index,pktlen0);
-      drop1 = arrival(i1,cpu_index,pktlen1);
-      drop2 = arrival(i2,cpu_index,pktlen2);
-      drop3 = arrival(i3,cpu_index,pktlen3);
-      drop4 = arrival(i4,cpu_index,pktlen4);
-      drop5 = arrival(i5,cpu_index,pktlen5);
-      drop6 = arrival(i6,cpu_index,pktlen6);
-      drop7 = arrival(i7,cpu_index,pktlen7);
+      j += arrival(mb0,f_vectors[j],i0,cpu_index,pktlen0);
+      j += arrival(mb1,f_vectors[j],i1,cpu_index,pktlen1);
+      j += arrival(mb2,f_vectors[j],i2,cpu_index,pktlen2);
+      j += arrival(mb3,f_vectors[j],i3,cpu_index,pktlen3);
+      j += arrival(mb4,f_vectors[j],i4,cpu_index,pktlen4);
+      j += arrival(mb5,f_vectors[j],i5,cpu_index,pktlen5);
+      j += arrival(mb6,f_vectors[j],i6,cpu_index,pktlen6);
+      j += arrival(mb7,f_vectors[j],i7,cpu_index,pktlen7);
 
     //  drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
     //  drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
@@ -398,79 +398,79 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
 	
       
-      if(PREDICT_TRUE(drop0 == 0)){
-        f_vectors[j]= mb0;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb0);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop0 == 0)){
+      //   f_vectors[j]= mb0;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb0);
+      //   // printf("HELLO");
+      // }
       
-      if(PREDICT_TRUE(drop1 == 0)){
-        f_vectors[j]= mb1;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb1);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop1 == 0)){
+      //   f_vectors[j]= mb1;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb1);
+      //   // printf("HELLO");
+      // }
       
-      if(PREDICT_TRUE(drop2 == 0)){
-        f_vectors[j]= mb2;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb2);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop2 == 0)){
+      //   f_vectors[j]= mb2;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb2);
+      //   // printf("HELLO");
+      // }
       
-      if(PREDICT_TRUE(drop3 == 0)){
-        f_vectors[j]= mb3;
-        j++;
-      }
+      // if(PREDICT_TRUE(drop3 == 0)){
+      //   f_vectors[j]= mb3;
+      //   j++;
+      // }
       
-      else{
-        rte_pktmbuf_free(mb3);
-        // printf("HELLO");
-      }
+      // else{
+      //   rte_pktmbuf_free(mb3);
+      //   // printf("HELLO");
+      // }
 
-      if(PREDICT_TRUE(drop4 == 0)){
-        f_vectors[j]= mb4;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb4);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop4 == 0)){
+      //   f_vectors[j]= mb4;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb4);
+      //   // printf("HELLO");
+      // }
       
-      if(PREDICT_TRUE(drop5 == 0)){
-        f_vectors[j]= mb5;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb5);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop5 == 0)){
+      //   f_vectors[j]= mb5;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb5);
+      //   // printf("HELLO");
+      // }
       
-      if(PREDICT_TRUE(drop6 == 0)){
-        f_vectors[j]= mb6;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb6);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop6 == 0)){
+      //   f_vectors[j]= mb6;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb6);
+      //   // printf("HELLO");
+      // }
       
-      if(PREDICT_TRUE(drop7 == 0)){
-        f_vectors[j]= mb7;
-        j++;
-      }
+      // if(PREDICT_TRUE(drop7 == 0)){
+      //   f_vectors[j]= mb7;
+      //   j++;
+      // }
       
-      else{
-        rte_pktmbuf_free(mb7);
-        // printf("HELLO");
-      }
+      // else{
+      //   rte_pktmbuf_free(mb7);
+      //   // printf("HELLO");
+      // }
       
       i+=8;
       n_buf-=8;
@@ -586,18 +586,18 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo0 = hash0%TABLESIZE;
       
        i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-       drop0 = arrival(i0,cpu_index,pktlen0);
+       j += arrival(mb0,f_vectors[j],i0,cpu_index,pktlen0);
       //drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 	//drop0=0;
     
-      if(PREDICT_TRUE(drop0 == 0)){
-        f_vectors[j]= mb0;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb0);
-        // printf("HELLO");
-      }
+      // if(PREDICT_TRUE(drop0 == 0)){
+      //   f_vectors[j]= mb0;
+      //   j++;
+      // }
+      // else{
+      //   rte_pktmbuf_free(mb0);
+      //   // printf("HELLO");
+      // }
       
       i++;
       n_buf--;
