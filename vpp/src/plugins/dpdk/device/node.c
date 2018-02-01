@@ -296,7 +296,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   while(n_buf>0){
     u32 hash0,hash1,hash2,hash3;
     u32 hash4,hash5,hash6,hash7;
-    // u16 pktlen0,pktlen1,pktlen2,pktlen3;
+    u16 pktlen0,pktlen1,pktlen2,pktlen3;
     u16 pktlen4,pktlen5,pktlen6,pktlen7;
     u8 modulo0,modulo1,modulo2,modulo3;
     u8 modulo4,modulo5,modulo6,modulo7;
@@ -306,7 +306,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
 //    flowcount_t * i0,*i1,*i2,*i3;
 
-    while(n_buf>=4){
+    while(n_buf>=8){
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
