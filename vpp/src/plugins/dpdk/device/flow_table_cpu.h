@@ -453,7 +453,7 @@ always_inline void update_costs(u32 cpu_index){
 	while(n>0){
 		flow0 = costlist->flow;
 		flow0->cost = flow0->weight*(total/su);
-		flow0->vqueue = 1;
+//		flow0->vqueue = 1;
 		costlist = costlist->next;
 		n -= 1;
 	}
@@ -461,9 +461,9 @@ always_inline void update_costs(u32 cpu_index){
 }
 
 always_inline void departure (u32 cpu_index){
-//    vstate(NULL,1,cpu_index);
-	f32 credit = (t[cpu_index]-old_t[cpu_index]);
-	threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];
+    vstate(NULL,1,cpu_index);
+//	f32 credit = (t[cpu_index]-old_t[cpu_index]);
+//	threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];
 #ifndef JIM_APPROX
 	n_drops[cpu_index]=0;
 #endif
