@@ -393,7 +393,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 //u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
-        //vstate(flow,0,cpu_index);
+        vstate(flow,0,cpu_index);
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
