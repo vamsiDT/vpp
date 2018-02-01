@@ -623,6 +623,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   else{
     update_costs(cpu_index);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+    if (n_buffers == 0)
+    {
+      return 0;
+    }
   }
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
