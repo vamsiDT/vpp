@@ -393,7 +393,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
-        vstate(flow,0,cpu_index);
+        //vstate(flow,0,cpu_index);
         drop = 0;
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
@@ -432,8 +432,8 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * i;
     u8 drop;
     i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
-    //drop = arrival(i,cpu_index,pktlenx);
-    drop = fake_function(i,cpu_index,pktlenx);
+    drop = arrival(i,cpu_index,pktlenx);
+    //drop = fake_function(i,cpu_index,pktlenx);
     return drop;
 }
 
