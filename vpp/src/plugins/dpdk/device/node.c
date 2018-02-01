@@ -304,7 +304,8 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     u8 drop4,drop5,drop6,drop7;
     struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
     struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
-//    flowcount_t * i0,*i1,*i2,*i3;
+    flowcount_t * i0,*i1,*i2,*i3;
+    flowcount_t * i4,*i5,*i6,*i7;
 
     while(n_buf>=8){
 //      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
@@ -355,6 +356,16 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo5 = hash5%TABLESIZE;
       modulo6 = hash6%TABLESIZE;
       modulo7 = hash7%TABLESIZE;
+
+
+      i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
+      i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
+      i2 = flow_table_classify(modulo2, hash2, pktlen2, cpu_index);
+      i3 = flow_table_classify(modulo3, hash3, pktlen3, cpu_index);
+      i4 = flow_table_classify(modulo4, hash4, pktlen4, cpu_index);
+      i5 = flow_table_classify(modulo5, hash5, pktlen5, cpu_index);
+      i6 = flow_table_classify(modulo6, hash6, pktlen6, cpu_index);
+      i7 = flow_table_classify(modulo7, hash7, pktlen7, cpu_index);
 
      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
@@ -623,10 +634,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   else{
     update_costs(cpu_index);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-    if (n_buffers == 0)
-    {
-      return 0;
-    }
   }
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
