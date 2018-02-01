@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <vppinfra/time.h>
-
+#include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 
@@ -34,7 +34,7 @@
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 3720
+#define WEIGHT_CLASS_1 372
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
@@ -178,6 +178,7 @@ extern error_cost_t * cost_node;
 extern u8 n_drops[MAXCPU];
 #endif
 extern f32 threshold[MAXCPU];
+//extern struct rte_mbuf * f_vectors[256];
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -359,7 +360,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
+		threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//printf("%f\n",threshold[cpu_index]);
 		//veryold_t[cpu_index] = nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
@@ -392,7 +393,8 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(struct rte_mbuf * mb, struct rte_mbuf * f,flowcount_t * flow,u32 cpu_index,u16 pktlenx){
+always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_index,u16 pktlenx){
+
 //u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
         vstate(flow,0,cpu_index);
@@ -401,7 +403,7 @@ always_inline u8 arrival(struct rte_mbuf * mb, struct rte_mbuf * f,flowcount_t *
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
-        f=mb;
+        f_vectors[j]=mb;
         return 1;
     }
     else {
@@ -424,15 +426,12 @@ always_inline u8 arrival(struct rte_mbuf * mb, struct rte_mbuf * f,flowcount_t *
 	ed->threshold = threshold[cpu_index];
   	ed->cost = flow->cost;
 #endif
-
-//	return drop;
-    return 0;
 }
 
 always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
     return 0;
 }
-
+/*
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * i;
     u8 drop;
@@ -441,28 +440,30 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     //drop = fake_function(i,cpu_index,pktlenx);
     return drop;
 }
-
+*/
 /*Function to update costs*/
 always_inline void update_costs(u32 cpu_index){
 
-	 activelist_t * costlist = head_af[cpu_index];
-    while(costlist != NULL){
-        flowcount_t * flow = costlist->flow;
-#ifdef JIM_APPROX
+	activelist_t * costlist = head_af[cpu_index];
+	if (PREDICT_TRUE(costlist != NULL)){
+		flowcount_t * flow0;
 		f64 total = (f64)s_total[cpu_index];
-#else /*Clock cycles spent in dropping the packets is subtracted from total clock clock cycles spent for a vector */
-		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));
-#endif
-		//f64 sum_w = sum[cpu_index]/flow->weight;
-		//f64 cost = total/(sum[cpu_index]/flow->weight);
-        flow->cost = flow->weight*(total/sum[cpu_index]);
-		//flow->cost = (u16)(((f64)flow->weight)*((f64)total/(f64)sum[cpu_index]));
-        costlist = costlist->next;
-    }
+		u64 su = sum[cpu_index];
+		u32 n = nbl[cpu_index];
+	while(n>0){
+		flow0 = costlist->flow;
+		flow0->cost = flow0->weight*(total/su);
+		flow0->vqueue = 1;
+		costlist = costlist->next;
+		n -= 1;
+	}
+	}
 }
 
 always_inline void departure (u32 cpu_index){
-    vstate(NULL,1,cpu_index);
+//    vstate(NULL,1,cpu_index);
+	f32 credit = (t[cpu_index]-old_t[cpu_index]);
+	threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];
 #ifndef JIM_APPROX
 	n_drops[cpu_index]=0;
 #endif

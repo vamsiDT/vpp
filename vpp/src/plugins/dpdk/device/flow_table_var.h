@@ -23,3 +23,4 @@ u8 n_drops[MAXCPU] = {0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 #endif
 
 f32 threshold[MAXCPU]={0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+//struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];

@@ -300,8 +300,8 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     u16 pktlen4,pktlen5,pktlen6,pktlen7;
     u8 modulo0,modulo1,modulo2,modulo3;
     u8 modulo4,modulo5,modulo6,modulo7;
-    u8 drop0,drop1,drop2,drop3;
-    u8 drop4,drop5,drop6,drop7;
+//    u8 drop0,drop1,drop2,drop3;
+//    u8 drop4,drop5,drop6,drop7;
     struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
     struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
     flowcount_t * i0,*i1,*i2,*i3;
@@ -367,14 +367,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       i6 = flow_table_classify(modulo6, hash6, pktlen6, cpu_index);
       i7 = flow_table_classify(modulo7, hash7, pktlen7, cpu_index);
 
-      j += arrival(mb0,f_vectors[j],i0,cpu_index,pktlen0);
-      j += arrival(mb1,f_vectors[j],i1,cpu_index,pktlen1);
-      j += arrival(mb2,f_vectors[j],i2,cpu_index,pktlen2);
-      j += arrival(mb3,f_vectors[j],i3,cpu_index,pktlen3);
-      j += arrival(mb4,f_vectors[j],i4,cpu_index,pktlen4);
-      j += arrival(mb5,f_vectors[j],i5,cpu_index,pktlen5);
-      j += arrival(mb6,f_vectors[j],i6,cpu_index,pktlen6);
-      j += arrival(mb7,f_vectors[j],i7,cpu_index,pktlen7);
+      j += arrival(mb0,j,i0,cpu_index,pktlen0);
+      j += arrival(mb1,j,i1,cpu_index,pktlen1);
+      j += arrival(mb2,j,i2,cpu_index,pktlen2);
+      j += arrival(mb3,j,i3,cpu_index,pktlen3);
+      j += arrival(mb4,j,i4,cpu_index,pktlen4);
+      j += arrival(mb5,j,i5,cpu_index,pktlen5);
+      j += arrival(mb6,j,i6,cpu_index,pktlen6);
+      j += arrival(mb7,j,i7,cpu_index,pktlen7);
 
     //  drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
     //  drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
@@ -586,7 +586,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo0 = hash0%TABLESIZE;
       
        i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-       j += arrival(mb0,f_vectors[j],i0,cpu_index,pktlen0);
+       j += arrival(mb0,j,i0,cpu_index,pktlen0);
       //drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 	//drop0=0;
     
@@ -644,6 +644,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     update_costs(cpu_index);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
   }
+//if (PREDICT_FALSE(n_buffers==0))
+//	return 0;
+
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
   trace_cnt = n_trace = vlib_get_trace_count (vm, node);
@@ -893,7 +896,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       while (n_buffers > 0 && n_left_to_next > 0)
 	{
 	  struct rte_mbuf *mb0 = f_vectors[mb_index];
-
 	  if (PREDICT_TRUE (n_buffers > 3))
 	    {
 	      dpdk_prefetch_buffer (f_vectors[mb_index + 2]);
@@ -922,7 +924,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->current_length = mb0->data_len;
 
 	  bi0 = vlib_get_buffer_index (vm, b0);
-
 	  to_next[0] = bi0;
 	  to_next++;
 	  n_left_to_next--;
@@ -955,7 +956,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 	  /* Process subsequent segments of multi-segment packets */
 	  dpdk_process_subseq_segs (vm, b0, mb0, fl);
-
 	  /*
 	   * Turn this on if you run into
 	   * "bad monkey" contexts, and you want to know exactly
