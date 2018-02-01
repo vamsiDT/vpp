@@ -391,21 +391,21 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
-u8 drop;
+//u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
         //vstate(flow,0,cpu_index);
-        drop = 0;
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
+        return 0;
     }
     else {
-        drop = 1;
 #ifndef JIM_APPROX
 		n_drops[cpu_index]++;
 #endif
+        return 1;
     }
 
 #ifdef ELOG_FAIRDROP
