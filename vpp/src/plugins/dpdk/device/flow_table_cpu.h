@@ -399,7 +399,7 @@ always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
-        //return 0;
+        return 0;
     }
     else {
 #ifndef JIM_APPROX
