@@ -1475,8 +1475,9 @@ vlib_main_or_worker_loop (vlib_main_t * vm, int is_main)
   while (1)
     {
 	u64 cpu_time_now = clib_cpu_time_now ();
-	s_total[os_get_cpu_number()]= cpu_time_now - s[os_get_cpu_number()];
-	s[os_get_cpu_number()] = cpu_time_now;
+  u32 cpu_index = os_get_cpu_number();
+	s_total[cpu_index]= cpu_time_now - s[cpu_index];
+	s[cpu_index] = cpu_time_now;
 
       vlib_node_runtime_t *n;
 
