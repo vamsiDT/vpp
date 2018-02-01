@@ -358,7 +358,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = credit*((f32)(4.0))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
+		threshold[cpu_index] = (credit*((f32)(4.0)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//veryold_t[cpu_index] = nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -399,7 +399,7 @@ always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
-        return 0;
+        //return 0;
     }
     else {
 #ifndef JIM_APPROX
@@ -422,6 +422,7 @@ always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 #endif
 
 //	return drop;
+    return 0;
 }
 
 always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
