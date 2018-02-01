@@ -384,6 +384,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb0);
+        printf("HELLO");
       }
       
       if(PREDICT_TRUE(drop1 == 0)){
@@ -392,6 +393,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb1);
+        printf("HELLO");
       }
       
       if(PREDICT_TRUE(drop2 == 0)){
@@ -400,6 +402,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb2);
+        printf("HELLO");
       }
       
       if(PREDICT_TRUE(drop3 == 0)){
@@ -409,6 +412,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       
       else{
         rte_pktmbuf_free(mb3);
+        printf("HELLO");
       }
 
       if(PREDICT_TRUE(drop4 == 0)){
@@ -417,6 +421,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb4);
+        printf("HELLO");
       }
       
       if(PREDICT_TRUE(drop5 == 0)){
@@ -425,6 +430,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb5);
+        printf("HELLO");
       }
       
       if(PREDICT_TRUE(drop6 == 0)){
@@ -433,6 +439,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb6);
+        printf("HELLO");
       }
       
       if(PREDICT_TRUE(drop7 == 0)){
@@ -442,6 +449,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       
       else{
         rte_pktmbuf_free(mb7);
+        printf("HELLO");
       }
       
       i+=8;
@@ -568,6 +576,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       }
       else{
         rte_pktmbuf_free(mb0);
+        printf("HELLO");
       }
       
       i++;
