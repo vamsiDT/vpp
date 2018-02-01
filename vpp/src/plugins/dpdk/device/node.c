@@ -295,15 +295,15 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u8 hello=0;
   while(n_buf>0){
     u32 hash0,hash1,hash2,hash3;
-    // u32 hash4,hash5,hash6,hash7;
-    u16 pktlen0,pktlen1,pktlen2,pktlen3;
-    // u16 pktlen4,pktlen5,pktlen6,pktlen7;
+    u32 hash4,hash5,hash6,hash7;
+    // u16 pktlen0,pktlen1,pktlen2,pktlen3;
+    u16 pktlen4,pktlen5,pktlen6,pktlen7;
     u8 modulo0,modulo1,modulo2,modulo3;
-    // u8 modulo4,modulo5,modulo6,modulo7;
+    u8 modulo4,modulo5,modulo6,modulo7;
     u8 drop0,drop1,drop2,drop3;
-    // u8 drop4,drop5,drop6,drop7;
+    u8 drop4,drop5,drop6,drop7;
     struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
-    // struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
+    struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
 //    flowcount_t * i0,*i1,*i2,*i3;
 
     while(n_buf>=4){
@@ -316,10 +316,10 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       mb1 = xd->rx_vectors[queue_id][i+1];
       mb2 = xd->rx_vectors[queue_id][i+2];
       mb3 = xd->rx_vectors[queue_id][i+3];
-      // mb4 = xd->rx_vectors[queue_id][i+4];
-      // mb5 = xd->rx_vectors[queue_id][i+5];
-      // mb6 = xd->rx_vectors[queue_id][i+6];
-      // mb7 = xd->rx_vectors[queue_id][i+7];
+      mb4 = xd->rx_vectors[queue_id][i+4];
+      mb5 = xd->rx_vectors[queue_id][i+5];
+      mb6 = xd->rx_vectors[queue_id][i+6];
+      mb7 = xd->rx_vectors[queue_id][i+7];
       
       if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
@@ -332,38 +332,38 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       hash1 = mb1->hash.rss;
       hash2 = mb2->hash.rss;
       hash3 = mb3->hash.rss;
-      // hash4 = mb4->hash.rss;
-      // hash5 = mb5->hash.rss;
-      // hash6 = mb6->hash.rss;
-      // hash7 = mb7->hash.rss;
+      hash4 = mb4->hash.rss;
+      hash5 = mb5->hash.rss;
+      hash6 = mb6->hash.rss;
+      hash7 = mb7->hash.rss;
       //  printf("hash0 = %u\n",hash0);
 
       pktlen0 = mb0->timesync;
       pktlen1 = mb1->timesync;
       pktlen2 = mb2->timesync;
       pktlen3 = mb3->timesync;
-      // pktlen4 = mb4->timesync;
-      // pktlen5 = mb5->timesync;
-      // pktlen6 = mb6->timesync;
-      // pktlen7 = mb7->timesync;
+      pktlen4 = mb4->timesync;
+      pktlen5 = mb5->timesync;
+      pktlen6 = mb6->timesync;
+      pktlen7 = mb7->timesync;
 
       modulo0 = hash0%TABLESIZE;
       modulo1 = hash1%TABLESIZE;
       modulo2 = hash2%TABLESIZE;
       modulo3 = hash3%TABLESIZE;
-      // modulo4 = hash4%TABLESIZE;
-      // modulo5 = hash5%TABLESIZE;
-      // modulo6 = hash6%TABLESIZE;
-      // modulo7 = hash7%TABLESIZE;
+      modulo4 = hash4%TABLESIZE;
+      modulo5 = hash5%TABLESIZE;
+      modulo6 = hash6%TABLESIZE;
+      modulo7 = hash7%TABLESIZE;
 
      drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
      drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
      drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
      drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-	   // drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
-    //  drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
-    //  drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
-    //  drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
+	   drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
+     drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
+     drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
+     drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
 
      // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
      // i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
@@ -411,41 +411,41 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
         rte_pktmbuf_free(mb3);
       }
 
-      // if(PREDICT_TRUE(drop4 == 0)){
-      //   f_vectors[j]= mb4;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb4);
-      // }
+      if(PREDICT_TRUE(drop4 == 0)){
+        f_vectors[j]= mb4;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb4);
+      }
       
-      // if(PREDICT_TRUE(drop5 == 0)){
-      //   f_vectors[j]= mb5;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb5);
-      // }
+      if(PREDICT_TRUE(drop5 == 0)){
+        f_vectors[j]= mb5;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb5);
+      }
       
-      // if(PREDICT_TRUE(drop6 == 0)){
-      //   f_vectors[j]= mb6;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb6);
-      // }
+      if(PREDICT_TRUE(drop6 == 0)){
+        f_vectors[j]= mb6;
+        j++;
+      }
+      else{
+        rte_pktmbuf_free(mb6);
+      }
       
-      // if(PREDICT_TRUE(drop7 == 0)){
-      //   f_vectors[j]= mb7;
-      //   j++;
-      // }
+      if(PREDICT_TRUE(drop7 == 0)){
+        f_vectors[j]= mb7;
+        j++;
+      }
       
-      // else{
-      //   rte_pktmbuf_free(mb7);
-      // }
+      else{
+        rte_pktmbuf_free(mb7);
+      }
       
-      i+=4;
-      n_buf-=4;
+      i+=8;
+      n_buf-=8;
     }
 #if 0
     while(n_buf>=4){
@@ -607,8 +607,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
 	if(n_buffers>0){
-        update_costs(cpu_index);
-  		n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+    update_costs(cpu_index);
+  	n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
 	}
 
   n_packets = n_buffers;
