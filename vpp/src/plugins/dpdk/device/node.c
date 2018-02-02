@@ -570,19 +570,21 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
 //      if(n_buf > 1)
 //        CLIB_PREFETCH (xd->rx_vectors[queue_id][i+1], CLIB_CACHE_LINE_BYTES, LOAD);
+      printf("HELLO7");
       mb0 = xd->rx_vectors[queue_id][i];
-      
+      printf("HELLO8");
       if(PREDICT_FALSE(hello==0)){
+        printf("HELLO9");
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
         departure(cpu_index);
+        printf("HELLO10");
         hello=1;
       }
     
       hash0 = mb0->hash.rss;
-    
+    printf("HELLO11");
       pktlen0 = mb0->timesync;
-    
       modulo0 = hash0%TABLESIZE;
       printf("HELLO2");
        i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
