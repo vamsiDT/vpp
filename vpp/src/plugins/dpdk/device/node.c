@@ -584,9 +584,11 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       pktlen0 = mb0->timesync;
     
       modulo0 = hash0%TABLESIZE;
-      
+      printf("HELLO2");
        i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
+       printf("HELLO3");
        j += arrival(mb0,j,i0,cpu_index,pktlen0);
+       printf("HELLO4");
       //drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 	//drop0=0;
     

@@ -432,7 +432,9 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
 
 //u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
+        printf("HELLO5");
         vstate(flow,0,cpu_index);
+        printf("HELLO6");
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
