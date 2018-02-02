@@ -195,7 +195,28 @@ always_inline void activelist_init(){
         (act+i*256+255)->flow=NULL;
         (act+i*256+255)->next=(act+i*256+0);
         head_act[i]=tail_act[i]=(act+i*256+0);
+        if(head_act[os_get_cpu_number()]->flow==NULL)
+            printf("HELLO");
+        else
+            printf("BYE");
     }
+}
+
+always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
+    if(head_act[cpu_index]->flow==NULL){
+        head_act[cpu_index]->flow=flow;
+    }
+    else{
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+        tail_act[cpu_index]->flow=flow;
+    }
+}
+
+always_inline flowcount_t * flowout_act(u32 cpu_index){
+    flowcount_t * i = head_act[cpu_index]->flow;
+    head_act[cpu_index]->flow=NULL;
+    head_act[cpu_index]=head_act[cpu_index]->next;
+    return i;
 }
 
 always_inline flowcount_t *
