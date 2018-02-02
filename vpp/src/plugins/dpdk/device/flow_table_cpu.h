@@ -369,6 +369,7 @@ always_inline flowcount_t * flowout(u32 cpu_index){
 
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
+        printf("flowinNULL Head \n");
         head_act[cpu_index]->flow=flow;
     }
     else{
