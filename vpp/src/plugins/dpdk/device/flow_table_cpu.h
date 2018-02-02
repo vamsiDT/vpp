@@ -370,12 +370,12 @@ always_inline flowcount_t * flowout(u32 cpu_index){
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
         // printf("flowinNULL Head \n");
-        if(tail_act[cpu_index]==head_act[cpu_index])
+        //if(tail_act[cpu_index]==head_act[cpu_index])
             // printf("head=tailwohoo\n");
         head_act[cpu_index]->flow=flow;
     }
     else{
-        if(tail_act[cpu_index]==head_act[cpu_index])
+        //if(tail_act[cpu_index]==head_act[cpu_index])
             // printf("head=tailwohooelse\n");
         tail_act[cpu_index]=tail_act[cpu_index]->next;
         tail_act[cpu_index]->flow=flow;
@@ -390,7 +390,7 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
     if(tail_act[cpu_index]!=head_act[cpu_index]){
         head_act[cpu_index]=head_act[cpu_index]->next;
     }
-    else
+    //else
         // printf("head=tailwohoout\n");
     return i;
 }
