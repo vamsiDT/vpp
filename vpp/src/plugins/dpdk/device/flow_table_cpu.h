@@ -386,9 +386,12 @@ always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
 always_inline flowcount_t * flowout_act(u32 cpu_index){
     flowcount_t * i = head_act[cpu_index]->flow;
     head_act[cpu_index]->flow=NULL;
-    head_act[cpu_index]=head_act[cpu_index]->next;
-    if(tail_act[cpu_index]==head_act[cpu_index])
-            printf("head=tailwohoout\n");
+    
+    if(tail_act[cpu_index]!=head_act[cpu_index]){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+    }
+    else
+        printf("head=tailwohoout\n");
     return i;
 }
 
