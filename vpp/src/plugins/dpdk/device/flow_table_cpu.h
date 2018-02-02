@@ -428,7 +428,9 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
             nbl[cpu_index]++;
+            printf("\nHELLOinbefore\n");
             flowin_act(flow,cpu_index);
+            printf("\nHELLOinafter\n");
         }
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;
