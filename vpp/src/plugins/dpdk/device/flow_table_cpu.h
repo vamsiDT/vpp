@@ -172,14 +172,29 @@ extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
+
 #ifndef JIM_APPROX
 extern u16 error_cost[MAXCPU];
 extern error_cost_t * cost_node;
 extern u8 n_drops[MAXCPU];
+
 #endif
 extern f32 threshold[MAXCPU];
+extern activelist_t * act;
 //extern struct rte_mbuf * f_vectors[256];
-
+/*
+always_inline void activelist_init(u32 cpu_index){
+    for(int i=0;i<MAXCPU;i++){
+        act[i]=malloc(256*sizeof(activelist_t));
+        for(int j=0;j<255;j++){
+            act[i][j]->flow=NULL;
+            act[i][j]->next=act[i][j+1];
+        }
+        act[i][255]->flow=NULL;
+        act[i][255]->next=act[i][0];
+    }
+}
+*/
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
