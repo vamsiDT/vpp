@@ -410,7 +410,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 		threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//printf("%f\n",threshold[cpu_index]);
 		//veryold_t[cpu_index] = nbl[cpu_index];
-        printf("%u\n",nbl[cpu_index]);
+        // printf("%u\n",nbl[cpu_index]);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -419,7 +419,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
                 // printf("\nHELLOoutbefore\n");
                 j = flowout_act(cpu_index);
                 // printf("\nHELLOout\n");
-                if(j==NULL)
+                //if(j==NULL)
                     // printf("NULL\n");
                 if(j->vqueue > served){
                     j->vqueue -= served;
