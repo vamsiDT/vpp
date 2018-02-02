@@ -198,23 +198,6 @@ always_inline void activelist_init(){
     }
 }
 
-always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
-    if(head_act[cpu_index]->flow==NULL){
-        head_act[cpu_index]->flow=flow;
-    }
-    else{
-        tail_act[cpu_index]=tail_act[cpu_index]->next;
-        tail_act[cpu_index]->flow=flow;
-    }
-}
-
-always_inline flowcount_t * flowout_act(u32 cpu_index){
-    flowcount_t * i = head_act[cpu_index]->flow;
-    head_act[cpu_index]->flow=NULL;
-    head_act[cpu_index]=head_act[cpu_index]->next;
-    return i;
-}
-
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -383,6 +366,25 @@ always_inline flowcount_t * flowout(u32 cpu_index){
     return temp;
 }
 
+
+always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
+    if(head_act[cpu_index]->flow==NULL){
+        head_act[cpu_index]->flow=flow;
+    }
+    else{
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+        tail_act[cpu_index]->flow=flow;
+        //tail_act[cpu_index]->next=head_act[cpu_index];
+    }
+}
+
+always_inline flowcount_t * flowout_act(u32 cpu_index){
+    flowcount_t * i = head_act[cpu_index]->flow;
+    head_act[cpu_index]->flow=NULL;
+    head_act[cpu_index]=head_act[cpu_index]->next;
+    return i;
+}
+
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
@@ -398,15 +400,19 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 		threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//printf("%f\n",threshold[cpu_index]);
 		//veryold_t[cpu_index] = nbl[cpu_index];
+        printf("%u\n",nbl[cpu_index]);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
+                printf("\nHELLOoutbefore\n");
                 j = flowout_act(cpu_index);
+                printf("\nHELLOout\n");
                 if(j->vqueue > served){
                     j->vqueue -= served;
                     flowin_act(j,cpu_index);
+                    printf("\nHELLOin\n");
                 }
                 else{
                     credit += served - j->vqueue;
