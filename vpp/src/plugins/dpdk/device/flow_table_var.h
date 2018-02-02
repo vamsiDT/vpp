@@ -24,4 +24,4 @@ u8 n_drops[MAXCPU] = {0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 f32 threshold[MAXCPU]={0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
-activelist_t * act = (activelist_t *)malloc(MAXCPU*256*sizeof(activelist_t));
+activelist_t * act;
