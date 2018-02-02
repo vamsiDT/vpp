@@ -181,20 +181,23 @@ extern u8 n_drops[MAXCPU];
 #endif
 extern f32 threshold[MAXCPU];
 extern activelist_t * act;
+extern activelist_t * head_act[MAXCPU];
+extern activelist_t * tail_act[MAXCPU];
 //extern struct rte_mbuf * f_vectors[256];
-/*
-always_inline void activelist_init(u32 cpu_index){
+
+always_inline void activelist_init(){
+    act = malloc(MAXCPU*256*sizeof(activelist_t));
     for(int i=0;i<MAXCPU;i++){
-        act[i]=malloc(256*sizeof(activelist_t));
         for(int j=0;j<255;j++){
-            act[i][j]->flow=NULL;
-            act[i][j]->next=act[i][j+1];
+            (act+i*256+j)->flow=NULL;
+            (act+i*256+j)->next=(act+i*256+j+1);
         }
-        act[i][255]->flow=NULL;
-        act[i][255]->next=act[i][0];
+        (act+i*256+255)->flow=NULL;
+        (act+i*256+255)->next=(act+i*256+0);
+        head_act[i]=tail_act[i]=(act+i*256+0);
     }
 }
-*/
+
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
