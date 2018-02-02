@@ -570,27 +570,27 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
 //      if(n_buf > 1)
 //        CLIB_PREFETCH (xd->rx_vectors[queue_id][i+1], CLIB_CACHE_LINE_BYTES, LOAD);
-      printf("HELLO7");
+      // printf("HELLO7");
       mb0 = xd->rx_vectors[queue_id][i];
-      printf("HELLO8");
+      // printf("HELLO8");
       if(PREDICT_FALSE(hello==0)){
-        printf("HELLO9");
+        // printf("HELLO9");
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
         departure(cpu_index);
-        printf("HELLO10");
+        // printf("HELLO10");
         hello=1;
       }
     
       hash0 = mb0->hash.rss;
-    printf("HELLO11");
+    // printf("HELLO11");
       pktlen0 = mb0->timesync;
       modulo0 = hash0%TABLESIZE;
-      printf("HELLO2");
+      // printf("HELLO2");
        i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-       printf("HELLO3");
+       // printf("HELLO3");
        j += arrival(mb0,j,i0,cpu_index,pktlen0);
-       printf("HELLO4");
+       // printf("HELLO4");
       //drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 	//drop0=0;
     
@@ -646,9 +646,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     }
   else{
     //update_costs(cpu_index);
-    printf("HELLO");
+    // printf("HELLO");
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-    printf("HELLO1");
+    // printf("HELLO1");
   }
 //if (PREDICT_FALSE(n_buffers==0))
 //	return 0;

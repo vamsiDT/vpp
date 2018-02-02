@@ -369,14 +369,14 @@ always_inline flowcount_t * flowout(u32 cpu_index){
 
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
-        printf("flowinNULL Head \n");
+        // printf("flowinNULL Head \n");
         if(tail_act[cpu_index]==head_act[cpu_index])
-            printf("head=tailwohoo\n");
+            // printf("head=tailwohoo\n");
         head_act[cpu_index]->flow=flow;
     }
     else{
         if(tail_act[cpu_index]==head_act[cpu_index])
-            printf("head=tailwohooelse\n");
+            // printf("head=tailwohooelse\n");
         tail_act[cpu_index]=tail_act[cpu_index]->next;
         tail_act[cpu_index]->flow=flow;
         //tail_act[cpu_index]->next=head_act[cpu_index];
@@ -391,7 +391,7 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
         head_act[cpu_index]=head_act[cpu_index]->next;
     }
     else
-        printf("head=tailwohoout\n");
+        // printf("head=tailwohoout\n");
     return i;
 }
 
@@ -416,15 +416,15 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                printf("\nHELLOoutbefore\n");
+                // printf("\nHELLOoutbefore\n");
                 j = flowout_act(cpu_index);
-                printf("\nHELLOout\n");
+                // printf("\nHELLOout\n");
                 if(j==NULL)
-                    printf("NULL\n");
+                    // printf("NULL\n");
                 if(j->vqueue > served){
                     j->vqueue -= served;
                     flowin_act(j,cpu_index);
-                    printf("\nHELLOin\n");
+                    // printf("\nHELLOin\n");
                 }
                 else{
                     credit += served - j->vqueue;
@@ -438,9 +438,9 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
             nbl[cpu_index]++;
-            printf("\nHELLOinbefore\n");
+            // printf("\nHELLOinbefore\n");
             flowin_act(flow,cpu_index);
-            printf("\nHELLOinafter\n");
+            // printf("\nHELLOinafter\n");
         }
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;
@@ -452,9 +452,9 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
 
 //u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
-        printf("HELLO5");
+        // printf("HELLO5");
         vstate(flow,0,cpu_index);
-        printf("HELLO6");
+        // printf("HELLO6");
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
