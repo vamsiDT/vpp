@@ -409,6 +409,8 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
                 printf("\nHELLOoutbefore\n");
                 j = flowout_act(cpu_index);
                 printf("\nHELLOout\n");
+                if(j==NULL)
+                    printf("NULL\n");
                 if(j->vqueue > served){
                     j->vqueue -= served;
                     flowin_act(j,cpu_index);
