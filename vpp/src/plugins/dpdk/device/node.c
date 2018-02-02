@@ -645,13 +645,13 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       return 0;
     }
   else{
-    //update_costs(cpu_index);
+    update_costs(cpu_index);
     // printf("HELLO");
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
     // printf("HELLO1");
   }
-//if (PREDICT_FALSE(n_buffers==0))
-//	return 0;
+if (PREDICT_FALSE(n_buffers==0))
+	return 0;
 
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
