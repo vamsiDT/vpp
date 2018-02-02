@@ -293,7 +293,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u16 i=0;
   u16 j=0;
   u8 hello=0;
-  if(head_act[cpu_index]->flow==NULL)
+  if(head_act[cpu_index]==NULL)
             printf("HELLO");
         else
             printf("BYE");
