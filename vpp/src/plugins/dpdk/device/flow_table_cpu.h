@@ -30,19 +30,19 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 208
 #else
-#define WEIGHT_DPDK 160//185
+#define WEIGHT_DPDK 156//185
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 352
+#define WEIGHT_CLASS_1 348
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
 #define FLOW_HASH_4157820474    (WEIGHT_CLASS_1)    //192.168.0.1
 #define FLOW_HASH_2122681738    (WEIGHT_CLASS_1)	//192.168.0.3
-#define FLOW_HASH_3010998242    (WEIGHT_CLASS_2)    //192.168.0.5
-#define FLOW_HASH_976153682     (WEIGHT_CLASS_2)	//192.168.0.7
-#define FLOW_HASH_1434910422    (WEIGHT_CLASS_2)    //192.168.0.9
+#define FLOW_HASH_3010998242    (WEIGHT_CLASS_1)    //192.168.0.5
+#define FLOW_HASH_976153682     (WEIGHT_CLASS_1)	//192.168.0.7
+#define FLOW_HASH_1434910422    (WEIGHT_CLASS_1)    //192.168.0.9
 #define FLOW_HASH_3704634726    (WEIGHT_CLASS_2)	//192.168.0.11
 #define FLOW_HASH_288202510     (WEIGHT_CLASS_2)    //192.168.0.13
 #define FLOW_HASH_2558221502    (WEIGHT_CLASS_2)    //192.168.0.15
@@ -369,29 +369,21 @@ always_inline flowcount_t * flowout(u32 cpu_index){
 
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
-        // printf("flowinNULL Head \n");
-        //if(tail_act[cpu_index]==head_act[cpu_index])
-            // printf("head=tailwohoo\n");
         head_act[cpu_index]->flow=flow;
     }
     else{
-        //if(tail_act[cpu_index]==head_act[cpu_index])
-            // printf("head=tailwohooelse\n");
         tail_act[cpu_index]=tail_act[cpu_index]->next;
         tail_act[cpu_index]->flow=flow;
-        //tail_act[cpu_index]->next=head_act[cpu_index];
     }
 }
 
 always_inline flowcount_t * flowout_act(u32 cpu_index){
     flowcount_t * i = head_act[cpu_index]->flow;
     head_act[cpu_index]->flow=NULL;
-    
-    if(tail_act[cpu_index]!=head_act[cpu_index]){
+
+    if(PREDICT_TRUE(tail_act[cpu_index]!=head_act[cpu_index])){
         head_act[cpu_index]=head_act[cpu_index]->next;
     }
-    //else
-        // printf("head=tailwohoout\n");
     return i;
 }
 
@@ -402,29 +394,21 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 #ifdef JIM_APPROX /*The exact calculation is not necessary as the drop cost gets cancelled between vq increments and decrements*/
-		credit = (t[cpu_index]-old_t[cpu_index]);//(15.0/9);
-		//printf("%f\t",credit);
+		credit = (t[cpu_index]-old_t[cpu_index]);
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
-		//printf("%f\n",threshold[cpu_index]);
-		//veryold_t[cpu_index] = nbl[cpu_index];
-        // printf("%u\n",nbl[cpu_index]);
+		threshold[cpu_index] = (credit*((f32)(1.15)))/nbl[cpu_index];
+
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                // printf("\nHELLOoutbefore\n");
                 j = flowout_act(cpu_index);
-                // printf("\nHELLOout\n");
-                //if(j==NULL)
-                    // printf("NULL\n");
                 if(j->vqueue > served){
                     j->vqueue -= served;
                     flowin_act(j,cpu_index);
-                    // printf("\nHELLOin\n");
                 }
                 else{
                     credit += served - j->vqueue;
@@ -438,9 +422,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
             nbl[cpu_index]++;
-            // printf("\nHELLOinbefore\n");
             flowin_act(flow,cpu_index);
-            // printf("\nHELLOinafter\n");
         }
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;
@@ -450,11 +432,8 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 /* arrival function for each packet */
 always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 
-//u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
-        // printf("HELLO5");
         vstate(flow,0,cpu_index);
-        // printf("HELLO6");
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
@@ -505,13 +484,12 @@ always_inline void update_costs(u32 cpu_index){
 	if (PREDICT_TRUE(costlist->flow != NULL)){
 		flowcount_t * flow0;
 		f64 total = (f64)s_total[cpu_index];
-		u64 su = sum[cpu_index];
+		f64 su = (f64)sum[cpu_index];
 		u32 n = nbl[cpu_index];
 	while(n>0){
 		flow0 = costlist->flow;
 		flow0->cost = flow0->weight*(total/su);
 		//printf("%u\n",flow0->cost);
-//		flow0->vqueue = 1;
 		costlist = costlist->next;
 		n -= 1;
 	}
@@ -520,8 +498,6 @@ always_inline void update_costs(u32 cpu_index){
 
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
-//	f32 credit = (t[cpu_index]-old_t[cpu_index]);
-//	threshold[cpu_index] = (credit*((f32)(4)))/nbl[cpu_index];
 #ifndef JIM_APPROX
 	n_drops[cpu_index]=0;
 #endif
