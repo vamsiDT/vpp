@@ -464,19 +464,6 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
 #endif
 }
 
-always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
-    return 0;
-}
-/*
-always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
-    flowcount_t * i;
-    u8 drop;
-    i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
-    drop = arrival(i,cpu_index,pktlenx);
-    //drop = fake_function(i,cpu_index,pktlenx);
-    return drop;
-}
-*/
 /*Function to update costs*/
 always_inline void update_costs(u32 cpu_index){
 
@@ -489,7 +476,6 @@ always_inline void update_costs(u32 cpu_index){
 	while(n>0){
 		flow0 = costlist->flow;
 		flow0->cost = flow0->weight*(total/su);
-		//printf("%u\n",flow0->cost);
 		costlist = costlist->next;
 		n -= 1;
 	}
