@@ -286,330 +286,6 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
     }
 }
 
-
-
-always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
-  u32 n_buf = n_buffers;
-  u16 i=0;
-  u16 j=0;
-  u8 hello=0;
-  while(n_buf>0){
-    u32 hash0,hash1,hash2,hash3;
-    u32 hash4,hash5,hash6,hash7;
-    u16 pktlen0,pktlen1,pktlen2,pktlen3;
-    u16 pktlen4,pktlen5,pktlen6,pktlen7;
-    u8 modulo0,modulo1,modulo2,modulo3;
-    u8 modulo4,modulo5,modulo6,modulo7;
-//    u8 drop0,drop1,drop2,drop3;
-//    u8 drop4,drop5,drop6,drop7;
-    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
-    struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
-    flowcount_t * i0,*i1,*i2,*i3;
-    flowcount_t * i4,*i5,*i6,*i7;
-
-    while(n_buf>=8){
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
-
-      mb0 = xd->rx_vectors[queue_id][i];
-      mb1 = xd->rx_vectors[queue_id][i+1];
-      mb2 = xd->rx_vectors[queue_id][i+2];
-      mb3 = xd->rx_vectors[queue_id][i+3];
-      mb4 = xd->rx_vectors[queue_id][i+4];
-      mb5 = xd->rx_vectors[queue_id][i+5];
-      mb6 = xd->rx_vectors[queue_id][i+6];
-      mb7 = xd->rx_vectors[queue_id][i+7];
-      
-      if(PREDICT_FALSE(hello==0)){
-        old_t[cpu_index] = t[cpu_index];
-        t[cpu_index] = mb0->udata64;
-        departure(cpu_index);
-        hello=1;
-      }
-      
-      hash0 = mb0->hash.rss;
-      hash1 = mb1->hash.rss;
-      hash2 = mb2->hash.rss;
-      hash3 = mb3->hash.rss;
-      hash4 = mb4->hash.rss;
-      hash5 = mb5->hash.rss;
-      hash6 = mb6->hash.rss;
-      hash7 = mb7->hash.rss;
-      //  printf("hash0 = %u\n",hash0);
-
-      pktlen0 = mb0->timesync;
-      pktlen1 = mb1->timesync;
-      pktlen2 = mb2->timesync;
-      pktlen3 = mb3->timesync;
-      pktlen4 = mb4->timesync;
-      pktlen5 = mb5->timesync;
-      pktlen6 = mb6->timesync;
-      pktlen7 = mb7->timesync;
-
-      modulo0 = hash0%TABLESIZE;
-      modulo1 = hash1%TABLESIZE;
-      modulo2 = hash2%TABLESIZE;
-      modulo3 = hash3%TABLESIZE;
-      modulo4 = hash4%TABLESIZE;
-      modulo5 = hash5%TABLESIZE;
-      modulo6 = hash6%TABLESIZE;
-      modulo7 = hash7%TABLESIZE;
-
-
-      i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-      i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
-      i2 = flow_table_classify(modulo2, hash2, pktlen2, cpu_index);
-      i3 = flow_table_classify(modulo3, hash3, pktlen3, cpu_index);
-      i4 = flow_table_classify(modulo4, hash4, pktlen4, cpu_index);
-      i5 = flow_table_classify(modulo5, hash5, pktlen5, cpu_index);
-      i6 = flow_table_classify(modulo6, hash6, pktlen6, cpu_index);
-      i7 = flow_table_classify(modulo7, hash7, pktlen7, cpu_index);
-
-      j += arrival(mb0,j,i0,cpu_index,pktlen0);
-      j += arrival(mb1,j,i1,cpu_index,pktlen1);
-      j += arrival(mb2,j,i2,cpu_index,pktlen2);
-      j += arrival(mb3,j,i3,cpu_index,pktlen3);
-      j += arrival(mb4,j,i4,cpu_index,pktlen4);
-      j += arrival(mb5,j,i5,cpu_index,pktlen5);
-      j += arrival(mb6,j,i6,cpu_index,pktlen6);
-      j += arrival(mb7,j,i7,cpu_index,pktlen7);
-
-    //  drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-    //  drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-    //  drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
-    //  drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-	   // drop4 = fq(modulo4,hash4,pktlen4,cpu_index);
-    //  drop5 = fq(modulo5,hash5,pktlen5,cpu_index);
-    //  drop6 = fq(modulo6,hash6,pktlen6,cpu_index);
-    //  drop7 = fq(modulo7,hash7,pktlen7,cpu_index);
-
-     // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-     // i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
-     // i2 = flow_table_classify(modulo2, hash2, pktlen2, cpu_index);
-     // i3 = flow_table_classify(modulo3, hash3, pktlen3, cpu_index);
-     // drop0 = arrival(i0,cpu_index,pktlen0);
-     // drop1 = arrival(i1,cpu_index,pktlen1);
-     // drop2 = arrival(i2,cpu_index,pktlen2);
-     // drop3 = arrival(i3,cpu_index,pktlen3);
-
-//      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0*pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
-
-	
-      
-      // if(PREDICT_TRUE(drop0 == 0)){
-      //   f_vectors[j]= mb0;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb0);
-      //   // printf("HELLO");
-      // }
-      
-      // if(PREDICT_TRUE(drop1 == 0)){
-      //   f_vectors[j]= mb1;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb1);
-      //   // printf("HELLO");
-      // }
-      
-      // if(PREDICT_TRUE(drop2 == 0)){
-      //   f_vectors[j]= mb2;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb2);
-      //   // printf("HELLO");
-      // }
-      
-      // if(PREDICT_TRUE(drop3 == 0)){
-      //   f_vectors[j]= mb3;
-      //   j++;
-      // }
-      
-      // else{
-      //   rte_pktmbuf_free(mb3);
-      //   // printf("HELLO");
-      // }
-
-      // if(PREDICT_TRUE(drop4 == 0)){
-      //   f_vectors[j]= mb4;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb4);
-      //   // printf("HELLO");
-      // }
-      
-      // if(PREDICT_TRUE(drop5 == 0)){
-      //   f_vectors[j]= mb5;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb5);
-      //   // printf("HELLO");
-      // }
-      
-      // if(PREDICT_TRUE(drop6 == 0)){
-      //   f_vectors[j]= mb6;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb6);
-      //   // printf("HELLO");
-      // }
-      
-      // if(PREDICT_TRUE(drop7 == 0)){
-      //   f_vectors[j]= mb7;
-      //   j++;
-      // }
-      
-      // else{
-      //   rte_pktmbuf_free(mb7);
-      //   // printf("HELLO");
-      // }
-      
-      i+=8;
-      n_buf-=8;
-    }
-#if 0
-    while(n_buf>=4){
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
-
-      mb0 = xd->rx_vectors[queue_id][i];
-      mb1 = xd->rx_vectors[queue_id][i+1];
-      mb2 = xd->rx_vectors[queue_id][i+2];
-      mb3 = xd->rx_vectors[queue_id][i+3];
-      
-      if(PREDICT_FALSE(hello==0)){
-        old_t[cpu_index] = t[cpu_index];
-        t[cpu_index] = mb0->udata64;
-        departure(cpu_index);
-        hello=1;
-      }
-      
-      hash0 = mb0->hash.rss;
-      hash1 = mb1->hash.rss;
-      hash2 = mb2->hash.rss;
-      hash3 = mb3->hash.rss;
-      //  printf("hash0 = %u\n",hash0);
-
-      pktlen0 = mb0->timesync;
-      pktlen1 = mb1->timesync;
-      pktlen2 = mb2->timesync;
-      pktlen3 = mb3->timesync;
-
-      modulo0 = hash0%TABLESIZE;
-      modulo1 = hash1%TABLESIZE;
-      modulo2 = hash2%TABLESIZE;
-      modulo3 = hash3%TABLESIZE;
-
-      
-     // drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-     // drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-     // drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
-     // drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-
-     // i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-     // i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
-     // i2 = flow_table_classify(modulo2, hash2, pktlen2, cpu_index);
-     // i3 = flow_table_classify(modulo3, hash3, pktlen3, cpu_index);
-     // drop0 = arrival(i0,cpu_index,pktlen0);
-     // drop1 = arrival(i1,cpu_index,pktlen1);
-     // drop2 = arrival(i2,cpu_index,pktlen2);
-     // drop3 = arrival(i3,cpu_index,pktlen3);
-
-      drop0=drop1=drop2=drop3=drop4=drop5=drop6=drop7=0;// *pktlen0*pktlen1*pktlen2*pktlen3*pktlen4*pktlen5*pktlen6*pktlen7*modulo0*modulo1*modulo2*modulo3*modulo4*modulo5*modulo6*modulo7;
-
-  
-      
-      if(PREDICT_TRUE(drop0 == 0)){
-        f_vectors[j]= mb0;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb0);
-      }
-      
-      if(PREDICT_TRUE(drop1 == 0)){
-        f_vectors[j]= mb1;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb1);
-      }
-      
-      if(PREDICT_TRUE(drop2 == 0)){
-        f_vectors[j]= mb2;
-        j++;
-      }
-      else{
-        rte_pktmbuf_free(mb2);
-      }
-      
-      if(PREDICT_TRUE(drop3 == 0)){
-        f_vectors[j]= mb3;
-        j++;
-      }
-      
-      else{
-        rte_pktmbuf_free(mb3);
-      }
-      
-      i+=4;
-      n_buf-=4;
-    }
-#endif
-    while(n_buf>0){
-
-//      if(n_buf > 1)
-//        CLIB_PREFETCH (xd->rx_vectors[queue_id][i+1], CLIB_CACHE_LINE_BYTES, LOAD);
-      // printf("HELLO7");
-      mb0 = xd->rx_vectors[queue_id][i];
-      // printf("HELLO8");
-      if(PREDICT_FALSE(hello==0)){
-        // printf("HELLO9");
-        old_t[cpu_index] = t[cpu_index];
-        t[cpu_index] = mb0->udata64;
-        departure(cpu_index);
-        // printf("HELLO10");
-        hello=1;
-      }
-    
-      hash0 = mb0->hash.rss;
-    // printf("HELLO11");
-      pktlen0 = mb0->timesync;
-      modulo0 = hash0%TABLESIZE;
-      // printf("HELLO2");
-       i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
-       // printf("HELLO3");
-       j += arrival(mb0,j,i0,cpu_index,pktlen0);
-       // printf("HELLO4");
-      //drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-	//drop0=0;
-    
-      // if(PREDICT_TRUE(drop0 == 0)){
-      //   f_vectors[j]= mb0;
-      //   j++;
-      // }
-      // else{
-      //   rte_pktmbuf_free(mb0);
-      //   // printf("HELLO");
-      // }
-      
-      i++;
-      n_buf--;
-    }
-  }
-  return j;
-}
-
 /*
  * This function is used when there are no worker threads.
  * The main thread performs IO and forwards the packets.
@@ -638,21 +314,12 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
-//  n_packets = n_buffers;
+  n_packets = n_buffers;
 
   if (n_buffers == 0)
     {
       return 0;
     }
-  else{
-    update_costs(cpu_index);
-    // printf("HELLO");
-    n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-    // printf("HELLO1");
-  }
-if (PREDICT_FALSE(n_buffers==0))
-	return 0;
-n_packets = n_buffers;
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
   trace_cnt = n_trace = vlib_get_trace_count (vm, node);
@@ -689,7 +356,7 @@ n_packets = n_buffers;
       u8 error0, error1, error2, error3;
       u64 or_ol_flags;
 
-/*
+
 ///////////////////////////////////////////////////
       u8  drop0,drop1,drop2,drop3;
       u32 hash0,hash1,hash2,hash3;
@@ -699,7 +366,7 @@ n_packets = n_buffers;
 
 		update_costs(vm,cpu_index);
 ///////////////////////////////////////////////////
-*/
+
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
 
       while (n_buffers >= 12 && n_left_to_next >= 4)
@@ -733,14 +400,14 @@ n_packets = n_buffers;
 		dpdk_prefetch_buffer (mb3->next);
 	    }
 
-/*
+
 	if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
         departure(cpu_index);
         hello=1;
 	}
-*/
+
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 	  b1 = vlib_buffer_from_rte_mbuf (mb1);
 	  b2 = vlib_buffer_from_rte_mbuf (mb2);
@@ -805,7 +472,7 @@ n_packets = n_buffers;
 	      b2->error = node->errors[error2];
 	      b3->error = node->errors[error3];
 	    }
-/*
+
 ////////////////////////////////////////////////////////////
     hash0 = mb0->hash.rss;
     hash1 = mb1->hash.rss;
@@ -826,10 +493,10 @@ n_packets = n_buffers;
     drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
     drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
     drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-    drop0 = 0;
-    drop1 = 0;
-    drop2 = 0;
-    drop3 = 0;
+//    drop0 = 0;
+//    drop1 = 0;
+//    drop2 = 0;
+//    drop3 = 0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -856,7 +523,7 @@ n_packets = n_buffers;
     }
 
 ////////////////////////////////////////////////////////////
-*/
+
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
 	  vlib_buffer_advance (b1, device_input_next_node_advance[next1]);
 	  vlib_buffer_advance (b2, device_input_next_node_advance[next2]);
@@ -909,14 +576,14 @@ n_packets = n_buffers;
 	    }
 
 	  ASSERT (mb0);
-/*
+
     if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
         departure(cpu_index);
         hello=1;
     }
-*/
+
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 
 	  /* Prefetch one next segment if it exists. */
@@ -941,13 +608,13 @@ n_packets = n_buffers;
 
 	  dpdk_rx_error_from_mb (mb0, &next0, &error0);
 	  b0->error = node->errors[error0];
-/*
+
 //////////////////////////////////////////////////////////
 	hash0 = mb0->hash.rss;
 	pktlen0 = mb0->timesync;
   	modulo0 = hash0%TABLESIZE;
     drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-    drop0 = 0;
+//    drop0 = 0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -955,7 +622,7 @@ n_packets = n_buffers;
         b0->error = node->errors[error0];
     }
 /////////////////////////////////////////////////////////
-*/
+
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
 
 	  n_rx_bytes += mb0->pkt_len;

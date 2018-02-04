@@ -30,19 +30,19 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 208
 #else
-#define WEIGHT_DPDK 156//185
+#define WEIGHT_DPDK 158//185
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 348
+#define WEIGHT_CLASS_1 350
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
 #define FLOW_HASH_4157820474    (WEIGHT_CLASS_1)    //192.168.0.1
 #define FLOW_HASH_2122681738    (WEIGHT_CLASS_1)	//192.168.0.3
-#define FLOW_HASH_3010998242    (WEIGHT_CLASS_1)    //192.168.0.5
-#define FLOW_HASH_976153682     (WEIGHT_CLASS_1)	//192.168.0.7
-#define FLOW_HASH_1434910422    (WEIGHT_CLASS_1)    //192.168.0.9
+#define FLOW_HASH_3010998242    (WEIGHT_CLASS_2)    //192.168.0.5
+#define FLOW_HASH_976153682     (WEIGHT_CLASS_2)	//192.168.0.7
+#define FLOW_HASH_1434910422    (WEIGHT_CLASS_2)    //192.168.0.9
 #define FLOW_HASH_3704634726    (WEIGHT_CLASS_2)	//192.168.0.11
 #define FLOW_HASH_288202510     (WEIGHT_CLASS_2)    //192.168.0.13
 #define FLOW_HASH_2558221502    (WEIGHT_CLASS_2)    //192.168.0.15
@@ -405,10 +405,10 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act(cpu_index);
+                j = flowout(cpu_index);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j,cpu_index);
+                    flowin(j,cpu_index);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -422,7 +422,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
             nbl[cpu_index]++;
-            flowin_act(flow,cpu_index);
+            flowin(flow,cpu_index);
         }
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;
@@ -430,8 +430,9 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_index,u16 pktlenx){
+always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 
+u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
         vstate(flow,0,cpu_index);
 #ifdef BUSYLOOP
@@ -439,15 +440,13 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
-        f_vectors[j]=mb;
-        return 1;
+        drop = 0;
     }
     else {
 #ifndef JIM_APPROX
 		n_drops[cpu_index]++;
 #endif
-        rte_pktmbuf_free(mb);
-        return 0;
+        drop = 1;
     }
 
 #ifdef ELOG_FAIRDROP
@@ -462,37 +461,33 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
 	ed->threshold = threshold[cpu_index];
   	ed->cost = flow->cost;
 #endif
+	return drop;
 }
 
 always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
     return 0;
 }
-/*
+
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     flowcount_t * i;
     u8 drop;
     i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
     drop = arrival(i,cpu_index,pktlenx);
-    //drop = fake_function(i,cpu_index,pktlenx);
     return drop;
 }
-*/
+
 /*Function to update costs*/
 always_inline void update_costs(u32 cpu_index){
 
-	activelist_t * costlist = head_act[cpu_index];
-	if (PREDICT_TRUE(costlist->flow != NULL)){
+		activelist_t * costlist = head_af[cpu_index];
 		flowcount_t * flow0;
 		f64 total = (f64)s_total[cpu_index];
 		f64 su = (f64)sum[cpu_index];
-		u32 n = nbl[cpu_index];
-	while(n>0){
+	while(costlist != NULL){
 		flow0 = costlist->flow;
 		flow0->cost = flow0->weight*(total/su);
 		//printf("%u\n",flow0->cost);
 		costlist = costlist->next;
-		n -= 1;
-	}
 	}
 }
 
