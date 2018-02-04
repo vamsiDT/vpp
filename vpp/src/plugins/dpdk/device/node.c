@@ -345,7 +345,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u64 or_ol_flags;
 
 //////////////////////////////////////////////
-    u64 hash0,hash1,hash2,hash3;
+    u32 hash0,hash1,hash2,hash3;
     u32 modulo0,modulo1,modulo2,modulo3;
     u16 pktlen0,pktlen1,pktlen2,pktlen3;
     u8  drop0,drop1,drop2,drop3 ;
@@ -451,10 +451,11 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 ////////////////////////////////////////////
-    hash0 = (unsigned)mb0->hash.rss;
-    hash1 = (unsigned)mb1->hash.rss;
-    hash2 = (unsigned)mb2->hash.rss;
-    hash3 = (unsigned)mb3->hash.rss;
+    hash0 = mb0->hash.rss;
+	//printf("hash0=%u\n",hash0);
+    hash1 = mb1->hash.rss;
+    hash2 = mb2->hash.rss;
+    hash3 = mb3->hash.rss;
     modulo0 = (hash0)%TABLESIZE;
     modulo1 = (hash1)%TABLESIZE;
     modulo2 = (hash2)%TABLESIZE;
@@ -571,7 +572,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 ////////////////////////////////////////////////
-    hash0 = (unsigned)mb0->hash.rss;
+    hash0 = mb0->hash.rss;
     modulo0 = (hash0)%TABLESIZE;
     pktlen0 = (mb0->data_len + 4);
     drop0 = fq(modulo0,hash0,pktlen0);
