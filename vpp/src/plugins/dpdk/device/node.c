@@ -288,6 +288,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
 /*
 	This is an array of pointers to mbufs of only the packets which are accepted by fairdrop algorithm
 */
+
 struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
 /*
@@ -379,6 +380,10 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       j += arrival(mb6,j,i6,cpu_index,pktlen6);
       j += arrival(mb7,j,i7,cpu_index,pktlen7);
 
+	  i+=8;
+	  n_buf-=8;
+
+	}
     while(n_buf>0){
 
       mb0 = xd->rx_vectors[queue_id][i];
