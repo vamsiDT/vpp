@@ -195,7 +195,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
 
-void flowin(flowcount_t * flow){
+always_inline void flowin(flowcount_t * flow){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
     temp->flow = flow;
@@ -212,7 +212,7 @@ void flowin(flowcount_t * flow){
 
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
 
-flowcount_t * flowout(){
+always_inline flowcount_t * flowout(){
     flowcount_t * temp;
     activelist_t * next;
     temp = head_af->flow;
