@@ -296,7 +296,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u32 n_buf = n_buffers;
   u16 i=0;
   u16 j=0;
-
+  u8 hello=0;
   while(n_buf>0){
     u32 hash0,hash1,hash2,hash3;
     u32 hash4,hash5,hash6,hash7;
@@ -323,6 +323,13 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       mb5 = xd->rx_vectors[queue_id][i+5];
       mb6 = xd->rx_vectors[queue_id][i+6];
       mb7 = xd->rx_vectors[queue_id][i+7];
+
+      if(PREDICT_FALSE(hello==0)){
+        old_t = t;
+        t = (u64)(unix_time_now_nsec ());
+        departure(cpu_index);
+        hello=1;
+      }
 
       hash0 = mb0->hash.rss;
       hash1 = mb1->hash.rss;
@@ -377,6 +384,13 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     while(n_buf>0){
 
       mb0 = xd->rx_vectors[queue_id][i];
+
+      if(PREDICT_FALSE(hello==0)){
+        old_t = t;
+        t = (u64)(unix_time_now_nsec ());
+        departure(cpu_index);
+        hello=1;
+      }
 
       hash0 = mb0->hash.rss;
 
@@ -692,9 +706,9 @@ if (PREDICT_FALSE(n_buffers==0))
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
 /*vstate update*/
-old_t = t;
-t = (u64)(unix_time_now_nsec ());
-departure();
+// old_t = t;
+// t = (u64)(unix_time_now_nsec ());
+// departure();
 
   return mb_index;
 }
