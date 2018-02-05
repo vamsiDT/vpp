@@ -11,6 +11,7 @@
 #include <vnet/vnet.h>
 #include <stdlib.h>
 #include <math.h>
+#include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
@@ -276,7 +277,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(flowcount_t * flow, u16 pktlenx){
+always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx){
 
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0);
