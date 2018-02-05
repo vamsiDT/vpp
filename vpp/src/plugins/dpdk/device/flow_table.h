@@ -194,7 +194,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-/*
+
 void flowin(flowcount_t * flow){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
@@ -209,9 +209,9 @@ void flowin(flowcount_t * flow){
         tail_af = temp;
     }
 }
-*/
+
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-/*
+
 flowcount_t * flowout(){
     flowcount_t * temp;
     activelist_t * next;
@@ -221,7 +221,7 @@ flowcount_t * flowout(){
     head_af = next;
     return temp;
 }
-*/
+
 always_inline void flowin_act(flowcount_t * flow){
     if(head_act->flow==NULL){
         head_act->flow=flow;
@@ -251,15 +251,15 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         int oldnbl=nbl+1;
         credit = (t - old_t)*ALPHA;
 //		threshold = 153600;//credit/nbl;
-        while (oldnbl>nbl && nbl > 0){
+        while (oldnbl>nbl && nbl > 0 ){
             oldnbl = nbl;
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act();
+                j = flowout();
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j);
+                    flowin(j);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -273,7 +273,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
     if (flow != NULL){
         if (flow->vqueue == 0){
             nbl++;
-            flowin_act(flow);
+            flowin(flow);
         }
         flow->vqueue += pktlenx;
     }
