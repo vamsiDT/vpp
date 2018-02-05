@@ -66,6 +66,8 @@ extern vnet_device_class_t dpdk_device_class;
 extern vlib_node_registration_t dpdk_input_node;
 extern vlib_node_registration_t handoff_dispatch_node;
 
+extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
+
 #if RTE_VERSION >= RTE_VERSION_NUM(17, 2, 0, 0)
 #define foreach_dpdk_pmd          \
   _ ("net_thunderx", THUNDERX)    \
