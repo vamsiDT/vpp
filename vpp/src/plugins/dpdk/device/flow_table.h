@@ -53,7 +53,7 @@ always_inline void activelist_init(){
     }
     (act+255)->flow=NULL;
     (act+255)->next=(act+0);
-    head_act[i]=tail_act[i]=(act+0);
+    head_act=tail_act=(act+0);
 }
 
 
