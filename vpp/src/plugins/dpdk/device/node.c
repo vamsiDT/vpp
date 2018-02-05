@@ -296,7 +296,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u32 n_buf = n_buffers;
   u16 i=0;
   u16 j=0;
-  u8 hello=0;
+
   while(n_buf>0){
     u32 hash0,hash1,hash2,hash3;
     u32 hash4,hash5,hash6,hash7;
@@ -323,13 +323,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       mb5 = xd->rx_vectors[queue_id][i+5];
       mb6 = xd->rx_vectors[queue_id][i+6];
       mb7 = xd->rx_vectors[queue_id][i+7];
-
-      if(PREDICT_FALSE(hello==0)){
-        old_t[cpu_index] = t[cpu_index];
-        t[cpu_index] = mb0->udata64;
-        departure(cpu_index);
-        hello=1;
-      }
 
       hash0 = mb0->hash.rss;
       hash1 = mb1->hash.rss;
@@ -384,13 +377,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     while(n_buf>0){
 
       mb0 = xd->rx_vectors[queue_id][i];
-
-      if(PREDICT_FALSE(hello==0)){
-        old_t[cpu_index] = t[cpu_index];
-        t[cpu_index] = mb0->udata64;
-        departure(cpu_index);
-        hello=1;
-      }
 
       hash0 = mb0->hash.rss;
 
@@ -492,13 +478,13 @@ if (PREDICT_FALSE(n_buffers==0))
 
 	  /* prefetches are interleaved with the rest of the code to reduce
 	     pressure on L1 cache */
-	  dpdk_prefetch_buffer (xd->f_vectors[mb_index + 8]);
-	  dpdk_prefetch_ethertype (xd->f_vectors[mb_index + 4]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 8]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 4]);
 
-	  mb0 = xd->f_vectors[mb_index];
-	  mb1 = xd->f_vectors[mb_index + 1];
-	  mb2 = xd->f_vectors[mb_index + 2];
-	  mb3 = xd->f_vectors[mb_index + 3];
+	  mb0 = f_vectors[mb_index];
+	  mb1 = f_vectors[mb_index + 1];
+	  mb2 = f_vectors[mb_index + 2];
+	  mb3 = f_vectors[mb_index + 3];
 
 	  ASSERT (mb0);
 	  ASSERT (mb1);
@@ -524,8 +510,8 @@ if (PREDICT_FALSE(n_buffers==0))
 
 	  dpdk_buffer_init_from_template (b0, b1, b2, b3, bt);
 
-	  dpdk_prefetch_buffer (xd->f_vectors[mb_index + 9]);
-	  dpdk_prefetch_ethertype (xd->f_vectors[mb_index + 5]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 9]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 5]);
 
 	  /* current_data must be set to -RTE_PKTMBUF_HEADROOM in template */
 	  b0->current_data += mb0->data_off;
@@ -538,8 +524,8 @@ if (PREDICT_FALSE(n_buffers==0))
 	  b2->current_length = mb2->data_len;
 	  b3->current_length = mb3->data_len;
 
-	  dpdk_prefetch_buffer (xd->f_vectors[mb_index + 10]);
-	  dpdk_prefetch_ethertype (xd->f_vectors[mb_index + 7]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 10]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 7]);
 
 	  bi0 = vlib_get_buffer_index (vm, b0);
 	  bi1 = vlib_get_buffer_index (vm, b1);
@@ -565,8 +551,8 @@ if (PREDICT_FALSE(n_buffers==0))
 	      next3 = dpdk_rx_next_from_etype (mb3, b3);
 	    }
 
-	  dpdk_prefetch_buffer (xd->f_vectors[mb_index + 11]);
-	  dpdk_prefetch_ethertype (xd->f_vectors[mb_index + 6]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 11]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 6]);
 
 	  or_ol_flags = (mb0->ol_flags | mb1->ol_flags |
 			 mb2->ol_flags | mb3->ol_flags);
@@ -625,12 +611,12 @@ if (PREDICT_FALSE(n_buffers==0))
 	}
       while (n_buffers > 0 && n_left_to_next > 0)
 	{
-	  struct rte_mbuf *mb0 = xd->f_vectors[mb_index];
+	  struct rte_mbuf *mb0 = f_vectors[mb_index];
 
 	  if (PREDICT_TRUE (n_buffers > 3))
 	    {
-	      dpdk_prefetch_buffer (xd->f_vectors[mb_index + 2]);
-	      dpdk_prefetch_ethertype (xd->f_vectors
+	      dpdk_prefetch_buffer (f_vectors[mb_index + 2]);
+	      dpdk_prefetch_ethertype (f_vectors
 				       [mb_index + 1]);
 	    }
 
