@@ -380,7 +380,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       hash0 = mb0->hash.rss;
 
-      pktlen0 = mb0->timesync;
+      pktlen0 = (mb0->data_len + 4);
 
       modulo0 = hash0%TABLESIZE;
 
@@ -434,6 +434,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 if (PREDICT_FALSE(n_buffers==0))
   return 0;
+
+
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
   trace_cnt = n_trace = vlib_get_trace_count (vm, node);
@@ -616,8 +618,7 @@ if (PREDICT_FALSE(n_buffers==0))
 	  if (PREDICT_TRUE (n_buffers > 3))
 	    {
 	      dpdk_prefetch_buffer (f_vectors[mb_index + 2]);
-	      dpdk_prefetch_ethertype (f_vectors
-				       [mb_index + 1]);
+	      dpdk_prefetch_ethertype (f_vectors[mb_index + 1]);
 	    }
 
 	  ASSERT (mb0);

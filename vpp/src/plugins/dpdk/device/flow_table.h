@@ -192,7 +192,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
     return flow;
 }
 
-/*
+
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
 /*
 void flowin(flowcount_t * flow){
