@@ -218,7 +218,7 @@ flowcount_t * flowout(){
     return temp;
 }
 
-always_inline void flowin_act(flowcount_t * flow{
+always_inline void flowin_act(flowcount_t * flow){
     if(head_act->flow==NULL){
         head_act->flow=flow;
     }
