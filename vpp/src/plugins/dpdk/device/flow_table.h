@@ -41,6 +41,21 @@ extern u32 nbl;
 extern u64 t;
 extern u64 old_t;
 extern f32 threshold;
+extern activelist_t * act;
+extern activelist_t * head_act;
+extern activelist_t * tail_act;
+
+always_inline void activelist_init(){
+    act = malloc(256*sizeof(activelist_t));
+    for(int j=0;j<255;j++){
+        (act+j)->flow=NULL;
+        (act+j)->next=(act+j+1);
+    }
+    (act+255)->flow=NULL;
+    (act+255)->next=(act+0);
+    head_act[i]=tail_act[i]=(act+0);
+}
+
 
 /* Flow classification function */
 always_inline flowcount_t *
@@ -203,6 +218,25 @@ flowcount_t * flowout(){
     return temp;
 }
 
+always_inline void flowin_act(flowcount_t * flow{
+    if(head_act->flow==NULL){
+        head_act->flow=flow;
+    }
+    else{
+        tail_act=tail_act->next;
+        tail_act->flow=flow;
+    }
+}
+
+always_inline flowcount_t * flowout_act(){
+    flowcount_t * i = head_act->flow;
+    head_act->flow=NULL;
+
+    if(PREDICT_TRUE(tail_act!=head_act)){
+        head_act=head_act->next;
+    }
+    return i;
+}
 
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
@@ -218,10 +252,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout();
+                j = flowout_act();
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin(j);
+                    flowin_act(j);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -235,7 +269,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
     if (flow != NULL){
         if (flow->vqueue == 0){
             nbl++;
-            flowin(flow);
+            flowin_act(flow);
         }
         flow->vqueue += pktlenx;
     }
@@ -243,18 +277,19 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow, u16 pktlenx){
-u8 drop;
+
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0);
-        drop = 0;
+        f_vectors[j]=mb;
+        return 1;
     }
     else {
-        drop = 1;
+        rte_pktmbuf_free(mb);
+        return 0;
         //update vstate is only after a vector. So no update before dropping a packet here.
     }
-return drop;
 }
-
+/*
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
     flowcount_t * i;
     u8 drop;
@@ -262,7 +297,7 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
     drop = arrival(i,pktlenx);
     return drop;
 }
-
+*/
 /*vstate update function before sending the vector. This function is after processing all the packets in the vector and runs only once per vector */
 always_inline void departure (){
     vstate(NULL,0,1);

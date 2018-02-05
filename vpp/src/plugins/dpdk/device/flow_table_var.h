@@ -11,3 +11,6 @@ u32 nbl;
 u64 t = 0;
 u64 old_t;
 f32 threshold;
+activelist_t * act;
+activelist_t * head_act;
+activelist_t * tail_act;

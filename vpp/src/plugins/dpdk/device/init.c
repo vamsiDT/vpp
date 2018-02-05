@@ -501,6 +501,8 @@ dpdk_lib_init (dpdk_main_t * dm)
   dm->input_cpu_first_index = 0;
   dm->input_cpu_count = 1;
 
+  activelist_init(); /*For fairdrop cpu*/
+
   /* find out which cpus will be used for input */
   p = hash_get_mem (tm->thread_registrations_by_name, "workers");
   tr = p ? (vlib_thread_registration_t *) p[0] : 0;
