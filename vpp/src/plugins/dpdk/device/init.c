@@ -65,6 +65,8 @@ dpdk_main_t dpdk_main;
 
 #include <vlibapi/api_helper_macros.h>
 
+#include <dpdk/device/flow_table_cpu.h>
+
 static void
   vl_api_sw_interface_set_dpdk_hqos_pipe_t_handler
   (vl_api_sw_interface_set_dpdk_hqos_pipe_t * mp)
