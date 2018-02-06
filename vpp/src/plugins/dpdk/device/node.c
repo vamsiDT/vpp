@@ -450,7 +450,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       return 0;
     }
   else{
-    printf("starting queue %u\n",queue_id);
+    //printf("starting queue %u\n",queue_id);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
   }
 
@@ -500,13 +500,13 @@ if (PREDICT_FALSE(n_buffers==0))
 
 	  /* prefetches are interleaved with the rest of the code to reduce
 	     pressure on L1 cache */
-	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 8]);
-	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 4]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 8]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 4]);
 
-	  mb0 = f_vectors[queue_id][mb_index];
-	  mb1 = f_vectors[queue_id][mb_index + 1];
-	  mb2 = f_vectors[queue_id][mb_index + 2];
-	  mb3 = f_vectors[queue_id][mb_index + 3];
+	  mb0 = f_vectors[mb_index];
+	  mb1 = f_vectors[mb_index + 1];
+	  mb2 = f_vectors[mb_index + 2];
+	  mb3 = f_vectors[mb_index + 3];
 
 	  ASSERT (mb0);
 	  ASSERT (mb1);
@@ -532,8 +532,8 @@ if (PREDICT_FALSE(n_buffers==0))
 
 	  dpdk_buffer_init_from_template (b0, b1, b2, b3, bt);
 
-	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 9]);
-	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 5]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 9]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 5]);
 
 	  /* current_data must be set to -RTE_PKTMBUF_HEADROOM in template */
 	  b0->current_data += mb0->data_off;
@@ -546,8 +546,8 @@ if (PREDICT_FALSE(n_buffers==0))
 	  b2->current_length = mb2->data_len;
 	  b3->current_length = mb3->data_len;
 
-	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 10]);
-	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 7]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 10]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 7]);
 
 	  bi0 = vlib_get_buffer_index (vm, b0);
 	  bi1 = vlib_get_buffer_index (vm, b1);
@@ -573,8 +573,8 @@ if (PREDICT_FALSE(n_buffers==0))
 	      next3 = dpdk_rx_next_from_etype (mb3, b3);
 	    }
 
-	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 11]);
-	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 6]);
+	  dpdk_prefetch_buffer (f_vectors[mb_index + 11]);
+	  dpdk_prefetch_ethertype (f_vectors[mb_index + 6]);
 
 	  or_ol_flags = (mb0->ol_flags | mb1->ol_flags |
 			 mb2->ol_flags | mb3->ol_flags);
@@ -633,12 +633,12 @@ if (PREDICT_FALSE(n_buffers==0))
 	}
       while (n_buffers > 0 && n_left_to_next > 0)
 	{
-	  struct rte_mbuf *mb0 = f_vectors[queue_id][mb_index];
+	  struct rte_mbuf *mb0 = f_vectors[mb_index];
 
 	  if (PREDICT_TRUE (n_buffers > 3))
 	    {
-	      dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 2]);
-	      dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 1]);
+	      dpdk_prefetch_buffer (f_vectors[mb_index + 2]);
+	      dpdk_prefetch_ethertype (f_vectors[mb_index + 1]);
 	    }
 
 	  ASSERT (mb0);
@@ -712,10 +712,10 @@ if (PREDICT_FALSE(n_buffers==0))
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
 /*vstate update*/
- old_t[queue_id] = t[queue_id];
- t[queue_id] = (u64)(unix_time_now_nsec ());
+ old_t = t;
+ t = (u64)(unix_time_now_nsec ());
 printf("departure queue %u\n",queue_id);
- departure(queue_id);
+ departure();
 
   return mb_index;
 }
