@@ -359,14 +359,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo7 = hash7%TABLESIZE;
 
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0);
-      i1 = flow_table_classify(modulo1, hash1, pktlen1);
-      i2 = flow_table_classify(modulo2, hash2, pktlen2);
-      i3 = flow_table_classify(modulo3, hash3, pktlen3);
-      i4 = flow_table_classify(modulo4, hash4, pktlen4);
-      i5 = flow_table_classify(modulo5, hash5, pktlen5);
-      i6 = flow_table_classify(modulo6, hash6, pktlen6);
-      i7 = flow_table_classify(modulo7, hash7, pktlen7);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
+      i1 = flow_table_classify(modulo1, hash1, pktlen1,queue_id);
+      i2 = flow_table_classify(modulo2, hash2, pktlen2,queue_id);
+      i3 = flow_table_classify(modulo3, hash3, pktlen3,queue_id);
+      i4 = flow_table_classify(modulo4, hash4, pktlen4,queue_id);
+      i5 = flow_table_classify(modulo5, hash5, pktlen5,queue_id);
+      i6 = flow_table_classify(modulo6, hash6, pktlen6,queue_id);
+      i7 = flow_table_classify(modulo7, hash7, pktlen7,queue_id);
 
       j += arrival(mb0,j,queue_id,i0,pktlen0);
       j += arrival(mb1,j,queue_id,i1,pktlen1);
@@ -398,7 +398,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       modulo0 = hash0%TABLESIZE;
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
 
       j += arrival(mb0,j,queue_id,i0,pktlen0);
 

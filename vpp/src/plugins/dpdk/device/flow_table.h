@@ -32,7 +32,7 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-extern flowcount_t *  nodet[TABLESIZE];
+extern flowcount_t *  nodet[4][TABLESIZE];
 extern activelist_t * head_af;
 extern activelist_t * tail_af;
 extern flowcount_t *  head ;
@@ -64,7 +64,7 @@ always_inline void activelist_init(){
 
 /* Flow classification function */
 always_inline flowcount_t *
-flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
+flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u16 queue_id){
 
     flowcount_t * flow;
 
