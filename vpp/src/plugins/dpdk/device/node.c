@@ -450,6 +450,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       return 0;
     }
   else{
+    printf("starting queue %u\n",queue_id);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
   }
 
@@ -713,7 +714,7 @@ if (PREDICT_FALSE(n_buffers==0))
 /*vstate update*/
  old_t[queue_id] = t[queue_id];
  t[queue_id] = (u64)(unix_time_now_nsec ());
-
+printf("departure queue %u\n",queue_id);
  departure(queue_id);
 
   return mb_index;

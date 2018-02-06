@@ -286,7 +286,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
         if (flow->vqueue == 0){
             nbl[queue_id]++;
             flowin_act(flow,queue_id);
-			printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
+			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }
         flow->vqueue += pktlenx;
     }
