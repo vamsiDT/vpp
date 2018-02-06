@@ -286,7 +286,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
   This is an array of pointers to mbufs of only the packets which are accepted by fairdrop algorithm
 */
 
-struct rte_mbuf * f_vectors[4][VLIB_FRAME_SIZE];
+struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
 /*
   Function to create a sub vector of packets which are accepted by fairdrop algiorithm
@@ -359,23 +359,23 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo7 = hash7%TABLESIZE;
 
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
-      i1 = flow_table_classify(modulo1, hash1, pktlen1,queue_id);
-      i2 = flow_table_classify(modulo2, hash2, pktlen2,queue_id);
-      i3 = flow_table_classify(modulo3, hash3, pktlen3,queue_id);
-      i4 = flow_table_classify(modulo4, hash4, pktlen4,queue_id);
-      i5 = flow_table_classify(modulo5, hash5, pktlen5,queue_id);
-      i6 = flow_table_classify(modulo6, hash6, pktlen6,queue_id);
-      i7 = flow_table_classify(modulo7, hash7, pktlen7,queue_id);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0);
+      i1 = flow_table_classify(modulo1, hash1, pktlen1);
+      i2 = flow_table_classify(modulo2, hash2, pktlen2);
+      i3 = flow_table_classify(modulo3, hash3, pktlen3);
+      i4 = flow_table_classify(modulo4, hash4, pktlen4);
+      i5 = flow_table_classify(modulo5, hash5, pktlen5);
+      i6 = flow_table_classify(modulo6, hash6, pktlen6);
+      i7 = flow_table_classify(modulo7, hash7, pktlen7);
 
-      j += arrival(mb0,j,queue_id,i0,pktlen0);
-      j += arrival(mb1,j,queue_id,i1,pktlen1);
-      j += arrival(mb2,j,queue_id,i2,pktlen2);
-      j += arrival(mb3,j,queue_id,i3,pktlen3);
-      j += arrival(mb4,j,queue_id,i4,pktlen4);
-      j += arrival(mb5,j,queue_id,i5,pktlen5);
-      j += arrival(mb6,j,queue_id,i6,pktlen6);
-      j += arrival(mb7,j,queue_id,i7,pktlen7);
+      j += arrival(mb0,j,i0,pktlen0);
+      j += arrival(mb1,j,i1,pktlen1);
+      j += arrival(mb2,j,i2,pktlen2);
+      j += arrival(mb3,j,i3,pktlen3);
+      j += arrival(mb4,j,i4,pktlen4);
+      j += arrival(mb5,j,i5,pktlen5);
+      j += arrival(mb6,j,i6,pktlen6);
+      j += arrival(mb7,j,i7,pktlen7);
 
     i+=8;
     n_buf-=8;
@@ -398,9 +398,9 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       modulo0 = hash0%TABLESIZE;
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0);
 
-      j += arrival(mb0,j,queue_id,i0,pktlen0);
+      j += arrival(mb0,j,i0,pktlen0);
 
       i++;
       n_buf--;

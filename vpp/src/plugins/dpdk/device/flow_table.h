@@ -32,164 +32,161 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-extern flowcount_t *  nodet[4][TABLESIZE];
+extern flowcount_t *  nodet[TABLESIZE];
 extern activelist_t * head_af;
 extern activelist_t * tail_af;
 extern flowcount_t *  head ;
 extern int numflows;
 extern u32 r_qtotal;
-extern u32 nbl[4];
-extern u64 t[4];
-extern u64 old_t[4];
+extern u32 nbl;
+extern u64 t;
+extern u64 old_t;
 extern f32 threshold;
 extern activelist_t * act;
-extern activelist_t * head_act[4];
-extern activelist_t * tail_act[4];
+extern activelist_t * head_act;
+extern activelist_t * tail_act;
 
 always_inline void activelist_init(){
-    act = malloc(4*256*sizeof(activelist_t));
-	for(int i=0;i<4;i++){
-	(act+i*256)->flow=NULL;
-	(act+i*256)->next=(act+1);
-    for(int j=1;j<255;j++){
+    act = malloc(256*sizeof(activelist_t));
+int i=0;
+    for(int j=0;j<255;j++){
         (act+i*256+j)->flow=NULL;
         (act+i*256+j)->next=(act+i*256+j+1);
     }
     (act+i*256+255)->flow=NULL;
-    (act+i*256+255)->next=(act+i*256);
-    head_act[i]=tail_act[i]=(act+i*256);
-	}
+    (act+i*256+255)->next=(act+i*256+0);
+    head_act=tail_act=(act+i*256+0);
 }
 
 
 /* Flow classification function */
 always_inline flowcount_t *
-flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u16 queue_id){
+flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
     flowcount_t * flow;
 
     if (PREDICT_FALSE(head == NULL)){
         numflows = 0;
 //        nbl = 0;
-        nodet[queue_id][modulox] = malloc(4*sizeof(flowcount_t));
-        (nodet[queue_id][modulox] + 0)->branchnext = NULL;
-        (nodet[queue_id][modulox] + 1)->branchnext = NULL;
-        (nodet[queue_id][modulox] + 2)->branchnext = NULL;
-        (nodet[queue_id][modulox] + 3)->branchnext = NULL;
+        nodet[modulox] = malloc(4*sizeof(flowcount_t));
+        (nodet[modulox] + 0)->branchnext = NULL;
+        (nodet[modulox] + 1)->branchnext = NULL;
+        (nodet[modulox] + 2)->branchnext = NULL;
+        (nodet[modulox] + 3)->branchnext = NULL;
         numflows++;
-        (nodet[queue_id][modulox] + 0)->hash = hashx0;
-        (nodet[queue_id][modulox] + 0)->update = (nodet[queue_id][modulox] + 0);
-        head = nodet[queue_id][modulox] + 0;
-        flow = nodet[queue_id][modulox] + 0;
+        (nodet[modulox] + 0)->hash = hashx0;
+        (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
+        head = nodet[modulox] + 0;
+        flow = nodet[modulox] + 0;
     }
 
-    else if ( (nodet[queue_id][modulox] + 0) == NULL ){
-        nodet[queue_id][modulox] = malloc(4*sizeof(flowcount_t));
-        (nodet[queue_id][modulox] + 0)->branchnext = NULL;
-        (nodet[queue_id][modulox] + 1)->branchnext = NULL;
-        (nodet[queue_id][modulox] + 2)->branchnext = NULL;
-        (nodet[queue_id][modulox] + 3)->branchnext = NULL;
+    else if ( (nodet[modulox] + 0) == NULL ){
+        nodet[modulox] = malloc(4*sizeof(flowcount_t));
+        (nodet[modulox] + 0)->branchnext = NULL;
+        (nodet[modulox] + 1)->branchnext = NULL;
+        (nodet[modulox] + 2)->branchnext = NULL;
+        (nodet[modulox] + 3)->branchnext = NULL;
         numflows++;
-        (nodet[queue_id][modulox] + 0)->hash = hashx0;
-        (nodet[queue_id][modulox] + 0)->update = (nodet[queue_id][modulox] + 0);
-        flow = nodet[queue_id][modulox] + 0;
+        (nodet[modulox] + 0)->hash = hashx0;
+        (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
+        flow = nodet[modulox] + 0;
     }
 
-    else if  ((nodet[queue_id][modulox] + 0)->branchnext == NULL)
+    else if  ((nodet[modulox] + 0)->branchnext == NULL)
     {
-        if  ( (nodet[queue_id][modulox] + 0)->hash != hashx0 )
+        if  ( (nodet[modulox] + 0)->hash != hashx0 )
         {
             numflows++;
-            (nodet[queue_id][modulox] + 1)->hash = hashx0;
-            (nodet[queue_id][modulox] + 0)->branchnext = (nodet[queue_id][modulox] + 1);
-            flow = nodet[queue_id][modulox] + 1;
+            (nodet[modulox] + 1)->hash = hashx0;
+            (nodet[modulox] + 0)->branchnext = (nodet[modulox] + 1);
+            flow = nodet[modulox] + 1;
         }
         else
         {
-            flow = nodet[queue_id][modulox] + 0;
+            flow = nodet[modulox] + 0;
         }
     }
 
-    else if ( (nodet[queue_id][modulox] + 1)->branchnext == NULL )
+    else if ( (nodet[modulox] + 1)->branchnext == NULL )
     {
-        if ( (nodet[queue_id][modulox] + 0)->hash != hashx0 ) {
-            if ( (nodet[queue_id][modulox] + 1)->hash != hashx0 ) {
+        if ( (nodet[modulox] + 0)->hash != hashx0 ) {
+            if ( (nodet[modulox] + 1)->hash != hashx0 ) {
 
                 numflows++;
-                (nodet[queue_id][modulox] + 2)->hash = hashx0;
-                (nodet[queue_id][modulox] + 1)->branchnext = nodet[queue_id][modulox] + 2;
-                flow = nodet[queue_id][modulox] + 2;
+                (nodet[modulox] + 2)->hash = hashx0;
+                (nodet[modulox] + 1)->branchnext = nodet[modulox] + 2;
+                flow = nodet[modulox] + 2;
             }
             else
             {
-                flow = nodet[queue_id][modulox] + 1;
+                flow = nodet[modulox] + 1;
             }
         }
         else
         {
-            flow = nodet[queue_id][modulox] + 0;
+            flow = nodet[modulox] + 0;
         }
     }
 
-    else if ( (nodet[queue_id][modulox] + 2)->branchnext == NULL ){
-        if ( (nodet[queue_id][modulox] + 0)->hash != hashx0 ) {
-            if ( (nodet[queue_id][modulox] + 1)->hash != hashx0 ) {
-                if ( (nodet[queue_id][modulox] + 2)->hash != hashx0 ) {
+    else if ( (nodet[modulox] + 2)->branchnext == NULL ){
+        if ( (nodet[modulox] + 0)->hash != hashx0 ) {
+            if ( (nodet[modulox] + 1)->hash != hashx0 ) {
+                if ( (nodet[modulox] + 2)->hash != hashx0 ) {
 
                     numflows++;
-                    (nodet[queue_id][modulox] + 3)->hash = hashx0;
-                    (nodet[queue_id][modulox] + 2)->branchnext = nodet[queue_id][modulox] + 3;
-                    (nodet[queue_id][modulox] + 3)->branchnext = nodet[queue_id][modulox] + 0;
-                    flow = nodet[queue_id][modulox] + 3;
+                    (nodet[modulox] + 3)->hash = hashx0;
+                    (nodet[modulox] + 2)->branchnext = nodet[modulox] + 3;
+                    (nodet[modulox] + 3)->branchnext = nodet[modulox] + 0;
+                    flow = nodet[modulox] + 3;
                 }
                 else
                 {
-                    flow = nodet[queue_id][modulox] + 2;
+                    flow = nodet[modulox] + 2;
                 }
             }
             else
             {
-                flow = nodet[queue_id][modulox] + 1;
+                flow = nodet[modulox] + 1;
             }
         }
         else
         {
-            flow = nodet[queue_id][modulox] + 0;
+            flow = nodet[modulox] + 0;
         }
     }
 
     else
     {
-        if ( (nodet[queue_id][modulox] + 0)->hash != hashx0 ) {
+        if ( (nodet[modulox] + 0)->hash != hashx0 ) {
 
-            if ( (nodet[queue_id][modulox] + 1)->hash != hashx0 ) {
+            if ( (nodet[modulox] + 1)->hash != hashx0 ) {
 
-                if ( (nodet[queue_id][modulox] + 2)->hash != hashx0 ) {
+                if ( (nodet[modulox] + 2)->hash != hashx0 ) {
 
-                    if ( (nodet[queue_id][modulox] + 3)->hash != hashx0 ) {
+                    if ( (nodet[modulox] + 3)->hash != hashx0 ) {
 
-                        ((nodet[queue_id][modulox] + 0)->update)->hash = hashx0;
-                        flow = (nodet[queue_id][modulox] + 0)->update;
-                        (nodet[queue_id][modulox] + 0)->update = ((nodet[queue_id][modulox] + 0)->update)->branchnext ;
+                        ((nodet[modulox] + 0)->update)->hash = hashx0;
+                        flow = (nodet[modulox] + 0)->update;
+                        (nodet[modulox] + 0)->update = ((nodet[modulox] + 0)->update)->branchnext ;
                     }
                     else
                     {
-                        flow = nodet[queue_id][modulox] + 3;
+                        flow = nodet[modulox] + 3;
                     }
                 }
                 else
                 {
-                    flow = nodet[queue_id][modulox] + 2;
+                    flow = nodet[modulox] + 2;
                 }
             }
             else
             {
-                flow = nodet[queue_id][modulox] + 1;
+                flow = nodet[modulox] + 1;
             }
         }
         else
         {
-            flow = nodet[queue_id][modulox] + 0;
+            flow = nodet[modulox] + 0;
         }
     }
 
@@ -226,26 +223,26 @@ always_inline flowcount_t * flowout(){
     return temp;
 }
 
-always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
-    if(head_act[queue_id]->flow==NULL){
-        head_act[queue_id]->flow=flow;
+always_inline void flowin_act(flowcount_t * flow){
+    if(head_act->flow==NULL){
+        head_act->flow=flow;
     }
     else{
-        tail_act[queue_id]=tail_act[queue_id]->next;
-        tail_act[queue_id]->flow=flow;
+        tail_act=tail_act->next;
+        tail_act->flow=flow;
     }
 //    if(head_act->flow==NULL)
 //        printf("wrong\n");
 
 }
 
-always_inline flowcount_t * flowout_act(u16 queue_id){
+always_inline flowcount_t * flowout_act(){
 //	if(head_act[queue_id]->flow==NULL)printf("headnullerror\n");else printf("not NULL\n");
-    flowcount_t * i = head_act[queue_id]->flow;
-    head_act[queue_id]->flow=NULL;
+    flowcount_t * i = head_act->flow;
+    head_act->flow=NULL;
 //printf("Hi!!!\t");
-    if(tail_act[queue_id]!=head_act[queue_id]){
-        head_act[queue_id]=head_act[queue_id]->next;
+    if(tail_act!=head_act){
+        head_act=head_act->next;
     }
 //	if(head_act==tail_act)
 //		printf("head=tail\n");
@@ -253,30 +250,30 @@ always_inline flowcount_t * flowout_act(u16 queue_id){
 }
 
 /* vstate algorithm */
-always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id){
+always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
         f32 served,credit;
-        int oldnbl=nbl[queue_id]+1;
-        credit = (t[queue_id] - old_t[queue_id])*ALPHA;
+        int oldnbl=nbl+1;
+        credit = (t - old_t)*ALPHA;
 //		threshold = 153600;//credit/nbl;
-	printf("%u\n",queue_id);
-        while (oldnbl>nbl[queue_id] && nbl[queue_id] > 0 ){
-            oldnbl = nbl[queue_id];
-            served = credit/nbl[queue_id];
+	//printf("%u\n",queue_id);
+        while (oldnbl>nbl && nbl > 0 ){
+            oldnbl = nbl;
+            served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act(queue_id);
-				if(j==NULL)printf("NULL :( on queue : %u \n",queue_id);
+                j = flowout_act();
+				//if(j==NULL)printf("NULL :( on queue : %u \n",queue_id);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j,queue_id);
+                    flowin_act(j);
                 }
                 else{
                     credit += served - j->vqueue;
                     j->vqueue = 0;
-                    nbl[queue_id]--;
+                    nbl--;
                 }
             }
         }
@@ -284,8 +281,8 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if (flow != NULL){
         if (flow->vqueue == 0){
-            nbl[queue_id]++;
-            flowin_act(flow,queue_id);
+            nbl++;
+            flowin_act(flow);
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }
         flow->vqueue += pktlenx;
@@ -293,11 +290,11 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(struct rte_mbuf * mb,u16 j,u16 queue_id,flowcount_t * flow,u16 pktlenx){
+always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx){
 
     if(flow->vqueue <= THRESHOLD){
-        vstate(flow,pktlenx,0,queue_id);
-        f_vectors[queue_id][j]=mb;
+        vstate(flow,pktlenx,0);
+        f_vectors[j]=mb;
         return 1;
     }
     else {
@@ -316,8 +313,8 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
 }
 */
 /*vstate update function before sending the vector. This function is after processing all the packets in the vector and runs only once per vector */
-always_inline void departure (u16 queue_id){
-    vstate(NULL,0,1,queue_id);
+always_inline void departure (){
+    vstate(NULL,0,1);
 }
 #endif /*FLOW_TABLE_H*/
 
