@@ -407,10 +407,11 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     }
   }
 
-//vstate update
-// old_t = t;
-// t = (u64)(unix_time_now_nsec ());
-// departure();
+/*vstate update*/
+ old_t = t;
+ t = (u64)(unix_time_now_nsec ());
+//printf("departure queue %u\n",queue_id);
+ departure();
 
   return j;
 }
@@ -711,11 +712,7 @@ if (PREDICT_FALSE(n_buffers==0))
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
-/*vstate update*/
- old_t = t;
- t = (u64)(unix_time_now_nsec ());
-printf("departure queue %u\n",queue_id);
- departure();
+
 
   return mb_index;
 }
