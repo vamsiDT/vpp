@@ -286,7 +286,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
   This is an array of pointers to mbufs of only the packets which are accepted by fairdrop algorithm
 */
 
-struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
+struct rte_mbuf * f_vectors[4][VLIB_FRAME_SIZE];
 
 /*
   Function to create a sub vector of packets which are accepted by fairdrop algiorithm
@@ -296,7 +296,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   u32 n_buf = n_buffers;
   u16 i=0;
   u16 j=0;
-  u8 hello=0;
+//  u8 hello=0;
   while(n_buf>0){
     u32 hash0,hash1,hash2,hash3;
     u32 hash4,hash5,hash6,hash7;
@@ -323,14 +323,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       mb5 = xd->rx_vectors[queue_id][i+5];
       mb6 = xd->rx_vectors[queue_id][i+6];
       mb7 = xd->rx_vectors[queue_id][i+7];
-
+/*
       if(PREDICT_FALSE(hello==0)){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
-        departure(cpu_index);
+        departure();
         hello=1;
       }
-
+*/
       hash0 = mb0->hash.rss;
       hash1 = mb1->hash.rss;
       hash2 = mb2->hash.rss;
@@ -368,14 +368,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       i6 = flow_table_classify(modulo6, hash6, pktlen6);
       i7 = flow_table_classify(modulo7, hash7, pktlen7);
 
-      j += arrival(mb0,j,i0,pktlen0);
-      j += arrival(mb1,j,i1,pktlen1);
-      j += arrival(mb2,j,i2,pktlen2);
-      j += arrival(mb3,j,i3,pktlen3);
-      j += arrival(mb4,j,i4,pktlen4);
-      j += arrival(mb5,j,i5,pktlen5);
-      j += arrival(mb6,j,i6,pktlen6);
-      j += arrival(mb7,j,i7,pktlen7);
+      j += arrival(mb0,j,queue_id,i0,pktlen0);
+      j += arrival(mb1,j,queue_id,i1,pktlen1);
+      j += arrival(mb2,j,queue_id,i2,pktlen2);
+      j += arrival(mb3,j,queue_id,i3,pktlen3);
+      j += arrival(mb4,j,queue_id,i4,pktlen4);
+      j += arrival(mb5,j,queue_id,i5,pktlen5);
+      j += arrival(mb6,j,queue_id,i6,pktlen6);
+      j += arrival(mb7,j,queue_id,i7,pktlen7);
 
     i+=8;
     n_buf-=8;
@@ -384,14 +384,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     while(n_buf>0){
 
       mb0 = xd->rx_vectors[queue_id][i];
-
+/*
       if(PREDICT_FALSE(hello==0)){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
-        departure(cpu_index);
+        departure();
         hello=1;
       }
-
+*/
       hash0 = mb0->hash.rss;
 
       pktlen0 = (mb0->data_len + 4);
@@ -400,12 +400,18 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       i0 = flow_table_classify(modulo0, hash0, pktlen0);
 
-      j += arrival(mb0,j,i0,pktlen0);
+      j += arrival(mb0,j,queue_id,i0,pktlen0);
 
       i++;
       n_buf--;
     }
   }
+
+//vstate update
+// old_t = t;
+// t = (u64)(unix_time_now_nsec ());
+// departure();
+
   return j;
 }
 
@@ -437,7 +443,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
-
+//printf("%u\n",queue_id);
+//printf("%u\n",n_buffers);
   if (n_buffers == 0)
     {
       return 0;
@@ -448,8 +455,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 if (PREDICT_FALSE(n_buffers==0))
   return 0;
-
-
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
   trace_cnt = n_trace = vlib_get_trace_count (vm, node);
@@ -494,13 +499,13 @@ if (PREDICT_FALSE(n_buffers==0))
 
 	  /* prefetches are interleaved with the rest of the code to reduce
 	     pressure on L1 cache */
-	  dpdk_prefetch_buffer (f_vectors[mb_index + 8]);
-	  dpdk_prefetch_ethertype (f_vectors[mb_index + 4]);
+	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 8]);
+	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 4]);
 
-	  mb0 = f_vectors[mb_index];
-	  mb1 = f_vectors[mb_index + 1];
-	  mb2 = f_vectors[mb_index + 2];
-	  mb3 = f_vectors[mb_index + 3];
+	  mb0 = f_vectors[queue_id][mb_index];
+	  mb1 = f_vectors[queue_id][mb_index + 1];
+	  mb2 = f_vectors[queue_id][mb_index + 2];
+	  mb3 = f_vectors[queue_id][mb_index + 3];
 
 	  ASSERT (mb0);
 	  ASSERT (mb1);
@@ -526,8 +531,8 @@ if (PREDICT_FALSE(n_buffers==0))
 
 	  dpdk_buffer_init_from_template (b0, b1, b2, b3, bt);
 
-	  dpdk_prefetch_buffer (f_vectors[mb_index + 9]);
-	  dpdk_prefetch_ethertype (f_vectors[mb_index + 5]);
+	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 9]);
+	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 5]);
 
 	  /* current_data must be set to -RTE_PKTMBUF_HEADROOM in template */
 	  b0->current_data += mb0->data_off;
@@ -540,8 +545,8 @@ if (PREDICT_FALSE(n_buffers==0))
 	  b2->current_length = mb2->data_len;
 	  b3->current_length = mb3->data_len;
 
-	  dpdk_prefetch_buffer (f_vectors[mb_index + 10]);
-	  dpdk_prefetch_ethertype (f_vectors[mb_index + 7]);
+	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 10]);
+	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 7]);
 
 	  bi0 = vlib_get_buffer_index (vm, b0);
 	  bi1 = vlib_get_buffer_index (vm, b1);
@@ -567,8 +572,8 @@ if (PREDICT_FALSE(n_buffers==0))
 	      next3 = dpdk_rx_next_from_etype (mb3, b3);
 	    }
 
-	  dpdk_prefetch_buffer (f_vectors[mb_index + 11]);
-	  dpdk_prefetch_ethertype (f_vectors[mb_index + 6]);
+	  dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 11]);
+	  dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 6]);
 
 	  or_ol_flags = (mb0->ol_flags | mb1->ol_flags |
 			 mb2->ol_flags | mb3->ol_flags);
@@ -627,12 +632,12 @@ if (PREDICT_FALSE(n_buffers==0))
 	}
       while (n_buffers > 0 && n_left_to_next > 0)
 	{
-	  struct rte_mbuf *mb0 = f_vectors[mb_index];
+	  struct rte_mbuf *mb0 = f_vectors[queue_id][mb_index];
 
 	  if (PREDICT_TRUE (n_buffers > 3))
 	    {
-	      dpdk_prefetch_buffer (f_vectors[mb_index + 2]);
-	      dpdk_prefetch_ethertype (f_vectors[mb_index + 1]);
+	      dpdk_prefetch_buffer (f_vectors[queue_id][mb_index + 2]);
+	      dpdk_prefetch_ethertype (f_vectors[queue_id][mb_index + 1]);
 	    }
 
 	  ASSERT (mb0);
@@ -706,9 +711,10 @@ if (PREDICT_FALSE(n_buffers==0))
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
 /*vstate update*/
-// old_t = t;
-// t = (u64)(unix_time_now_nsec ());
-// departure();
+ old_t[queue_id] = t[queue_id];
+ t[queue_id] = (u64)(unix_time_now_nsec ());
+
+ departure(queue_id);
 
   return mb_index;
 }
@@ -793,8 +799,10 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
       else
         n_rx_packets += dpdk_device_input (dm, xd, node, cpu_index, dq->queue_id, /* maybe_multiseg */ 0);
     }
-  /* *INDENT-ON* */
 
+//printf("n_rx_packets=%lu\n",n_rx_packets);
+
+  /* *INDENT-ON* */
   poll_rate_limit (dm);
 
   return n_rx_packets;
