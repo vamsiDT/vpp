@@ -71,125 +71,125 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u16 queue_id){
     if (PREDICT_FALSE(head == NULL)){
         numflows = 0;
 //        nbl = 0;
-        nodet[modulox] = malloc(4*sizeof(flowcount_t));
-        (nodet[modulox] + 0)->branchnext = NULL;
-        (nodet[modulox] + 1)->branchnext = NULL;
-        (nodet[modulox] + 2)->branchnext = NULL;
-        (nodet[modulox] + 3)->branchnext = NULL;
+        nodet[queue_id][modulox] = malloc(4*sizeof(flowcount_t));
+        (nodet[queue_id][modulox] + 0)->branchnext = NULL;
+        (nodet[queue_id][modulox] + 1)->branchnext = NULL;
+        (nodet[queue_id][modulox] + 2)->branchnext = NULL;
+        (nodet[queue_id][modulox] + 3)->branchnext = NULL;
         numflows++;
-        (nodet[modulox] + 0)->hash = hashx0;
-        (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
-        head = nodet[modulox] + 0;
-        flow = nodet[modulox] + 0;
+        (nodet[queue_id][modulox] + 0)->hash = hashx0;
+        (nodet[queue_id][modulox] + 0)->update = (nodet[queue_id][modulox] + 0);
+        head = nodet[queue_id][modulox] + 0;
+        flow = nodet[queue_id][modulox] + 0;
     }
 
-    else if ( (nodet[modulox] + 0) == NULL ){
-        nodet[modulox] = malloc(4*sizeof(flowcount_t));
-        (nodet[modulox] + 0)->branchnext = NULL;
-        (nodet[modulox] + 1)->branchnext = NULL;
-        (nodet[modulox] + 2)->branchnext = NULL;
-        (nodet[modulox] + 3)->branchnext = NULL;
+    else if ( (nodet[queue_id][modulox] + 0) == NULL ){
+        nodet[queue_id][modulox] = malloc(4*sizeof(flowcount_t));
+        (nodet[queue_id][modulox] + 0)->branchnext = NULL;
+        (nodet[queue_id][modulox] + 1)->branchnext = NULL;
+        (nodet[queue_id][modulox] + 2)->branchnext = NULL;
+        (nodet[queue_id][modulox] + 3)->branchnext = NULL;
         numflows++;
-        (nodet[modulox] + 0)->hash = hashx0;
-        (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
-        flow = nodet[modulox] + 0;
+        (nodet[queue_id][modulox] + 0)->hash = hashx0;
+        (nodet[queue_id][modulox] + 0)->update = (nodet[queue_id][modulox] + 0);
+        flow = nodet[queue_id][modulox] + 0;
     }
 
-    else if  ((nodet[modulox] + 0)->branchnext == NULL)
+    else if  ((nodet[queue_id][modulox] + 0)->branchnext == NULL)
     {
-        if  ( (nodet[modulox] + 0)->hash != hashx0 )
+        if  ( (nodet[queue_id][modulox] + 0)->hash != hashx0 )
         {
             numflows++;
-            (nodet[modulox] + 1)->hash = hashx0;
-            (nodet[modulox] + 0)->branchnext = (nodet[modulox] + 1);
-            flow = nodet[modulox] + 1;
+            (nodet[queue_id][modulox] + 1)->hash = hashx0;
+            (nodet[queue_id][modulox] + 0)->branchnext = (nodet[queue_id][modulox] + 1);
+            flow = nodet[queue_id][modulox] + 1;
         }
         else
         {
-            flow = nodet[modulox] + 0;
+            flow = nodet[queue_id][modulox] + 0;
         }
     }
 
-    else if ( (nodet[modulox] + 1)->branchnext == NULL )
+    else if ( (nodet[queue_id][modulox] + 1)->branchnext == NULL )
     {
-        if ( (nodet[modulox] + 0)->hash != hashx0 ) {
-            if ( (nodet[modulox] + 1)->hash != hashx0 ) {
+        if ( (nodet[queue_id][modulox] + 0)->hash != hashx0 ) {
+            if ( (nodet[queue_id][modulox] + 1)->hash != hashx0 ) {
 
                 numflows++;
-                (nodet[modulox] + 2)->hash = hashx0;
-                (nodet[modulox] + 1)->branchnext = nodet[modulox] + 2;
-                flow = nodet[modulox] + 2;
+                (nodet[queue_id][modulox] + 2)->hash = hashx0;
+                (nodet[queue_id][modulox] + 1)->branchnext = nodet[queue_id][modulox] + 2;
+                flow = nodet[queue_id][modulox] + 2;
             }
             else
             {
-                flow = nodet[modulox] + 1;
+                flow = nodet[queue_id][modulox] + 1;
             }
         }
         else
         {
-            flow = nodet[modulox] + 0;
+            flow = nodet[queue_id][modulox] + 0;
         }
     }
 
-    else if ( (nodet[modulox] + 2)->branchnext == NULL ){
-        if ( (nodet[modulox] + 0)->hash != hashx0 ) {
-            if ( (nodet[modulox] + 1)->hash != hashx0 ) {
-                if ( (nodet[modulox] + 2)->hash != hashx0 ) {
+    else if ( (nodet[queue_id][modulox] + 2)->branchnext == NULL ){
+        if ( (nodet[queue_id][modulox] + 0)->hash != hashx0 ) {
+            if ( (nodet[queue_id][modulox] + 1)->hash != hashx0 ) {
+                if ( (nodet[queue_id][modulox] + 2)->hash != hashx0 ) {
 
                     numflows++;
-                    (nodet[modulox] + 3)->hash = hashx0;
-                    (nodet[modulox] + 2)->branchnext = nodet[modulox] + 3;
-                    (nodet[modulox] + 3)->branchnext = nodet[modulox] + 0;
-                    flow = nodet[modulox] + 3;
+                    (nodet[queue_id][modulox] + 3)->hash = hashx0;
+                    (nodet[queue_id][modulox] + 2)->branchnext = nodet[queue_id][modulox] + 3;
+                    (nodet[queue_id][modulox] + 3)->branchnext = nodet[queue_id][modulox] + 0;
+                    flow = nodet[queue_id][modulox] + 3;
                 }
                 else
                 {
-                    flow = nodet[modulox] + 2;
+                    flow = nodet[queue_id][modulox] + 2;
                 }
             }
             else
             {
-                flow = nodet[modulox] + 1;
+                flow = nodet[queue_id][modulox] + 1;
             }
         }
         else
         {
-            flow = nodet[modulox] + 0;
+            flow = nodet[queue_id][modulox] + 0;
         }
     }
 
     else
     {
-        if ( (nodet[modulox] + 0)->hash != hashx0 ) {
+        if ( (nodet[queue_id][modulox] + 0)->hash != hashx0 ) {
 
-            if ( (nodet[modulox] + 1)->hash != hashx0 ) {
+            if ( (nodet[queue_id][modulox] + 1)->hash != hashx0 ) {
 
-                if ( (nodet[modulox] + 2)->hash != hashx0 ) {
+                if ( (nodet[queue_id][modulox] + 2)->hash != hashx0 ) {
 
-                    if ( (nodet[modulox] + 3)->hash != hashx0 ) {
+                    if ( (nodet[queue_id][modulox] + 3)->hash != hashx0 ) {
 
-                        ((nodet[modulox] + 0)->update)->hash = hashx0;
-                        flow = (nodet[modulox] + 0)->update;
-                        (nodet[modulox] + 0)->update = ((nodet[modulox] + 0)->update)->branchnext ;
+                        ((nodet[queue_id][modulox] + 0)->update)->hash = hashx0;
+                        flow = (nodet[queue_id][modulox] + 0)->update;
+                        (nodet[queue_id][modulox] + 0)->update = ((nodet[queue_id][modulox] + 0)->update)->branchnext ;
                     }
                     else
                     {
-                        flow = nodet[modulox] + 3;
+                        flow = nodet[queue_id][modulox] + 3;
                     }
                 }
                 else
                 {
-                    flow = nodet[modulox] + 2;
+                    flow = nodet[queue_id][modulox] + 2;
                 }
             }
             else
             {
-                flow = nodet[modulox] + 1;
+                flow = nodet[queue_id][modulox] + 1;
             }
         }
         else
         {
-            flow = nodet[modulox] + 0;
+            flow = nodet[queue_id][modulox] + 0;
         }
     }
 
