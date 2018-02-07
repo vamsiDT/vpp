@@ -398,7 +398,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       modulo0 = hash0%TABLESIZE;
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0);
 
       j += arrival(mb0,j,i0,pktlen0,queue_id);
 
@@ -791,7 +791,7 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
   /* *INDENT-OFF* */
   old_t = t;
   t = (u64)(unix_time_now_nsec ());
-  credit = t-old_t;
+  credit = (t-old_t)*ALPHA;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);

@@ -15,7 +15,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.2
+#define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
@@ -48,15 +48,15 @@ extern activelist_t * tail_act[4];
 extern f32 credit;
 
 always_inline void activelist_init(){
-    act = malloc(4*256*sizeof(activelist_t));
+    act = malloc(4*512*sizeof(activelist_t));
     for(int i=0;i<4;i++){
-    for(int j=0;j<255;j++){
-        (act+i*256+j)->flow=NULL;
-        (act+i*256+j)->next=(act+i*256+j+1);
+    for(int j=0;j<511;j++){
+        (act+i*512+j)->flow=NULL;
+        (act+i*512+j)->next=(act+i*512+j+1);
     }
-    (act+i*256+255)->flow=NULL;
-    (act+i*256+255)->next=(act+i*256+0);
-    head_act[i]=tail[i]_act=(act+i*256+0);
+    (act+i*512+511)->flow=NULL;
+    (act+i*512+511)->next=(act+i*512+0);
+    head_act[i]=tail_act[i]=(act+i*512+0);
     }
 }
 
@@ -261,14 +261,14 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
         int oldnbl=nbl[queue_id]+1;
         //credit = (t - old_t)*ALPHA;
 //		threshold = 153600;//credit/nbl;
-	//printf("%u\n",queue_id);
+//	printf("credit=%f\tnbl=%u\tqueue=%u\n",credit,nbl[queue_id],queue_id);
         while (oldnbl>nbl[queue_id] && nbl[queue_id] > 0 ){
             oldnbl = nbl[queue_id];
             served = credit/nbl[queue_id];
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout_act(queue_id);
-				if(j==NULL)printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
+				//if(j==NULL)printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
                 if(j->vqueue > served){
                     j->vqueue -= served;
                     flowin_act(j,queue_id);
@@ -285,6 +285,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if (flow != NULL){
         if (flow->vqueue == 0){
+			//if(nbl[queue_id]<256)
             nbl[queue_id]++;
             flowin_act(flow,queue_id);
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
@@ -294,7 +295,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,queue_id){
+always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,u16 queue_id){
 
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0,queue_id);
