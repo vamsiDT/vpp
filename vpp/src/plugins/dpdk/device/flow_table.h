@@ -49,14 +49,14 @@ extern f32 credit;
 
 always_inline void activelist_init(){
     act = malloc(4*256*sizeof(activelist_t));
-    for(int i=0;i<4;j++){
+    for(int i=0;i<4;i++){
     for(int j=0;j<255;j++){
         (act+i*256+j)->flow=NULL;
         (act+i*256+j)->next=(act+i*256+j+1);
     }
     (act+i*256+255)->flow=NULL;
     (act+i*256+255)->next=(act+i*256+0);
-    head_act[i]=tail[2]_act=(act+i*256+0);
+    head_act[i]=tail[i]_act=(act+i*256+0);
     }
 }
 
