@@ -359,23 +359,23 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       modulo7 = hash7%TABLESIZE;
 
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0);
-      i1 = flow_table_classify(modulo1, hash1, pktlen1);
-      i2 = flow_table_classify(modulo2, hash2, pktlen2);
-      i3 = flow_table_classify(modulo3, hash3, pktlen3);
-      i4 = flow_table_classify(modulo4, hash4, pktlen4);
-      i5 = flow_table_classify(modulo5, hash5, pktlen5);
-      i6 = flow_table_classify(modulo6, hash6, pktlen6);
-      i7 = flow_table_classify(modulo7, hash7, pktlen7);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
+      i1 = flow_table_classify(modulo1, hash1, pktlen1,queue_id);
+      i2 = flow_table_classify(modulo2, hash2, pktlen2,queue_id);
+      i3 = flow_table_classify(modulo3, hash3, pktlen3,queue_id);
+      i4 = flow_table_classify(modulo4, hash4, pktlen4,queue_id);
+      i5 = flow_table_classify(modulo5, hash5, pktlen5,queue_id);
+      i6 = flow_table_classify(modulo6, hash6, pktlen6,queue_id);
+      i7 = flow_table_classify(modulo7, hash7, pktlen7,queue_id);
 
-      j += arrival(mb0,j,i0,pktlen0);
-      j += arrival(mb1,j,i1,pktlen1);
-      j += arrival(mb2,j,i2,pktlen2);
-      j += arrival(mb3,j,i3,pktlen3);
-      j += arrival(mb4,j,i4,pktlen4);
-      j += arrival(mb5,j,i5,pktlen5);
-      j += arrival(mb6,j,i6,pktlen6);
-      j += arrival(mb7,j,i7,pktlen7);
+      j += arrival(mb0,j,i0,pktlen0,queue_id);
+      j += arrival(mb1,j,i1,pktlen1,queue_id);
+      j += arrival(mb2,j,i2,pktlen2,queue_id);
+      j += arrival(mb3,j,i3,pktlen3,queue_id);
+      j += arrival(mb4,j,i4,pktlen4,queue_id);
+      j += arrival(mb5,j,i5,pktlen5,queue_id);
+      j += arrival(mb6,j,i6,pktlen6,queue_id);
+      j += arrival(mb7,j,i7,pktlen7,queue_id);
 
     i+=8;
     n_buf-=8;
@@ -398,9 +398,9 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       modulo0 = hash0%TABLESIZE;
 
-      i0 = flow_table_classify(modulo0, hash0, pktlen0);
+      i0 = flow_table_classify(modulo0, hash0, pktlen0,queue_id);
 
-      j += arrival(mb0,j,i0,pktlen0);
+      j += arrival(mb0,j,i0,pktlen0,queue_id);
 
       i++;
       n_buf--;
@@ -408,10 +408,10 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
   }
 
 /*vstate update*/
- old_t = t;
- t = (u64)(unix_time_now_nsec ());
+ // old_t = t;
+ // t = (u64)(unix_time_now_nsec ());
 //printf("departure queue %u\n",queue_id);
- departure();
+ departure(queue_id);
 
   return j;
 }
@@ -789,6 +789,9 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
    * Poll all devices on this cpu for input/interrupts.
    */
   /* *INDENT-OFF* */
+  old_t = t;
+  t = (u64)(unix_time_now_nsec ());
+  credit = t-old_t;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);

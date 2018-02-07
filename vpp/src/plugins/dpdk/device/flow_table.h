@@ -38,24 +38,26 @@ extern activelist_t * tail_af;
 extern flowcount_t *  head ;
 extern int numflows;
 extern u32 r_qtotal;
-extern u32 nbl;
+extern u32 nbl[4];
 extern u64 t;
 extern u64 old_t;
 extern f32 threshold;
 extern activelist_t * act;
-extern activelist_t * head_act;
-extern activelist_t * tail_act;
+extern activelist_t * head_act[4];
+extern activelist_t * tail_act[4];
+extern f32 credit;
 
 always_inline void activelist_init(){
-    act = malloc(512*sizeof(activelist_t));
-int i=0;
-    for(int j=0;j<511;j++){
-        (act+i*512+j)->flow=NULL;
-        (act+i*512+j)->next=(act+i*512+j+1);
+    act = malloc(4*256*sizeof(activelist_t));
+    for(int i=0;i<4;j++){
+    for(int j=0;j<255;j++){
+        (act+i*256+j)->flow=NULL;
+        (act+i*256+j)->next=(act+i*256+j+1);
     }
-    (act+i*512+255)->flow=NULL;
-    (act+i*512+255)->next=(act+i*512+0);
-    head_act=tail_act=(act+i*512+0);
+    (act+i*256+255)->flow=NULL;
+    (act+i*256+255)->next=(act+i*256+0);
+    head_act[i]=tail[2]_act=(act+i*256+0);
+    }
 }
 
 
@@ -223,27 +225,27 @@ always_inline flowcount_t * flowout(){
     return temp;
 }
 
-always_inline void flowin_act(flowcount_t * flow){
+always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
     // if(head_act->flow==NULL){
     //     head_act->flow=flow;
     // }
     // else{
         // tail_act=tail_act->next;
-        tail_act->flow=flow;
-        tail_act=tail_act->next;
+        tail_act[queue_id]->flow=flow;
+        tail_act[queue_id]=tail_act[queue_id]->next;
     // }
 //    if(head_act->flow==NULL)
 //        printf("wrong\n");
 
 }
 
-always_inline flowcount_t * flowout_act(){
+always_inline flowcount_t * flowout_act(u16 queue_id){
 //	if(head_act[queue_id]->flow==NULL)printf("headnullerror\n");else printf("not NULL\n");
-    flowcount_t * i = head_act->flow;
-    head_act->flow=NULL;
+    flowcount_t * i = head_act[queue_id]->flow;
+    head_act[queue_id]->flow=NULL;
 //printf("Hi!!!\t");
     // if(tail_act!=head_act){
-        head_act=head_act->next;
+        head_act[queue_id]=head_act[queue_id]->next;
     // }
 //	if(head_act==tail_act)
 //		printf("head=tail\n");
@@ -251,30 +253,31 @@ always_inline flowcount_t * flowout_act(){
 }
 
 /* vstate algorithm */
-always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
+always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id){
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-        f32 served,credit;
-        int oldnbl=nbl+1;
-        credit = (t - old_t)*ALPHA;
+        f32 served;//,credit;
+        int oldnbl=nbl[queue_id]+1;
+        //credit = (t - old_t)*ALPHA;
 //		threshold = 153600;//credit/nbl;
 	//printf("%u\n",queue_id);
-        while (oldnbl>nbl && nbl > 0 ){
-            oldnbl = nbl;
-            served = credit/nbl;
+        while (oldnbl>nbl[queue_id] && nbl[queue_id] > 0 ){
+            oldnbl = nbl[queue_id];
+            served = credit/nbl[queue_id];
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act();
-				//if(j==NULL)printf("NULL :( on queue : %u \n",queue_id);
+                j = flowout_act(queue_id);
+				if(j==NULL)printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j);
+                    flowin_act(j,queue_id);
+                    credit += served - j->vqueue;
                 }
                 else{
                     credit += served - j->vqueue;
                     j->vqueue = 0;
-                    nbl--;
+                    nbl[queue_id]--;
                 }
             }
         }
@@ -282,8 +285,8 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if (flow != NULL){
         if (flow->vqueue == 0){
-            nbl++;
-            flowin_act(flow);
+            nbl[queue_id]++;
+            flowin_act(flow,queue_id);
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }
         flow->vqueue += pktlenx;
@@ -291,10 +294,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx){
+always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,queue_id){
 
     if(flow->vqueue <= THRESHOLD){
-        vstate(flow,pktlenx,0);
+        vstate(flow,pktlenx,0,queue_id);
         f_vectors[j]=mb;
         return 1;
     }
@@ -314,8 +317,8 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
 }
 */
 /*vstate update function before sending the vector. This function is after processing all the packets in the vector and runs only once per vector */
-always_inline void departure (){
-    vstate(NULL,0,1);
+always_inline void departure (u16 queue_id){
+    vstate(NULL,0,1,queue_id);
 }
 #endif /*FLOW_TABLE_H*/
 
