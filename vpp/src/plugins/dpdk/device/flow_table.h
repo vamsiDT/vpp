@@ -224,13 +224,14 @@ always_inline flowcount_t * flowout(){
 }
 
 always_inline void flowin_act(flowcount_t * flow){
-    if(head_act->flow==NULL){
-        head_act->flow=flow;
-    }
-    else{
-        tail_act=tail_act->next;
+    // if(head_act->flow==NULL){
+    //     head_act->flow=flow;
+    // }
+    // else{
+        // tail_act=tail_act->next;
         tail_act->flow=flow;
-    }
+        tail_act=tail_act->next;
+    // }
 //    if(head_act->flow==NULL)
 //        printf("wrong\n");
 
@@ -241,9 +242,9 @@ always_inline flowcount_t * flowout_act(){
     flowcount_t * i = head_act->flow;
     head_act->flow=NULL;
 //printf("Hi!!!\t");
-    if(tail_act!=head_act){
+    // if(tail_act!=head_act){
         head_act=head_act->next;
-    }
+    // }
 //	if(head_act==tail_act)
 //		printf("head=tail\n");
     return i;
