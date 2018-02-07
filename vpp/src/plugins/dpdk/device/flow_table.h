@@ -15,7 +15,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.4
+#define ALPHA 0.2
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
@@ -47,15 +47,15 @@ extern activelist_t * head_act;
 extern activelist_t * tail_act;
 
 always_inline void activelist_init(){
-    act = malloc(256*sizeof(activelist_t));
+    act = malloc(512*sizeof(activelist_t));
 int i=0;
-    for(int j=0;j<255;j++){
-        (act+i*256+j)->flow=NULL;
-        (act+i*256+j)->next=(act+i*256+j+1);
+    for(int j=0;j<511;j++){
+        (act+i*512+j)->flow=NULL;
+        (act+i*512+j)->next=(act+i*512+j+1);
     }
-    (act+i*256+255)->flow=NULL;
-    (act+i*256+255)->next=(act+i*256+0);
-    head_act=tail_act=(act+i*256+0);
+    (act+i*512+255)->flow=NULL;
+    (act+i*512+255)->next=(act+i*512+0);
+    head_act=tail_act=(act+i*512+0);
 }
 
 
