@@ -15,7 +15,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.9
+#define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
@@ -38,26 +38,24 @@ extern activelist_t * tail_af;
 extern flowcount_t *  head ;
 extern int numflows;
 extern u32 r_qtotal;
-extern u32 nbl[4];
+extern u32 nbl;
 extern u64 t;
 extern u64 old_t;
 extern f32 threshold;
 extern activelist_t * act;
-extern activelist_t * head_act[4];
-extern activelist_t * tail_act[4];
+extern activelist_t * head_act;
+extern activelist_t * tail_act;
 extern f32 credit;
 
 always_inline void activelist_init(){
-    act = malloc(4*2048*sizeof(activelist_t));
-    for(int i=0;i<4;i++){
-    for(int j=0;j<2047;j++){
-        (act+i*2048+j)->flow=NULL;
-        (act+i*2048+j)->next=(act+i*2048+j+1);
+    act = malloc(4096*sizeof(activelist_t));
+    for(int j=0;j<4095;j++){
+        (act+j)->flow=NULL;
+        (act+j)->next=(act+j+1);
     }
-    (act+i*2048+2047)->flow=NULL;
-    (act+i*2048+2047)->next=(act+i*2048+0);
-    head_act[i]=tail_act[i]=(act+i*2048+0);
-    }
+    (act+4095)->flow=NULL;
+    (act+4095)->next=(act+0);
+    head_act=tail_act=(act+0);
 }
 
 
@@ -231,8 +229,8 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
     // }
     // else{
         // tail_act=tail_act->next;
-        tail_act[queue_id]->flow=flow;
-        tail_act[queue_id]=tail_act[queue_id]->next;
+        tail_act->flow=flow;
+        tail_act=tail_act->next;
     // }
 //    if(head_act->flow==NULL)
 //        printf("wrong\n");
@@ -241,11 +239,11 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
 
 always_inline flowcount_t * flowout_act(u16 queue_id){
 //	if(head_act[queue_id]->flow==NULL)printf("headnullerror\n");else printf("not NULL\n");
-    flowcount_t * i = head_act[queue_id]->flow;
-    head_act[queue_id]->flow=NULL;
+    flowcount_t * i = head_act->flow;
+    head_act->flow=NULL;
 //printf("Hi!!!\t");
     // if(tail_act!=head_act){
-        head_act[queue_id]=head_act[queue_id]->next;
+        head_act=head_act->next;
     // }
 //	if(head_act==tail_act)
 //		printf("head=tail\n");
@@ -259,13 +257,13 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
         flowcount_t * j;
 //		printf("%d\n",numflows);
         f32 served;//,credit;
-        int oldnbl=nbl[queue_id]+1;
+        int oldnbl=nbl+1;
         //credit = (t - old_t)*ALPHA;
 //		threshold = 153600;//credit/nbl;
 //	printf("credit=%f\tnbl=%u\tqueue=%u\n",credit,nbl[queue_id],queue_id);
-        while (oldnbl>nbl[queue_id] && nbl[queue_id] > 0 ){
-            oldnbl = nbl[queue_id];
-            served = credit/nbl[queue_id];
+        while (oldnbl>nbl && nbl > 0 ){
+            oldnbl = nbl;
+            served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout_act(queue_id);
@@ -278,7 +276,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
                 else{
                     credit += served - j->vqueue;
                     j->vqueue = 0;
-                    nbl[queue_id]--;
+                    nbl--;
                 }
             }
         }
@@ -287,7 +285,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
     if (flow != NULL){
         if (flow->vqueue == 0){
 			//if(nbl[queue_id]<256)
-            nbl[queue_id]++;
+            nbl++;
             flowin_act(flow,queue_id);
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }

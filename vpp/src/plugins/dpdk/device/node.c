@@ -411,8 +411,9 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
  // old_t = t;
  // t = (u64)(unix_time_now_nsec ());
 //printf("departure queue %u\n",queue_id);
- departure(queue_id);
+// departure(queue_id);
 
+departure(0);
   return j;
 }
 
@@ -789,9 +790,9 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
    * Poll all devices on this cpu for input/interrupts.
    */
   /* *INDENT-OFF* */
-  old_t = t;
-  t = (u64)(unix_time_now_nsec ());
-  credit = (t-old_t)*ALPHA;
+    old_t = t;
+    t = (u64)(unix_time_now_nsec ());
+    credit = (t-old_t)*ALPHA;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);
@@ -802,6 +803,13 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
     }
 
 //printf("n_rx_packets=%lu\n",n_rx_packets);
+
+//if(n_rx_packets > 0){
+//  	old_t = t;
+//  	t = (u64)(unix_time_now_nsec ());
+//  	credit = (t-old_t)*ALPHA;
+//	departure(0);
+//}
 
   /* *INDENT-ON* */
   poll_rate_limit (dm);
