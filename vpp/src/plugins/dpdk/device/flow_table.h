@@ -15,7 +15,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.1
+#define ALPHA 0.9
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
@@ -48,15 +48,15 @@ extern activelist_t * tail_act[4];
 extern f32 credit;
 
 always_inline void activelist_init(){
-    act = malloc(4*512*sizeof(activelist_t));
+    act = malloc(4*2048*sizeof(activelist_t));
     for(int i=0;i<4;i++){
-    for(int j=0;j<511;j++){
-        (act+i*512+j)->flow=NULL;
-        (act+i*512+j)->next=(act+i*512+j+1);
+    for(int j=0;j<2047;j++){
+        (act+i*2048+j)->flow=NULL;
+        (act+i*2048+j)->next=(act+i*2048+j+1);
     }
-    (act+i*512+511)->flow=NULL;
-    (act+i*512+511)->next=(act+i*512+0);
-    head_act[i]=tail_act[i]=(act+i*512+0);
+    (act+i*2048+2047)->flow=NULL;
+    (act+i*2048+2047)->next=(act+i*2048+0);
+    head_act[i]=tail_act[i]=(act+i*2048+0);
     }
 }
 
@@ -257,6 +257,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
+//		printf("%d\n",numflows);
         f32 served;//,credit;
         int oldnbl=nbl[queue_id]+1;
         //credit = (t - old_t)*ALPHA;
