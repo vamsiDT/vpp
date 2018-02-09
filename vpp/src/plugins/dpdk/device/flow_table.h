@@ -45,7 +45,7 @@ extern f32 threshold;
 extern activelist_t * act;
 extern activelist_t * head_act;
 extern activelist_t * tail_act;
-extern f32 credit;
+//extern f32 credit;
 
 always_inline void activelist_init(){
     act = malloc(4096*sizeof(activelist_t));
@@ -255,11 +255,11 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-//		printf("%d\n",numflows);
-        f32 served;//,credit;
+//		printf("%u\n",nbl);
+        f32 served,credit;
         int oldnbl=nbl+1;
-        //credit = (t - old_t)*ALPHA;
-//		threshold = 153600;//credit/nbl;
+        credit=(t-old_t)*ALPHA*10;
+		//threshold = (credit*1.2)/nbl;
 //	printf("credit=%f\tnbl=%u\tqueue=%u\n",credit,nbl[queue_id],queue_id);
         while (oldnbl>nbl && nbl > 0 ){
             oldnbl = nbl;
@@ -272,11 +272,13 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
                     j->vqueue -= served;
                     flowin_act(j,queue_id);
                     credit += served - j->vqueue;
+					//printf("Flow_in credit = %f\n",credit);
                 }
                 else{
                     credit += served - j->vqueue;
                     j->vqueue = 0;
                     nbl--;
+					//printf("Flow_out credit = %f\n",credit);
                 }
             }
         }

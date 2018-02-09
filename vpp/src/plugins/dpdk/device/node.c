@@ -340,14 +340,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       hash6 = mb6->hash.rss;
       hash7 = mb7->hash.rss;
 
-      pktlen0 = (mb0->data_len + 4);
-      pktlen1 = (mb1->data_len + 4);
-      pktlen2 = (mb2->data_len + 4);
-      pktlen3 = (mb3->data_len + 4);
-      pktlen4 = (mb4->data_len + 4);
-      pktlen5 = (mb5->data_len + 4);
-      pktlen6 = (mb6->data_len + 4);
-      pktlen7 = (mb7->data_len + 4);
+      pktlen0 = (mb0->pkt_len + 4)*8;
+      pktlen1 = (mb1->pkt_len + 4)*8;
+      pktlen2 = (mb2->pkt_len + 4)*8;
+      pktlen3 = (mb3->pkt_len + 4)*8;
+      pktlen4 = (mb4->pkt_len + 4)*8;
+      pktlen5 = (mb5->pkt_len + 4)*8;
+      pktlen6 = (mb6->pkt_len + 4)*8;
+      pktlen7 = (mb7->pkt_len + 4)*8;
 
       modulo0 = hash0%TABLESIZE;
       modulo1 = hash1%TABLESIZE;
@@ -394,7 +394,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 */
       hash0 = mb0->hash.rss;
 
-      pktlen0 = (mb0->data_len + 4);
+      pktlen0 = (mb0->pkt_len + 4)*8;
 
       modulo0 = hash0%TABLESIZE;
 
@@ -413,13 +413,13 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 //printf("departure queue %u\n",queue_id);
 // departure(queue_id);
 
-departure(0);
+//departure(0);
   return j;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+u32 n_packets;
 
 /*
  * This function is used when there are no worker threads.
@@ -445,6 +445,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
+ n_packets +=n_buffers;
 //printf("%u\n",queue_id);
 //printf("%u\n",n_buffers);
   if (n_buffers == 0)
@@ -790,9 +791,9 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
    * Poll all devices on this cpu for input/interrupts.
    */
   /* *INDENT-OFF* */
-    old_t = t;
-    t = (u64)(unix_time_now_nsec ());
-    credit = (t-old_t)*ALPHA;
+//    old_t = t;
+//    t = (u64)(unix_time_now_nsec ());
+//    credit = (t-old_t)*ALPHA;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);
@@ -804,13 +805,14 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
 
 //printf("n_rx_packets=%lu\n",n_rx_packets);
 
-//if(n_rx_packets > 0){
-//  	old_t = t;
-//  	t = (u64)(unix_time_now_nsec ());
-//  	credit = (t-old_t)*ALPHA;
-//	departure(0);
-//}
-
+if(n_packets > 0 || n_rx_packets > 0){
+  	old_t = t;
+  	t = (u64)(unix_time_now_nsec ());
+  	//credit = (t-old_t)*ALPHA*10;
+	departure(0);
+//printf("departure done credit=%f,%lu,%lu,%f\n",credit,t,old_t,(t-old_t)*ALPHA);
+}
+n_packets=0;
   /* *INDENT-ON* */
   poll_rate_limit (dm);
 

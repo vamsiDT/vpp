@@ -52,6 +52,9 @@
 #include <vnet/dpo/classify_dpo.h>
 #include <vnet/mfib/mfib_table.h>	/* for mFIB table and entry creation */
 
+#include <plugins/dpdk/device/flow_table.h>
+#include <plugins/dpdk/device/flow_table_var.h>
+
 /**
  * @file
  * @brief IPv4 Forwarding.
@@ -2693,6 +2696,12 @@ ip4_rewrite_inline (vlib_main_t * vm,
   /* Need to do trace after rewrites to pick up new packet data. */
   if (node->flags & VLIB_NODE_FLAG_TRACE)
     ip4_forward_next_trace (vm, node, frame, VLIB_TX);
+
+
+//    old_t = t;
+//    t = vlib_time_now(vm)*1e9;//(u64)(unix_time_now_nsec ());
+//    credit = (t-old_t)*ALPHA;
+//    departure(0);
 
   return frame->n_vectors;
 }
