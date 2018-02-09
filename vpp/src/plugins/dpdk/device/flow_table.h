@@ -17,7 +17,7 @@
 #define TABLESIZE 4096
 #define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (192000) //just a random number. Update the value with proper theoritical approach.
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
@@ -229,8 +229,15 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
     // }
     // else{
         // tail_act=tail_act->next;
+		if( (head_act==NULL) || (head_act!=tail_act) ){
         tail_act->flow=flow;
         tail_act=tail_act->next;
+		}
+		else{
+		head_act=head_act->next;
+		tail_act->flow=flow;
+		tail_act=tail_act->next;
+		}
     // }
 //    if(head_act->flow==NULL)
 //        printf("wrong\n");
@@ -258,6 +265,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 //		printf("%u\n",nbl);
         f32 served,credit;
         int oldnbl=nbl+1;
+//		credit_v=credit;
         credit=(t-old_t)*ALPHA*10;
 		//threshold = (credit*1.2)/nbl;
 //	printf("credit=%f\tnbl=%u\tqueue=%u\n",credit,nbl[queue_id],queue_id);
@@ -267,7 +275,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout_act(queue_id);
-				//if(j==NULL)printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
+				if(j==NULL)continue;//printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
                 if(j->vqueue > served){
                     j->vqueue -= served;
                     flowin_act(j,queue_id);
@@ -286,7 +294,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if (flow != NULL){
         if (flow->vqueue == 0){
-			//if(nbl[queue_id]<256)
+			if(nbl<4095)
             nbl++;
             flowin_act(flow,queue_id);
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
@@ -297,14 +305,17 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
 /* arrival function for each packet */
 always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,u16 queue_id){
-
+//	printf("%u\n",flow->vqueue);
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0,queue_id);
         f_vectors[j]=mb;
+//		printf("%u\n",flow->vqueue);
         return 1;
     }
     else {
+		//printf("%u\n",flow->vqueue);
         rte_pktmbuf_free(mb);
+//		printf("drop\n");
         return 0;
         //update vstate is only after a vector. So no update before dropping a packet here.
     }

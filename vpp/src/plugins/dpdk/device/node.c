@@ -287,7 +287,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
 */
 
 struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
-
+u8 hello=0;
 /*
   Function to create a sub vector of packets which are accepted by fairdrop algiorithm
 */
@@ -327,7 +327,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       if(PREDICT_FALSE(hello==0)){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
-        departure();
+        departure(0);
         hello=1;
       }
 */
@@ -379,6 +379,11 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
     i+=8;
     n_buf-=8;
+	      if(PREDICT_FALSE((queue_id==1)&&(n_buf==0))){
+        old_t = t;
+        t = (u64)(unix_time_now_nsec ());
+        departure(0);
+	}
 
   }
     while(n_buf>0){
@@ -388,7 +393,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       if(PREDICT_FALSE(hello==0)){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
-        departure();
+        departure(0);
         hello=1;
       }
 */
@@ -404,6 +409,12 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       i++;
       n_buf--;
+	  if(PREDICT_FALSE((queue_id==1)&&(n_buf==0))){
+        old_t = t;
+        t = (u64)(unix_time_now_nsec ());
+        departure(0);
+      }
+
     }
   }
 
@@ -419,7 +430,10 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-u32 n_packets;
+u32 n_packets=512;
+u32 n_packets_previous;
+u32 n_bu=512;
+u32 n_bu_previous;
 
 /*
  * This function is used when there are no worker threads.
@@ -445,7 +459,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
- n_packets +=n_buffers;
+ n_bu +=n_buffers;
 //printf("%u\n",queue_id);
 //printf("%u\n",n_buffers);
   if (n_buffers == 0)
@@ -456,7 +470,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     //printf("starting queue %u\n",queue_id);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
   }
-
+ n_packets +=n_buffers;
 if (PREDICT_FALSE(n_buffers==0))
   return 0;
 
@@ -794,6 +808,11 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
 //    old_t = t;
 //    t = (u64)(unix_time_now_nsec ());
 //    credit = (t-old_t)*ALPHA;
+n_packets_previous=n_packets;
+n_packets=0;
+n_bu_previous=n_bu;
+n_bu=0;
+hello=0;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);
@@ -805,14 +824,15 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
 
 //printf("n_rx_packets=%lu\n",n_rx_packets);
 
-if(n_packets > 0 || n_rx_packets > 0){
-  	old_t = t;
-  	t = (u64)(unix_time_now_nsec ());
-  	//credit = (t-old_t)*ALPHA*10;
-	departure(0);
+//if( (n_bu_previous > 0) || (n_packets_previous > 0) || (n_packets > 0) || (n_rx_packets > 0) ){
+  	//old_t = t;
+  	//t = (u64)(unix_time_now_nsec ());
+//  	credit = (t-old_t)*ALPHA*10;
+// 	printf("credit = %f\tdeparture\n",(t-old_t)*ALPHA*10);
+	//departure(0);
 //printf("departure done credit=%f,%lu,%lu,%f\n",credit,t,old_t,(t-old_t)*ALPHA);
-}
-n_packets=0;
+//}
+//else printf("no departure\n");
   /* *INDENT-ON* */
   poll_rate_limit (dm);
 
