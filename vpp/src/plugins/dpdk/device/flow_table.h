@@ -240,14 +240,14 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
         tail_act=tail_act->next;
 		}
 		else{
-		printf("overflow\n");
+		// printf("overflow\n");
 		head_act=head_act->next;
 		tail_act->flow=flow;
 		tail_act=tail_act->next;
 		}
     // }
-    if(head_act->flow==NULL)
-        printf("wrong\n");
+    // if(head_act->flow==NULL)
+    //     printf("wrong\n");
 
 }
 
@@ -271,8 +271,8 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
 //		printf("%u\n",nbl);
-        f32 credit;
-		f32 served;
+        f32 served,credit;
+		//f32 served;
         int oldnbl=nbl+1;
 //		credit_v=credit;
         credit=(t-old_t)*ALPHA*10;
@@ -313,8 +313,8 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }
         flow->vqueue += pktlenx;
-		if(flow->vqueue > THRESHOLD+512)
-		printf("Vqueue in %u\n",flow->vqueue);
+		// if(flow->vqueue > THRESHOLD+512)
+		// printf("Vqueue in %u\n",flow->vqueue);
     }
 }
 
