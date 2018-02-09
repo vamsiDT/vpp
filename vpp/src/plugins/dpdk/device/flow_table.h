@@ -17,7 +17,7 @@
 #define TABLESIZE 4096
 #define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (192000) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
@@ -76,6 +76,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
         numflows++;
         (nodet[modulox] + 0)->hash = hashx0;
         (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
+		(nodet[modulox] + 0)->vqueue = 0;
         head = nodet[modulox] + 0;
         flow = nodet[modulox] + 0;
     }
@@ -89,6 +90,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
         numflows++;
         (nodet[modulox] + 0)->hash = hashx0;
         (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
+		(nodet[modulox] + 0)->vqueue = 0;
         flow = nodet[modulox] + 0;
     }
 
@@ -99,6 +101,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
             numflows++;
             (nodet[modulox] + 1)->hash = hashx0;
             (nodet[modulox] + 0)->branchnext = (nodet[modulox] + 1);
+			(nodet[modulox] + 1)->vqueue = 0;
             flow = nodet[modulox] + 1;
         }
         else
@@ -114,6 +117,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
                 numflows++;
                 (nodet[modulox] + 2)->hash = hashx0;
+				(nodet[modulox] + 2)->vqueue = 0;
                 (nodet[modulox] + 1)->branchnext = nodet[modulox] + 2;
                 flow = nodet[modulox] + 2;
             }
@@ -135,6 +139,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
                     numflows++;
                     (nodet[modulox] + 3)->hash = hashx0;
+					(nodet[modulox] + 3)->vqueue = 0;
                     (nodet[modulox] + 2)->branchnext = nodet[modulox] + 3;
                     (nodet[modulox] + 3)->branchnext = nodet[modulox] + 0;
                     flow = nodet[modulox] + 3;
@@ -166,6 +171,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
                     if ( (nodet[modulox] + 3)->hash != hashx0 ) {
 
                         ((nodet[modulox] + 0)->update)->hash = hashx0;
+						((nodet[modulox] + 0)->update)->vqueue = 0;
                         flow = (nodet[modulox] + 0)->update;
                         (nodet[modulox] + 0)->update = ((nodet[modulox] + 0)->update)->branchnext ;
                     }
@@ -229,29 +235,31 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
     // }
     // else{
         // tail_act=tail_act->next;
-		if( (head_act==NULL) || (head_act!=tail_act) ){
+		if( ((head_act->flow==NULL)&&(head_act==tail_act)) || (head_act!=tail_act) ){
         tail_act->flow=flow;
         tail_act=tail_act->next;
 		}
 		else{
+		printf("overflow\n");
 		head_act=head_act->next;
 		tail_act->flow=flow;
 		tail_act=tail_act->next;
 		}
     // }
-//    if(head_act->flow==NULL)
-//        printf("wrong\n");
+    if(head_act->flow==NULL)
+        printf("wrong\n");
 
 }
 
 always_inline flowcount_t * flowout_act(u16 queue_id){
-//	if(head_act[queue_id]->flow==NULL)printf("headnullerror\n");else printf("not NULL\n");
-    flowcount_t * i = head_act->flow;
+
+    //if(head_act->flow==NULL)printf("NULL\t");
+	flowcount_t * i = head_act->flow;
     head_act->flow=NULL;
 //printf("Hi!!!\t");
-    // if(tail_act!=head_act){
+     if(tail_act!=head_act){
         head_act=head_act->next;
-    // }
+     }
 //	if(head_act==tail_act)
 //		printf("head=tail\n");
     return i;
@@ -263,27 +271,32 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
 //		printf("%u\n",nbl);
-        f32 served,credit;
+        f32 credit;
+		f32 served;
         int oldnbl=nbl+1;
 //		credit_v=credit;
         credit=(t-old_t)*ALPHA*10;
-		//threshold = (credit*1.2)/nbl;
-//	printf("credit=%f\tnbl=%u\tqueue=%u\n",credit,nbl[queue_id],queue_id);
+		threshold = (credit)/nbl;
+//	printf("actual credit=%f\tcredit=%u\tnbl=%u\tserved=%u\n",(t-old_t)*ALPHA*10,credit,nbl,credit/nbl);
         while (oldnbl>nbl && nbl > 0 ){
             oldnbl = nbl;
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout_act(queue_id);
-				if(j==NULL)continue;//printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
-                if(j->vqueue > served){
-                    j->vqueue -= served;
+				//if(j==NULL){/*printf("%u\n",k);*/continue;}//printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
+                if(j->vqueue > (u32)served){
+					//if(j->vqueue > THRESHOLD+512)
+					//printf("Vqueue vstate%u\t",j->vqueue);
+                    j->vqueue -= (u32)served;
+					//if(j->vqueue > THRESHOLD+512)
+					//printf("Vqueue vstate %u\n",j->vqueue);
                     flowin_act(j,queue_id);
-                    credit += served - j->vqueue;
+                    credit += (u32)served - j->vqueue;
 					//printf("Flow_in credit = %f\n",credit);
                 }
                 else{
-                    credit += served - j->vqueue;
+                    credit += (u32)served - j->vqueue;
                     j->vqueue = 0;
                     nbl--;
 					//printf("Flow_out credit = %f\n",credit);
@@ -300,12 +313,15 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }
         flow->vqueue += pktlenx;
+		if(flow->vqueue > THRESHOLD+512)
+		printf("Vqueue in %u\n",flow->vqueue);
     }
 }
 
 /* arrival function for each packet */
 always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,u16 queue_id){
-//	printf("%u\n",flow->vqueue);
+	//printf("arrival %u\n",flow->vqueue);
+	//if(flow==NULL)printf("Stupid Motherfucker\n");
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0,queue_id);
         f_vectors[j]=mb;
@@ -313,7 +329,7 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktle
         return 1;
     }
     else {
-		//printf("%u\n",flow->vqueue);
+		//printf("drop %u\n",flow->vqueue);
         rte_pktmbuf_free(mb);
 //		printf("drop\n");
         return 0;

@@ -379,7 +379,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
     i+=8;
     n_buf-=8;
-	      if(PREDICT_FALSE((queue_id==1)&&(n_buf==0))){
+	    if(PREDICT_FALSE((queue_id==1)&&(n_buf==0))){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
         departure(0);
