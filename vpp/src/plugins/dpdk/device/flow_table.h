@@ -45,7 +45,7 @@ extern f32 threshold;
 extern activelist_t * act;
 extern activelist_t * head_act;
 extern activelist_t * tail_act;
-//extern f32 credit;
+//extern u32 nbla;
 
 always_inline void activelist_init(){
     act = malloc(4096*sizeof(activelist_t));
@@ -235,25 +235,43 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
     // }
     // else{
         // tail_act=tail_act->next;
-		if( ((head_act->flow==NULL)&&(head_act==tail_act)) || (head_act!=tail_act) ){
+/*
+		if(((head_act==tail_act)|| (head_act!=tail_act->next))&&(head_act->flow!=NULL)){
+				tail_act=tail_act->next;
+		}
+		else if (head_act==tail_act->next){
+			head_act=head_act->next;
+			tail_act=tail_act->next;
+		}
+*/
+		if(PREDICT_FALSE(head_act==tail_act->next)){
+            head_act=head_act->next;
+            tail_act=tail_act->next;
+        }
+		else if(head_act->flow!=NULL)
+			tail_act=tail_act->next;
+ 	    tail_act->flow=flow;
+/*
+		if( ((head_act->flow==NULL)&&(head_act==tail_act)) || (head_act!=tail_act->next) ){
         tail_act->flow=flow;
         tail_act=tail_act->next;
 		}
 		else{
-		// printf("overflow\n");
+		 printf("overflow\n");
 		head_act=head_act->next;
 		tail_act->flow=flow;
 		tail_act=tail_act->next;
 		}
+*/
     // }
-    // if(head_act->flow==NULL)
-    //     printf("wrong\n");
+//     if(head_act->flow==NULL)
+//         printf("wrong\n");
 
 }
 
 always_inline flowcount_t * flowout_act(u16 queue_id){
 
-    //if(head_act->flow==NULL)printf("NULL\t");
+//    if(head_act->flow==NULL)printf("NULL\t");
 	flowcount_t * i = head_act->flow;
     head_act->flow=NULL;
 //printf("Hi!!!\t");
@@ -276,7 +294,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
         int oldnbl=nbl+1;
 //		credit_v=credit;
         credit=(t-old_t)*ALPHA*10;
-		threshold = (credit)/nbl;
+//		threshold = (credit)/nbl;
 //	printf("actual credit=%f\tcredit=%u\tnbl=%u\tserved=%u\n",(t-old_t)*ALPHA*10,credit,nbl,credit/nbl);
         while (oldnbl>nbl && nbl > 0 ){
             oldnbl = nbl;
@@ -284,19 +302,19 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout_act(queue_id);
-				//if(j==NULL){/*printf("%u\n",k);*/continue;}//printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
-                if(j->vqueue > (u32)served){
+				//if(j==NULL){printf("%u\n",k);/*continue;*/}//printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
+                if(j->vqueue > served){
 					//if(j->vqueue > THRESHOLD+512)
 					//printf("Vqueue vstate%u\t",j->vqueue);
-                    j->vqueue -= (u32)served;
+                    j->vqueue -= served;
 					//if(j->vqueue > THRESHOLD+512)
 					//printf("Vqueue vstate %u\n",j->vqueue);
                     flowin_act(j,queue_id);
-                    credit += (u32)served - j->vqueue;
+                    credit += served - j->vqueue;
 					//printf("Flow_in credit = %f\n",credit);
                 }
                 else{
-                    credit += (u32)served - j->vqueue;
+                    credit += served - j->vqueue;
                     j->vqueue = 0;
                     nbl--;
 					//printf("Flow_out credit = %f\n",credit);
@@ -307,7 +325,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if (flow != NULL){
         if (flow->vqueue == 0){
-			if(nbl<4095)
+			if(nbl<4096)
             nbl++;
             flowin_act(flow,queue_id);
 			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
