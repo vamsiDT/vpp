@@ -17,6 +17,7 @@
 #define TABLESIZE 4096
 #define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
+#define NUMFLOWS 4096
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
@@ -48,13 +49,13 @@ extern activelist_t * tail_act;
 //extern u32 nbla;
 
 always_inline void activelist_init(){
-    act = malloc(4096*sizeof(activelist_t));
-    for(int j=0;j<4095;j++){
+    act = malloc(NUMFLOWS*sizeof(activelist_t));
+    for(int j=0;j<(NUMFLOWS-1);j++){
         (act+j)->flow=NULL;
         (act+j)->next=(act+j+1);
     }
-    (act+4095)->flow=NULL;
-    (act+4095)->next=(act+0);
+    (act+(NUMFLOWS-1))->flow=NULL;
+    (act+(NUMFLOWS-1))->next=(act+0);
     head_act=tail_act=(act+0);
 }
 
@@ -230,20 +231,7 @@ always_inline flowcount_t * flowout(){
 }
 
 always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
-    // if(head_act->flow==NULL){
-    //     head_act->flow=flow;
-    // }
-    // else{
-        // tail_act=tail_act->next;
-/*
-		if(((head_act==tail_act)|| (head_act!=tail_act->next))&&(head_act->flow!=NULL)){
-				tail_act=tail_act->next;
-		}
-		else if (head_act==tail_act->next){
-			head_act=head_act->next;
-			tail_act=tail_act->next;
-		}
-*/
+
 		if(PREDICT_FALSE(head_act==tail_act->next)){
             head_act=head_act->next;
             tail_act=tail_act->next;
@@ -251,35 +239,16 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
 		else if(head_act->flow!=NULL)
 			tail_act=tail_act->next;
  	    tail_act->flow=flow;
-/*
-		if( ((head_act->flow==NULL)&&(head_act==tail_act)) || (head_act!=tail_act->next) ){
-        tail_act->flow=flow;
-        tail_act=tail_act->next;
-		}
-		else{
-		 printf("overflow\n");
-		head_act=head_act->next;
-		tail_act->flow=flow;
-		tail_act=tail_act->next;
-		}
-*/
-    // }
-//     if(head_act->flow==NULL)
-//         printf("wrong\n");
 
 }
 
 always_inline flowcount_t * flowout_act(u16 queue_id){
 
-//    if(head_act->flow==NULL)printf("NULL\t");
 	flowcount_t * i = head_act->flow;
     head_act->flow=NULL;
-//printf("Hi!!!\t");
      if(tail_act!=head_act){
         head_act=head_act->next;
      }
-//	if(head_act==tail_act)
-//		printf("head=tail\n");
     return i;
 }
 
@@ -288,36 +257,24 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-//		printf("%u\n",nbl);
-        f32 served,credit;
-		//f32 served;
+        u32 served,credit;
         int oldnbl=nbl+1;
-//		credit_v=credit;
         credit=(t-old_t)*ALPHA*10;
 //		threshold = (credit)/nbl;
-//	printf("actual credit=%f\tcredit=%u\tnbl=%u\tserved=%u\n",(t-old_t)*ALPHA*10,credit,nbl,credit/nbl);
         while (oldnbl>nbl && nbl > 0 ){
             oldnbl = nbl;
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
                 j = flowout_act(queue_id);
-				//if(j==NULL){printf("%u\n",k);/*continue;*/}//printf("NULL :( on nbl[%u] : %u\n",queue_id,nbl[queue_id]);
                 if(j->vqueue > served){
-					//if(j->vqueue > THRESHOLD+512)
-					//printf("Vqueue vstate%u\t",j->vqueue);
                     j->vqueue -= served;
-					//if(j->vqueue > THRESHOLD+512)
-					//printf("Vqueue vstate %u\n",j->vqueue);
                     flowin_act(j,queue_id);
-                    credit += served - j->vqueue;
-					//printf("Flow_in credit = %f\n",credit);
                 }
                 else{
                     credit += served - j->vqueue;
                     j->vqueue = 0;
                     nbl--;
-					//printf("Flow_out credit = %f\n",credit);
                 }
             }
         }
@@ -328,41 +285,24 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
 			if(nbl<4096)
             nbl++;
             flowin_act(flow,queue_id);
-			//printf("nbl:%u\tqueue:%u\n",nbl[queue_id],queue_id);
         }
         flow->vqueue += pktlenx;
-		// if(flow->vqueue > THRESHOLD+512)
-		// printf("Vqueue in %u\n",flow->vqueue);
     }
 }
 
 /* arrival function for each packet */
 always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,u16 queue_id){
-	//printf("arrival %u\n",flow->vqueue);
-	//if(flow==NULL)printf("Stupid Motherfucker\n");
-    if(flow->vqueue <= THRESHOLD){
+    if(flow->vqueue <= threshold){
         vstate(flow,pktlenx,0,queue_id);
         f_vectors[j]=mb;
-//		printf("%u\n",flow->vqueue);
         return 1;
     }
     else {
-		//printf("drop %u\n",flow->vqueue);
         rte_pktmbuf_free(mb);
-//		printf("drop\n");
         return 0;
-        //update vstate is only after a vector. So no update before dropping a packet here.
     }
 }
-/*
-always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
-    flowcount_t * i;
-    u8 drop;
-    i = flow_table_classify(modulox,hashx0,pktlenx);
-    drop = arrival(i,pktlenx);
-    return drop;
-}
-*/
+
 /*vstate update function before sending the vector. This function is after processing all the packets in the vector and runs only once per vector */
 always_inline void departure (u16 queue_id){
     vstate(NULL,0,1,queue_id);
@@ -376,4 +316,3 @@ always_inline void departure (u16 queue_id){
 *   End
 *
 */
-

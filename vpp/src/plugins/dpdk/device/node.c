@@ -287,7 +287,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
 */
 
 struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
-u8 hello=0;
+
 /*
   Function to create a sub vector of packets which are accepted by fairdrop algiorithm
 */
@@ -310,10 +310,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     flowcount_t * i4,*i5,*i6,*i7;
 
     while(n_buf>=8){
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
 
       mb0 = xd->rx_vectors[queue_id][i];
       mb1 = xd->rx_vectors[queue_id][i+1];
@@ -323,14 +319,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       mb5 = xd->rx_vectors[queue_id][i+5];
       mb6 = xd->rx_vectors[queue_id][i+6];
       mb7 = xd->rx_vectors[queue_id][i+7];
-/*
-      if(PREDICT_FALSE(hello==0)){
-        old_t = t;
-        t = (u64)(unix_time_now_nsec ());
-        departure(0);
-        hello=1;
-      }
-*/
+
       hash0 = mb0->hash.rss;
       hash1 = mb1->hash.rss;
       hash2 = mb2->hash.rss;
@@ -379,24 +368,18 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
     i+=8;
     n_buf-=8;
+/*
 	    if(PREDICT_FALSE((queue_id==1)&&(n_buf==0))){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
         departure(0);
 	}
-
+*/
   }
     while(n_buf>0){
 
       mb0 = xd->rx_vectors[queue_id][i];
-/*
-      if(PREDICT_FALSE(hello==0)){
-        old_t = t;
-        t = (u64)(unix_time_now_nsec ());
-        departure(0);
-        hello=1;
-      }
-*/
+
       hash0 = mb0->hash.rss;
 
       pktlen0 = (mb0->pkt_len + 4)*8;
@@ -409,31 +392,22 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       i++;
       n_buf--;
+/*
 	  if(PREDICT_FALSE((queue_id==1)&&(n_buf==0))){
         old_t = t;
         t = (u64)(unix_time_now_nsec ());
         departure(0);
       }
-
+*/
     }
   }
 
-/*vstate update*/
- // old_t = t;
- // t = (u64)(unix_time_now_nsec ());
-//printf("departure queue %u\n",queue_id);
-// departure(queue_id);
-
-//departure(0);
   return j;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 u32 n_packets=512;
-u32 n_packets_previous;
-u32 n_bu=512;
-u32 n_bu_previous;
 
 /*
  * This function is used when there are no worker threads.
@@ -459,18 +433,17 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
- n_bu +=n_buffers;
-//printf("%u\n",queue_id);
-//printf("%u\n",n_buffers);
+
   if (n_buffers == 0)
     {
       return 0;
     }
   else{
-    //printf("starting queue %u\n",queue_id);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
   }
+
  n_packets +=n_buffers;
+
 if (PREDICT_FALSE(n_buffers==0))
   return 0;
 
@@ -808,11 +781,6 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
 //    old_t = t;
 //    t = (u64)(unix_time_now_nsec ());
 //    credit = (t-old_t)*ALPHA;
-n_packets_previous=n_packets;
-n_packets=0;
-n_bu_previous=n_bu;
-n_bu=0;
-hello=0;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);
@@ -834,6 +802,13 @@ hello=0;
 //}
 //else printf("no departure\n");
   /* *INDENT-ON* */
+if(PREDICT_TRUE(nbl > 0)){
+	old_t = t;
+	t = (u64)(unix_time_now_nsec ());
+	departure(0);
+	//n_packets=0;
+}
+
   poll_rate_limit (dm);
 
   return n_rx_packets;
