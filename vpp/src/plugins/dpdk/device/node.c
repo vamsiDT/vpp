@@ -648,9 +648,6 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
    * Poll all devices on this cpu for input/interrupts.
    */
   /* *INDENT-OFF* */
-//    old_t = t;
-//    t = (u64)(unix_time_now_nsec ());
-//    credit = (t-old_t)*ALPHA;
   vec_foreach (dq, dm->devices_by_cpu[cpu_index])
     {
       xd = vec_elt_at_index(dm->devices, dq->device);
@@ -660,23 +657,11 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
         n_rx_packets += dpdk_device_input (dm, xd, node, cpu_index, dq->queue_id, /* maybe_multiseg */ 0);
     }
 
-//printf("n_rx_packets=%lu\n",n_rx_packets);
-
-//if( (n_bu_previous > 0) || (n_packets_previous > 0) || (n_packets > 0) || (n_rx_packets > 0) ){
-  	//old_t = t;
-  	//t = (u64)(unix_time_now_nsec ());
-//  	credit = (t-old_t)*ALPHA*10;
-// 	printf("credit = %f\tdeparture\n",(t-old_t)*ALPHA*10);
-	//departure(0);
-//printf("departure done credit=%f,%lu,%lu,%f\n",credit,t,old_t,(t-old_t)*ALPHA);
-//}
-//else printf("no departure\n");
   /* *INDENT-ON* */
 if(PREDICT_TRUE(nbl > 0)){
 	old_t = t;
 	t = (u64)(unix_time_now_nsec ());
-	departure(0);
-	//n_packets=0;
+	departure();
 }
 
   poll_rate_limit (dm);

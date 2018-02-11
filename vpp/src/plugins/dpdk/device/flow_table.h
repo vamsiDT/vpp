@@ -15,7 +15,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.1
+#define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define NUMFLOWS 4096
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
@@ -66,7 +66,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
         numflows++;
         (nodet[modulox] + 0)->hash = hashx0;
         (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
-		(nodet[modulox] + 0)->vqueue = 0;
         head = nodet[modulox] + 0;
         flow = nodet[modulox] + 0;
     }
@@ -80,7 +79,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
         numflows++;
         (nodet[modulox] + 0)->hash = hashx0;
         (nodet[modulox] + 0)->update = (nodet[modulox] + 0);
-		(nodet[modulox] + 0)->vqueue = 0;
         flow = nodet[modulox] + 0;
     }
 
@@ -91,7 +89,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
             numflows++;
             (nodet[modulox] + 1)->hash = hashx0;
             (nodet[modulox] + 0)->branchnext = (nodet[modulox] + 1);
-			(nodet[modulox] + 1)->vqueue = 0;
             flow = nodet[modulox] + 1;
         }
         else
@@ -107,7 +104,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
                 numflows++;
                 (nodet[modulox] + 2)->hash = hashx0;
-				(nodet[modulox] + 2)->vqueue = 0;
                 (nodet[modulox] + 1)->branchnext = nodet[modulox] + 2;
                 flow = nodet[modulox] + 2;
             }
@@ -129,7 +125,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
                     numflows++;
                     (nodet[modulox] + 3)->hash = hashx0;
-					(nodet[modulox] + 3)->vqueue = 0;
                     (nodet[modulox] + 2)->branchnext = nodet[modulox] + 3;
                     (nodet[modulox] + 3)->branchnext = nodet[modulox] + 0;
                     flow = nodet[modulox] + 3;
@@ -161,7 +156,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
                     if ( (nodet[modulox] + 3)->hash != hashx0 ) {
 
                         ((nodet[modulox] + 0)->update)->hash = hashx0;
-						((nodet[modulox] + 0)->update)->vqueue = 0;
+						((nodet[modulox] + 0)->update)->vqueue=0;
                         flow = (nodet[modulox] + 0)->update;
                         (nodet[modulox] + 0)->update = ((nodet[modulox] + 0)->update)->branchnext ;
                     }
@@ -218,7 +213,7 @@ always_inline flowcount_t * flowout(){
     return temp;
 }
 
-/*Ring Activelist Implementation with size NUMFLOWS. 
+/*Ring Activelist Implementation with size NUMFLOWS.
 **Activelist entries are overwritten when the activelist is full. (Algorithm cannot work when the activelist overflows)
   */
 
@@ -233,7 +228,7 @@ always_inline void activelist_init(){
     head_act=tail_act=(act+0);
 }
 
-always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
+always_inline void flowin_act(flowcount_t * flow){
 
 	if(PREDICT_FALSE(head_act==tail_act->next)){
         head_act=head_act->next;
@@ -245,7 +240,7 @@ always_inline void flowin_act(flowcount_t * flow,u16 queue_id){
 
 }
 
-always_inline flowcount_t * flowout_act(u16 queue_id){
+always_inline flowcount_t * flowout_act(){
 
 	flowcount_t * i = head_act->flow;
     head_act->flow=NULL;
@@ -256,7 +251,7 @@ always_inline flowcount_t * flowout_act(u16 queue_id){
 }
 
 /* vstate algorithm */
-always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id){
+always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
@@ -269,10 +264,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act(queue_id);
+                j = flowout_act();
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j,queue_id);
+                    flowin_act(j);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -287,16 +282,16 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u16 queue_id
         if (flow->vqueue == 0){
 			if(nbl<NUMFLOWS)
             nbl++;
-            flowin_act(flow,queue_id);
+            flowin_act(flow);
         }
         flow->vqueue += pktlenx;
     }
 }
 
 /* arrival function for each packet */
-always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx,u16 queue_id){
+always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx){
     if(flow->vqueue <= threshold){
-        vstate(flow,pktlenx,0,queue_id);
+        vstate(flow,pktlenx,0);
         f_vectors[j]=mb;
         return 1;
     }
@@ -307,8 +302,8 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktle
 }
 
 /*vstate update function before sending the vector. This function is after processing all the packets in the vector and runs only once per vector */
-always_inline void departure (u16 queue_id){
-    vstate(NULL,0,1,queue_id);
+always_inline void departure (){
+    vstate(NULL,0,1);
 }
 
 /*
