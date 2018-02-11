@@ -49,112 +49,6 @@ extern activelist_t * tail_act;
 extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 extern u32 n_packets;
 
-/*
-  Function to create a sub vector of packets which are accepted by fairdrop algiorithm
-*/
-
-always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
-  u32 n_buf = n_buffers;
-  u16 i=0;
-  u16 j=0;
-
-  while(n_buf>0){
-    u32 hash0,hash1,hash2,hash3;
-    u32 hash4,hash5,hash6,hash7;
-    u16 pktlen0,pktlen1,pktlen2,pktlen3;
-    u16 pktlen4,pktlen5,pktlen6,pktlen7;
-    u8 modulo0,modulo1,modulo2,modulo3;
-    u8 modulo4,modulo5,modulo6,modulo7;
-    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
-    struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
-    flowcount_t * i0,*i1,*i2,*i3;
-    flowcount_t * i4,*i5,*i6,*i7;
-
-    while(n_buf>=8){
-
-      mb0 = xd->rx_vectors[queue_id][i];
-      mb1 = xd->rx_vectors[queue_id][i+1];
-      mb2 = xd->rx_vectors[queue_id][i+2];
-      mb3 = xd->rx_vectors[queue_id][i+3];
-      mb4 = xd->rx_vectors[queue_id][i+4];
-      mb5 = xd->rx_vectors[queue_id][i+5];
-      mb6 = xd->rx_vectors[queue_id][i+6];
-      mb7 = xd->rx_vectors[queue_id][i+7];
-
-      hash0 = mb0->hash.rss;
-      hash1 = mb1->hash.rss;
-      hash2 = mb2->hash.rss;
-      hash3 = mb3->hash.rss;
-      hash4 = mb4->hash.rss;
-      hash5 = mb5->hash.rss;
-      hash6 = mb6->hash.rss;
-      hash7 = mb7->hash.rss;
-
-      pktlen0 = (mb0->pkt_len + 4)*8;
-      pktlen1 = (mb1->pkt_len + 4)*8;
-      pktlen2 = (mb2->pkt_len + 4)*8;
-      pktlen3 = (mb3->pkt_len + 4)*8;
-      pktlen4 = (mb4->pkt_len + 4)*8;
-      pktlen5 = (mb5->pkt_len + 4)*8;
-      pktlen6 = (mb6->pkt_len + 4)*8;
-      pktlen7 = (mb7->pkt_len + 4)*8;
-
-      modulo0 = hash0%TABLESIZE;
-      modulo1 = hash1%TABLESIZE;
-      modulo2 = hash2%TABLESIZE;
-      modulo3 = hash3%TABLESIZE;
-      modulo4 = hash4%TABLESIZE;
-      modulo5 = hash5%TABLESIZE;
-      modulo6 = hash6%TABLESIZE;
-      modulo7 = hash7%TABLESIZE;
-
-
-      i0 = flow_table_classify(modulo0, hash0, pktlen0);
-      i1 = flow_table_classify(modulo1, hash1, pktlen1);
-      i2 = flow_table_classify(modulo2, hash2, pktlen2);
-      i3 = flow_table_classify(modulo3, hash3, pktlen3);
-      i4 = flow_table_classify(modulo4, hash4, pktlen4);
-      i5 = flow_table_classify(modulo5, hash5, pktlen5);
-      i6 = flow_table_classify(modulo6, hash6, pktlen6);
-      i7 = flow_table_classify(modulo7, hash7, pktlen7);
-
-      j += arrival(mb0,j,i0,pktlen0,queue_id);
-      j += arrival(mb1,j,i1,pktlen1,queue_id);
-      j += arrival(mb2,j,i2,pktlen2,queue_id);
-      j += arrival(mb3,j,i3,pktlen3,queue_id);
-      j += arrival(mb4,j,i4,pktlen4,queue_id);
-      j += arrival(mb5,j,i5,pktlen5,queue_id);
-      j += arrival(mb6,j,i6,pktlen6,queue_id);
-      j += arrival(mb7,j,i7,pktlen7,queue_id);
-
-    i+=8;
-    n_buf-=8;
-
-  }
-    while(n_buf>0){
-
-      mb0 = xd->rx_vectors[queue_id][i];
-
-      hash0 = mb0->hash.rss;
-
-      pktlen0 = (mb0->pkt_len + 4)*8;
-
-      modulo0 = hash0%TABLESIZE;
-
-      i0 = flow_table_classify(modulo0, hash0, pktlen0);
-
-      j += arrival(mb0,j,i0,pktlen0,queue_id);
-
-      i++;
-      n_buf--;
-
-    }
-  }
-
-  return j;
-}
-
-
 /* Flow classification function */
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
@@ -416,6 +310,112 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktle
 always_inline void departure (u16 queue_id){
     vstate(NULL,0,1,queue_id);
 }
+
+/*
+  Function to create a sub vector of packets which are accepted by fairdrop algiorithm
+*/
+
+always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
+  u32 n_buf = n_buffers;
+  u16 i=0;
+  u16 j=0;
+
+  while(n_buf>0){
+    u32 hash0,hash1,hash2,hash3;
+    u32 hash4,hash5,hash6,hash7;
+    u16 pktlen0,pktlen1,pktlen2,pktlen3;
+    u16 pktlen4,pktlen5,pktlen6,pktlen7;
+    u8 modulo0,modulo1,modulo2,modulo3;
+    u8 modulo4,modulo5,modulo6,modulo7;
+    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
+    struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
+    flowcount_t * i0,*i1,*i2,*i3;
+    flowcount_t * i4,*i5,*i6,*i7;
+
+    while(n_buf>=8){
+
+      mb0 = xd->rx_vectors[queue_id][i];
+      mb1 = xd->rx_vectors[queue_id][i+1];
+      mb2 = xd->rx_vectors[queue_id][i+2];
+      mb3 = xd->rx_vectors[queue_id][i+3];
+      mb4 = xd->rx_vectors[queue_id][i+4];
+      mb5 = xd->rx_vectors[queue_id][i+5];
+      mb6 = xd->rx_vectors[queue_id][i+6];
+      mb7 = xd->rx_vectors[queue_id][i+7];
+
+      hash0 = mb0->hash.rss;
+      hash1 = mb1->hash.rss;
+      hash2 = mb2->hash.rss;
+      hash3 = mb3->hash.rss;
+      hash4 = mb4->hash.rss;
+      hash5 = mb5->hash.rss;
+      hash6 = mb6->hash.rss;
+      hash7 = mb7->hash.rss;
+
+      pktlen0 = (mb0->pkt_len + 4)*8;
+      pktlen1 = (mb1->pkt_len + 4)*8;
+      pktlen2 = (mb2->pkt_len + 4)*8;
+      pktlen3 = (mb3->pkt_len + 4)*8;
+      pktlen4 = (mb4->pkt_len + 4)*8;
+      pktlen5 = (mb5->pkt_len + 4)*8;
+      pktlen6 = (mb6->pkt_len + 4)*8;
+      pktlen7 = (mb7->pkt_len + 4)*8;
+
+      modulo0 = hash0%TABLESIZE;
+      modulo1 = hash1%TABLESIZE;
+      modulo2 = hash2%TABLESIZE;
+      modulo3 = hash3%TABLESIZE;
+      modulo4 = hash4%TABLESIZE;
+      modulo5 = hash5%TABLESIZE;
+      modulo6 = hash6%TABLESIZE;
+      modulo7 = hash7%TABLESIZE;
+
+
+      i0 = flow_table_classify(modulo0, hash0, pktlen0);
+      i1 = flow_table_classify(modulo1, hash1, pktlen1);
+      i2 = flow_table_classify(modulo2, hash2, pktlen2);
+      i3 = flow_table_classify(modulo3, hash3, pktlen3);
+      i4 = flow_table_classify(modulo4, hash4, pktlen4);
+      i5 = flow_table_classify(modulo5, hash5, pktlen5);
+      i6 = flow_table_classify(modulo6, hash6, pktlen6);
+      i7 = flow_table_classify(modulo7, hash7, pktlen7);
+
+      j += arrival(mb0,j,i0,pktlen0,queue_id);
+      j += arrival(mb1,j,i1,pktlen1,queue_id);
+      j += arrival(mb2,j,i2,pktlen2,queue_id);
+      j += arrival(mb3,j,i3,pktlen3,queue_id);
+      j += arrival(mb4,j,i4,pktlen4,queue_id);
+      j += arrival(mb5,j,i5,pktlen5,queue_id);
+      j += arrival(mb6,j,i6,pktlen6,queue_id);
+      j += arrival(mb7,j,i7,pktlen7,queue_id);
+
+    i+=8;
+    n_buf-=8;
+
+  }
+    while(n_buf>0){
+
+      mb0 = xd->rx_vectors[queue_id][i];
+
+      hash0 = mb0->hash.rss;
+
+      pktlen0 = (mb0->pkt_len + 4)*8;
+
+      modulo0 = hash0%TABLESIZE;
+
+      i0 = flow_table_classify(modulo0, hash0, pktlen0);
+
+      j += arrival(mb0,j,i0,pktlen0,queue_id);
+
+      i++;
+      n_buf--;
+
+    }
+  }
+
+  return j;
+}
+
 #endif /*FLOW_TABLE_H*/
 
 /*
