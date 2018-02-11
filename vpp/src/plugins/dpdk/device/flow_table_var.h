@@ -14,4 +14,6 @@ f32 threshold=19200;
 activelist_t * act;
 activelist_t * head_act;
 activelist_t * tail_act;
+struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
+u32 n_packets=512;
 //f32 credit;
