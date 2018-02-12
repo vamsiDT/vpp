@@ -388,12 +388,12 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       mb0 = xd->rx_vectors[queue_id][i];
 
-      if(PREDICT_FALSE(hello==0)){
-        old_t[cpu_index] = t[cpu_index];
-        t[cpu_index] = mb0->udata64;
-        departure(cpu_index);
-        hello=1;
-      }
+        if(PREDICT_FALSE(hello==0)){
+          old_t[cpu_index] = t[cpu_index];
+          t[cpu_index] = mb0->udata64;
+          departure(cpu_index);
+          hello=1;
+        }
 
       hash0 = mb0->hash.rss;
 

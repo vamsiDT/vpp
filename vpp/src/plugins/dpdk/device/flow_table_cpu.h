@@ -366,7 +366,7 @@ always_inline flowcount_t * flowout(u32 cpu_index){
     return temp;
 }
 
-
+/*
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
         head_act[cpu_index]->flow=flow;
@@ -386,6 +386,30 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
     }
     return i;
 }
+*/
+
+always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
+
+    if(PREDICT_FALSE(head_act[cpu_index]==tail_act[cpu_index]->next)){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    }
+    else if(head_act[cpu_index]->flow!=NULL)
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    tail_act[cpu_index]->flow=flow;
+
+}
+
+always_inline flowcount_t * flowout_act(u32 cpu_index){
+
+    flowcount_t * i = head_act[cpu_index]->flow;
+    head_act[cpu_index]->flow=NULL;
+     if(tail_act[cpu_index]!=head_act[cpu_index]){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+     }
+    return i;
+}
+
 
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
