@@ -290,7 +290,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
 /* arrival function for each packet */
 always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u16 pktlenx){
-    if(flow->vqueue <= threshold){
+    if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0);
         f_vectors[j]=mb;
         return 1;
