@@ -34,15 +34,15 @@
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 348
+#define WEIGHT_CLASS_1 700
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
 #define FLOW_HASH_4157820474    (WEIGHT_CLASS_1)    //192.168.0.1
 #define FLOW_HASH_2122681738    (WEIGHT_CLASS_1)	//192.168.0.3
-#define FLOW_HASH_3010998242    (WEIGHT_CLASS_1)    //192.168.0.5
-#define FLOW_HASH_976153682     (WEIGHT_CLASS_1)	//192.168.0.7
-#define FLOW_HASH_1434910422    (WEIGHT_CLASS_1)    //192.168.0.9
+#define FLOW_HASH_3010998242    (WEIGHT_CLASS_2)    //192.168.0.5
+#define FLOW_HASH_976153682     (WEIGHT_CLASS_2)	//192.168.0.7
+#define FLOW_HASH_1434910422    (WEIGHT_CLASS_2)    //192.168.0.9
 #define FLOW_HASH_3704634726    (WEIGHT_CLASS_2)	//192.168.0.11
 #define FLOW_HASH_288202510     (WEIGHT_CLASS_2)    //192.168.0.13
 #define FLOW_HASH_2558221502    (WEIGHT_CLASS_2)    //192.168.0.15
@@ -415,14 +415,14 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-        f32 served,credit;
+        u32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 #ifdef JIM_APPROX /*The exact calculation is not necessary as the drop cost gets cancelled between vq increments and decrements*/
 		credit = (t[cpu_index]-old_t[cpu_index]);
 #else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
 		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
 #endif
-		threshold[cpu_index] = (credit*((f32)(1.15)))/nbl[cpu_index];
+		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -445,6 +445,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
+			if(nbl[cpu_index]<256)
             nbl[cpu_index]++;
             flowin_act(flow,cpu_index);
         }
