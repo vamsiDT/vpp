@@ -43,6 +43,9 @@ extern u32 nbl;
 extern u64 t;
 extern u64 old_t;
 extern f32 threshold;
+extern activelist_t * act;
+extern activelist_t * head_act;
+extern activelist_t * tail_act;
 
 /* Flow classification function */
 always_inline flowcount_t *
@@ -179,6 +182,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 }
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
+/*
 void flowin(flowcount_t * flow){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
@@ -193,8 +197,9 @@ void flowin(flowcount_t * flow){
         tail_af = temp;
     }
 }
-
+*/
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
+/*
 flowcount_t * flowout(){
     flowcount_t * temp;
     activelist_t * next;
@@ -204,7 +209,7 @@ flowcount_t * flowout(){
     head_af = next;
     return temp;
 }
-
+*/
 always_inline void activelist_init(){
     act = malloc(NUMFLOWS*sizeof(activelist_t));
     for(int j=0;j<(NUMFLOWS-1);j++){
