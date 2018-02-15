@@ -264,10 +264,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act();
+                j = flowout();
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j);
+                    flowin(j);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -280,9 +280,8 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if (flow != NULL){
         if (flow->vqueue == 0){
-			if(nbl<NUMFLOWS)
             nbl++;
-            flowin_act(flow);
+            flowin(flow);
         }
         flow->vqueue += pktlenx;
     }
