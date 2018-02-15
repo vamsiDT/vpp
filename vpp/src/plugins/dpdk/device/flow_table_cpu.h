@@ -180,11 +180,14 @@ extern u8 n_drops[MAXCPU];
 
 #endif
 extern f32 threshold[MAXCPU];
+/*
 extern activelist_t * act;
 extern activelist_t * head_act[MAXCPU];
 extern activelist_t * tail_act[MAXCPU];
+*/
 //extern struct rte_mbuf * f_vectors[256];
 
+/*
 always_inline void activelist_init(){
     act = malloc(MAXCPU*256*sizeof(activelist_t));
     for(int i=0;i<MAXCPU;i++){
@@ -197,7 +200,7 @@ always_inline void activelist_init(){
         head_act[i]=tail_act[i]=(act+i*256+0);
     }
 }
-
+*/
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -340,6 +343,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
+
 always_inline void flowin(flowcount_t * flow,u32 cpu_index){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
@@ -366,7 +370,7 @@ always_inline flowcount_t * flowout(u32 cpu_index){
     return temp;
 }
 
-
+/*
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
         head_act[cpu_index]->flow=flow;
@@ -386,7 +390,7 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
     }
     return i;
 }
-
+*/
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
@@ -462,10 +466,6 @@ u8 drop;
   	ed->cost = flow->cost;
 #endif
 	return drop;
-}
-
-always_inline u8 fake_function (flowcount_t * i,u32 cpu_index,u16 pktlenx){
-    return 0;
 }
 
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
