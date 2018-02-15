@@ -347,14 +347,14 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       hash6 = mb6->hash.rss;
       hash7 = mb7->hash.rss;
 
-      pktlen0 = (mb0->pkt_len + 4)*8;
-      pktlen1 = (mb1->pkt_len + 4)*8;
-      pktlen2 = (mb2->pkt_len + 4)*8;
-      pktlen3 = (mb3->pkt_len + 4)*8;
-      pktlen4 = (mb4->pkt_len + 4)*8;
-      pktlen5 = (mb5->pkt_len + 4)*8;
-      pktlen6 = (mb6->pkt_len + 4)*8;
-      pktlen7 = (mb7->pkt_len + 4)*8;
+      pktlen0 = (mb0->pkt_len + 24)*8;
+      pktlen1 = (mb1->pkt_len + 24)*8;
+      pktlen2 = (mb2->pkt_len + 24)*8;
+      pktlen3 = (mb3->pkt_len + 24)*8;
+      pktlen4 = (mb4->pkt_len + 24)*8;
+      pktlen5 = (mb5->pkt_len + 24)*8;
+      pktlen6 = (mb6->pkt_len + 24)*8;
+      pktlen7 = (mb7->pkt_len + 24)*8;
 
       modulo0 = hash0%TABLESIZE;
       modulo1 = hash1%TABLESIZE;
@@ -394,7 +394,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 
       hash0 = mb0->hash.rss;
 
-      pktlen0 = (mb0->pkt_len + 4)*8;
+      pktlen0 = (mb0->pkt_len + 24)*8;
 
       modulo0 = hash0%TABLESIZE;
 
