@@ -32,6 +32,7 @@
 #include <fcntl.h>
 
 #include <dpdk/device/dpdk_priv.h>
+#include <dpdk/device/flow_table.h>
 
 dpdk_main_t dpdk_main;
 
@@ -500,6 +501,8 @@ dpdk_lib_init (dpdk_main_t * dm)
 
   dm->input_cpu_first_index = 0;
   dm->input_cpu_count = 1;
+
+ activelist_init(); /*For fairdrop cpu*/
 
   /* find out which cpus will be used for input */
   p = hash_get_mem (tm->thread_registrations_by_name, "workers");
