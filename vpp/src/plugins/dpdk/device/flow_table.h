@@ -11,12 +11,14 @@
 #include <vnet/vnet.h>
 #include <stdlib.h>
 #include <math.h>
+#include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
+#define NUMFLOWS 10240
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
@@ -203,6 +205,38 @@ flowcount_t * flowout(){
     return temp;
 }
 
+always_inline void activelist_init(){
+    act = malloc(NUMFLOWS*sizeof(activelist_t));
+    for(int j=0;j<(NUMFLOWS-1);j++){
+        (act+j)->flow=NULL;
+        (act+j)->next=(act+j+1);
+    }
+    (act+(NUMFLOWS-1))->flow=NULL;
+    (act+(NUMFLOWS-1))->next=(act+0);
+    head_act=tail_act=(act+0);
+}
+
+always_inline void flowin_act(flowcount_t * flow){
+
+    if(PREDICT_FALSE(head_act==tail_act->next)){
+        head_act=head_act->next;
+        tail_act=tail_act->next;
+    }
+    else if(head_act->flow!=NULL)
+        tail_act=tail_act->next;
+        tail_act->flow=flow;
+
+}
+
+always_inline flowcount_t * flowout_act(){
+
+    flowcount_t * i = head_act->flow;
+    head_act->flow=NULL;
+     if(tail_act!=head_act){
+        head_act=head_act->next;
+     }
+    return i;
+}
 
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
@@ -218,10 +252,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout();
+                j = flowout_act();
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin(j);
+                    flowin_act(j);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -234,8 +268,9 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if (flow != NULL){
         if (flow->vqueue == 0){
+			if(nbl<NUMFLOWS)
             nbl++;
-            flowin(flow);
+            flowin_act(flow);
         }
         flow->vqueue += pktlenx;
     }
