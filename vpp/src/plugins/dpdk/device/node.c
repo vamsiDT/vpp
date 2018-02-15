@@ -574,7 +574,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 ////////////////////////////////////////////////
     hash0 = mb0->hash.rss;
     modulo0 = (hash0)%TABLESIZE;
-    pktlen0 = (mb0->data_len + 4)*8;
+    pktlen0 = (mb0->data_len + 24)*8;
     drop0 = fq(modulo0,hash0,pktlen0);
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
