@@ -17,7 +17,7 @@
 #define TABLESIZE 4096
 #define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define NUMFLOWS 4096
+#define NUMFLOWS 10240
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
