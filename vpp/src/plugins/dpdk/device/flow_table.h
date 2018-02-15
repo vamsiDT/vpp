@@ -176,6 +176,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 }
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
+/*
 void flowin(flowcount_t * flow){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
@@ -190,8 +191,9 @@ void flowin(flowcount_t * flow){
         tail_af = temp;
     }
 }
-
+*/
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
+/*
 flowcount_t * flowout(){
     flowcount_t * temp;
     activelist_t * next;
@@ -201,7 +203,60 @@ flowcount_t * flowout(){
     head_af = next;
     return temp;
 }
+*/
 
+always_inline void activelist_init(){
+    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
+    for(int i=0;i<MAXCPU;i++){
+        for(int j=0;j<(NUMFLOWS-1);j++){
+            (act+i*NUMFLOWS+j)->flow=NULL;
+            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
+        }
+        (act+i*NUMFLOWS+255)->flow=NULL;
+        (act+i*NUMFLOWS+255)->next=(act+i*NUMFLOWS+0);
+        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
+    }
+}
+
+always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
+
+    if(PREDICT_FALSE(head_act[cpu_index]==tail_act[cpu_index]->next)){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    }
+    else if(head_act[cpu_index]->flow!=NULL)
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    tail_act[cpu_index]->flow=flow;
+
+}
+
+always_inline flowcount_t * flowout_act(u32 cpu_index){
+
+    flowcount_t * i = head_act[cpu_index]->flow;
+    head_act[cpu_index]->flow=NULL;
+     if(tail_act[cpu_index]!=head_act[cpu_index]){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+     }
+    return i;
+}
+
+/*Function to update costs*/
+always_inline void update_costs(u32 cpu_index){
+
+    activelist_t * costlist = head_act[cpu_index];
+    if (PREDICT_TRUE(costlist->flow != NULL)){
+        flowcount_t * flow0;
+        f64 total = (f64)s_total[cpu_index];
+        f64 su = (f64)sum[cpu_index];
+        u32 n = nbl[cpu_index];
+    while(n>0){
+        flow0 = costlist->flow;
+        flow0->cost = flow0->weight*(total/su);
+        costlist = costlist->next;
+        n -= 1;
+    }
+    }
+}
 
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
@@ -216,10 +271,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
             served = credit/nbl;
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout();
+                j = flowout_act(cpu_index);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin(j);
+                    flowin_act(j,cpu_index);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -232,8 +287,9 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
     if (flow != NULL){
         if (flow->vqueue == 0){
+	    if(nbl<NUMFLOWS)
             nbl++;
-            flowin(flow);
+            flowin_act(flow,cpu_index);
         }
         flow->vqueue += pktlenx;
     }
@@ -241,16 +297,15 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
 
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow, u16 pktlenx){
-u8 drop;
+//u8 drop;
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0);
-        drop = 0;
+	return 0;
     }
     else {
-        drop = 1;
+	return 1;
         //update vstate is only after a vector. So no update before dropping a packet here.
     }
-return drop;
 }
 
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
