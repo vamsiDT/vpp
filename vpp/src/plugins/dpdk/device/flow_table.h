@@ -14,7 +14,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 1.0
+#define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 
@@ -211,7 +211,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl+1;
-        credit = (t - old_t)*ALPHA;
+        credit = (t - old_t)*10*ALPHA;
 //		threshold = 153600;//credit/nbl;
         while (oldnbl>nbl && nbl > 0){
             oldnbl = nbl;
