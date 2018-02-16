@@ -19,6 +19,7 @@
 #define TABLESIZE 128
 #define MAXCPU 4
 #define ALPHACPU 1.0
+#define NUMFLOWS 10240
 
 //#define ELOG_FAIRDROP
 //#define ELOG_DPDK_COST
@@ -173,34 +174,14 @@ extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
-#ifndef JIM_APPROX
-extern u16 error_cost[MAXCPU];
-extern error_cost_t * cost_node;
-extern u8 n_drops[MAXCPU];
-
-#endif
 extern f32 threshold[MAXCPU];
-/*
+
 extern activelist_t * act;
 extern activelist_t * head_act[MAXCPU];
 extern activelist_t * tail_act[MAXCPU];
-*/
+
 //extern struct rte_mbuf * f_vectors[256];
 
-/*
-always_inline void activelist_init(){
-    act = malloc(MAXCPU*256*sizeof(activelist_t));
-    for(int i=0;i<MAXCPU;i++){
-        for(int j=0;j<255;j++){
-            (act+i*256+j)->flow=NULL;
-            (act+i*256+j)->next=(act+i*256+j+1);
-        }
-        (act+i*256+255)->flow=NULL;
-        (act+i*256+255)->next=(act+i*256+0);
-        head_act[i]=tail_act[i]=(act+i*256+0);
-    }
-}
-*/
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -218,9 +199,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
-#ifndef JIM_APPROX
-		cost_node = malloc(MAXCPU*(sizeof(error_cost_t)));
-#endif
     }
 
     else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
@@ -342,55 +320,41 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 }
 
 
-/* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-
-always_inline void flowin(flowcount_t * flow,u32 cpu_index){
-    activelist_t * temp;
-    temp = malloc(sizeof(activelist_t));
-    temp->flow = flow;
-    temp->next = NULL;
-    if (head_af[cpu_index] == NULL){
-        head_af[cpu_index] = temp;
-        tail_af[cpu_index] = temp;
-    }
-    else{
-        tail_af[cpu_index]->next = temp;
-        tail_af[cpu_index] = temp;
+always_inline void activelist_init(){
+    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
+    for(int i=0;i<MAXCPU;i++){
+        for(int j=0;j<(NUMFLOWS-1);j++){
+            (act+i*NUMFLOWS+j)->flow=NULL;
+            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
+        }
+        (act+i*NUMFLOWS+(NUMFLOWS-1))->flow=NULL;
+        (act+i*NUMFLOWS+(NUMFLOWS-1))->next=(act+i*NUMFLOWS+0);
+        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
     }
 }
 
-/* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-always_inline flowcount_t * flowout(u32 cpu_index){
-    flowcount_t * temp;
-    activelist_t * next;
-    temp = head_af[cpu_index]->flow;
-    next = head_af[cpu_index]->next;
-    free(head_af[cpu_index]);
-    head_af[cpu_index] = next;
-    return temp;
-}
-
-/*
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
-    if(head_act[cpu_index]->flow==NULL){
-        head_act[cpu_index]->flow=flow;
-    }
-    else{
+
+    if(PREDICT_FALSE(head_act[cpu_index]==tail_act[cpu_index]->next)){
+        head_act[cpu_index]=head_act[cpu_index]->next;
         tail_act[cpu_index]=tail_act[cpu_index]->next;
-        tail_act[cpu_index]->flow=flow;
     }
+    else if(head_act[cpu_index]->flow!=NULL)
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    tail_act[cpu_index]->flow=flow;
+
 }
 
 always_inline flowcount_t * flowout_act(u32 cpu_index){
+
     flowcount_t * i = head_act[cpu_index]->flow;
     head_act[cpu_index]->flow=NULL;
-
-    if(PREDICT_TRUE(tail_act[cpu_index]!=head_act[cpu_index])){
+     if(tail_act[cpu_index]!=head_act[cpu_index]){
         head_act[cpu_index]=head_act[cpu_index]->next;
-    }
+     }
     return i;
 }
-*/
+
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
@@ -409,10 +373,10 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout(cpu_index);
+                j = flowout_act(cpu_index);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin(j,cpu_index);
+                    flowin_act(j,cpu_index);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -426,7 +390,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
             nbl[cpu_index]++;
-            flowin(flow,cpu_index);
+            flowin_act(flow,cpu_index);
         }
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;
@@ -436,7 +400,6 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow,u32 cpu_index,u16 pktlenx){
 
-u8 drop;
     if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
         vstate(flow,0,cpu_index);
 #ifdef BUSYLOOP
@@ -444,13 +407,10 @@ u8 drop;
 //		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
-        drop = 0;
+        return 0;
     }
     else {
-#ifndef JIM_APPROX
-		n_drops[cpu_index]++;
-#endif
-        drop = 1;
+        return 1;
     }
 
 #ifdef ELOG_FAIRDROP
@@ -465,7 +425,6 @@ u8 drop;
 	ed->threshold = threshold[cpu_index];
   	ed->cost = flow->cost;
 #endif
-	return drop;
 }
 
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -479,23 +438,19 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 /*Function to update costs*/
 always_inline void update_costs(u32 cpu_index){
 
-		activelist_t * costlist = head_af[cpu_index];
-		flowcount_t * flow0;
-		f64 total = (f64)s_total[cpu_index];
-		f64 su = (f64)sum[cpu_index];
+	activelist_t * costlist = head_af[cpu_index];
+	flowcount_t * flow0;
+	f64 total = (f64)s_total[cpu_index];
+	f64 su = (f64)sum[cpu_index];
 	while(costlist != NULL){
 		flow0 = costlist->flow;
 		flow0->cost = flow0->weight*(total/su);
-		//printf("%u\n",flow0->cost);
 		costlist = costlist->next;
 	}
 }
 
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
-#ifndef JIM_APPROX
-	n_drops[cpu_index]=0;
-#endif
 	sum[cpu_index]=0;
 }
 

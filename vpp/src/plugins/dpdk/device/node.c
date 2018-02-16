@@ -294,8 +294,8 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   vlib_node_runtime_t * node, u32 cpu_index, u16 queue_id,
 		   int maybe_multiseg)
 {
-  u64 dpdk_cost_begin = rte_rdtsc();
-  u32 n_packets;
+  // u64 dpdk_cost_begin = rte_rdtsc();
+  // u32 n_packets;
   u32 n_buffers;
   u32 next_index = VNET_DEVICE_INPUT_NEXT_ETHERNET_INPUT;
   u32 n_left_to_next, *to_next;
@@ -492,10 +492,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
     drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
     drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
-//    drop0 = 0;
-//    drop1 = 0;
-//    drop2 = 0;
-//    drop3 = 0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -611,15 +607,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 //////////////////////////////////////////////////////////
 	hash0 = mb0->hash.rss;
 	pktlen0 = mb0->timesync;
-  	modulo0 = hash0%TABLESIZE;
-    drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-//    drop0 = 0;
+	modulo0 = hash0%TABLESIZE;
+  drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
 
-    if(PREDICT_FALSE(drop0 == 1)){
-        next0 = VNET_DEVICE_INPUT_NEXT_DROP;
-        error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
-        b0->error = node->errors[error0];
-    }
+  if(PREDICT_FALSE(drop0 == 1)){
+    next0 = VNET_DEVICE_INPUT_NEXT_DROP;
+    error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
+    b0->error = node->errors[error0];
+  }
 /////////////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
@@ -674,7 +669,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	ed->cpu_index = cpu_index;
 #endif
 
-dpdk_cost_total[cpu_index]=((f64)rte_rdtsc() - (f64)dpdk_cost_begin)/(f64)n_packets;
+//dpdk_cost_total[cpu_index]=((f64)rte_rdtsc() - (f64)dpdk_cost_begin)/(f64)n_packets;
 
   return mb_index;
 }
