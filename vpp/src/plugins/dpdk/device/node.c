@@ -313,7 +313,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
-  n_packets = n_buffers;
+//  n_packets = n_buffers;
 
   if (n_buffers == 0)
     {

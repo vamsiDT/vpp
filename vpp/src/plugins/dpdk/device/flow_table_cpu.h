@@ -410,7 +410,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
-		    if(nbl<NUMFLOWS)
+		    if(nbl[cpu_index]<NUMFLOWS)
             nbl[cpu_index]++;
             flowin_act(flow,cpu_index);
         }
