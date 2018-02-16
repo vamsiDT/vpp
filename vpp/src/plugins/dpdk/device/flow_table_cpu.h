@@ -19,6 +19,7 @@
 #define TABLESIZE 128
 #define MAXCPU 4
 #define ALPHACPU 1.0
+#define NUMFLOWS 10240
 
 //#define ELOG_FAIRDROP
 //#define ELOG_DPDK_COST
@@ -180,27 +181,27 @@ extern u8 n_drops[MAXCPU];
 
 #endif
 extern f32 threshold[MAXCPU];
-/*
+
 extern activelist_t * act;
 extern activelist_t * head_act[MAXCPU];
 extern activelist_t * tail_act[MAXCPU];
-*/
+
 //extern struct rte_mbuf * f_vectors[256];
 
-/*
+
 always_inline void activelist_init(){
-    act = malloc(MAXCPU*256*sizeof(activelist_t));
+    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
     for(int i=0;i<MAXCPU;i++){
-        for(int j=0;j<255;j++){
-            (act+i*256+j)->flow=NULL;
-            (act+i*256+j)->next=(act+i*256+j+1);
+        for(int j=0;j<(NUMFLOWS-1);j++){
+            (act+i*NUMFLOWS+j)->flow=NULL;
+            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
         }
-        (act+i*256+255)->flow=NULL;
-        (act+i*256+255)->next=(act+i*256+0);
-        head_act[i]=tail_act[i]=(act+i*256+0);
+        (act+i*NUMFLOWS+255)->flow=NULL;
+        (act+i*NUMFLOWS+255)->next=(act+i*NUMFLOWS+0);
+        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
     }
 }
-*/
+
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -343,7 +344,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
 
 /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-
+/*
 always_inline void flowin(flowcount_t * flow,u32 cpu_index){
     activelist_t * temp;
     temp = malloc(sizeof(activelist_t));
@@ -358,8 +359,9 @@ always_inline void flowin(flowcount_t * flow,u32 cpu_index){
         tail_af[cpu_index] = temp;
     }
 }
-
+*/
 /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
+/*
 always_inline flowcount_t * flowout(u32 cpu_index){
     flowcount_t * temp;
     activelist_t * next;
@@ -369,7 +371,7 @@ always_inline flowcount_t * flowout(u32 cpu_index){
     head_af[cpu_index] = next;
     return temp;
 }
-
+*/
 /*
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
     if(head_act[cpu_index]->flow==NULL){
