@@ -153,11 +153,6 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-typedef struct cost_node{
-	u64 clocks;
-	u64 vectors;
-}error_cost_t;
-
 extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
@@ -174,9 +169,6 @@ extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
 extern f32 threshold[MAXCPU];
-extern activelist_t * act;
-extern activelist_t * head_act[MAXCPU];
-extern activelist_t * tail_act[MAXCPU];
 extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
 always_inline flowcount_t *
@@ -318,63 +310,52 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
 /*
 *               Functions related to activelist. 
-* activelist_init --> creating a circular linked list for activelist
-* flowin_act --> for adding a new entry to activelist at tail
-* flowout_act --> for removing an entry from activelist at head
+* flowin --> for adding a new entry to activelist at tail
+* flowout --> for removing an entry from activelist at head
 * update_costs --> for updating the costs of all the entries in the activelist
 */
 
-always_inline void activelist_init(){
-    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
-    for(int i=0;i<MAXCPU;i++){
-        for(int j=0;j<(NUMFLOWS-1);j++){
-            (act+i*NUMFLOWS+j)->flow=NULL;
-            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
-        }
-        (act+i*NUMFLOWS+(NUMFLOWS-1))->flow=NULL;
-        (act+i*NUMFLOWS+(NUMFLOWS-1))->next=(act+i*NUMFLOWS+0);
-        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
+always_inline void flowin(flowcount_t * flow,u32 cpu_index){
+    activelist_t * temp;
+    temp = malloc(sizeof(activelist_t));
+    temp->flow = flow;
+    temp->next = NULL;
+    if (head_af[cpu_index] == NULL){
+        head_af[cpu_index] = temp;
+        tail_af[cpu_index] = temp;
+    }
+    else{
+        tail_af[cpu_index]->next = temp;
+        tail_af[cpu_index] = temp;
     }
 }
 
-always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
 
-    if(PREDICT_FALSE(head_act[cpu_index]==tail_act[cpu_index]->next)){
-        head_act[cpu_index]=head_act[cpu_index]->next;
-        tail_act[cpu_index]=tail_act[cpu_index]->next;
-    }
-    else if(head_act[cpu_index]->flow!=NULL)
-        tail_act[cpu_index]=tail_act[cpu_index]->next;
-    tail_act[cpu_index]->flow=flow;
-
+always_inline flowcount_t * flowout(u32 cpu_index){
+    flowcount_t * temp;
+    activelist_t * next;
+    temp = head_af[cpu_index]->flow;
+    next = head_af[cpu_index]->next;
+    free(head_af[cpu_index]);
+    head_af[cpu_index] = next;
+    return temp;
 }
 
-always_inline flowcount_t * flowout_act(u32 cpu_index){
-
-    flowcount_t * i = head_act[cpu_index]->flow;
-    head_act[cpu_index]->flow=NULL;
-     if(tail_act[cpu_index]!=head_act[cpu_index]){
-        head_act[cpu_index]=head_act[cpu_index]->next;
-     }
-    return i;
-}
-
+/*Function to update costs*/
 always_inline void update_costs(u32 cpu_index){
 
-    activelist_t * costlist = head_act[cpu_index];
-    if (PREDICT_TRUE(costlist->flow != NULL)){
+        activelist_t * costlist = head_af[cpu_index];
         flowcount_t * flow0;
         f64 total = (f64)s_total[cpu_index];
         f64 su = (f64)sum[cpu_index];
-        u32 n = nbl[cpu_index];
-    while(n>0){
+    while(costlist != NULL){
         flow0 = costlist->flow;
         flow0->cost = flow0->weight*(total/su);
+        //printf("%u\n",flow0->cost);
         costlist = costlist->next;
-        n -= 1;
-    }
     }
 }
+
 
 /* vstate algorithm */
 
@@ -391,10 +372,10 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout_act(cpu_index);
+                j = flowout(cpu_index);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin_act(j,cpu_index);
+                    flowin(j,cpu_index);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -407,9 +388,8 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
-			if(nbl[cpu_index]<NUMFLOWS)
             nbl[cpu_index]++;
-            flowin_act(flow,cpu_index);
+            flowin(flow,cpu_index);
         }
 		flow->vqueue += flow->cost;
 		sum[cpu_index]+=flow->weight;

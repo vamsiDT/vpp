@@ -16,14 +16,5 @@ u32 veryold_t[MAXCPU]={0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 f64 sum[MAXCPU]={0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 u64 dpdk_cost_total[MAXCPU]={0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-#ifndef JIM_APPROX
-u16 error_cost[MAXCPU] = {0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-error_cost_t * cost_node;
-u8 n_drops[MAXCPU] = {0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-#endif
-
 f32 threshold[MAXCPU]={0,0,0,0};//{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
-activelist_t * act;
-activelist_t * head_act[MAXCPU];
-activelist_t * tail_act[MAXCPU];
