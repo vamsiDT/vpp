@@ -320,6 +320,13 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 }
 
 
+/*
+*               Functions related to activelist. 
+* activelist_init --> creating a circular linked list for activelist
+* flowin_act --> for adding a new entry to activelist at tail
+* flowout_act --> for removing an entry from activelist at head
+* update_costs --> for updating the costs of all the entries in the activelist
+*/
 
 always_inline void activelist_init(){
     act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
@@ -382,11 +389,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-#ifdef JIM_APPROX /*The exact calculation is not necessary as the drop cost gets cancelled between vq increments and decrements*/
 		credit = (t[cpu_index]-old_t[cpu_index]);
-#else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
-		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
-#endif
 		threshold[cpu_index] = (credit*((f32)(1.15)))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
