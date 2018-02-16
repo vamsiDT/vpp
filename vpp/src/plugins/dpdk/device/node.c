@@ -361,7 +361,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u32 hash0,hash1,hash2,hash3;
       u32 pktlen0,pktlen1,pktlen2,pktlen3;
       u8 modulo0,modulo1,modulo2,modulo3;
-	  u8 hello=0;
+	    u8 hello=0;
 
 	  update_costs(cpu_index);
 ///////////////////////////////////////////////////
@@ -399,13 +399,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		dpdk_prefetch_buffer (mb3->next);
 	    }
 
-
+//////////////////////////////////////////////////////////
 	if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
         departure(cpu_index);
         hello=1;
 	}
+//////////////////////////////////////////////////////////
 
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 	  b1 = vlib_buffer_from_rte_mbuf (mb1);
@@ -572,12 +573,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 	  ASSERT (mb0);
 
+//////////////////////////////////////////////////////////
     if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
         departure(cpu_index);
         hello=1;
     }
+//////////////////////////////////////////////////////////
 
 	  b0 = vlib_buffer_from_rte_mbuf (mb0);
 
