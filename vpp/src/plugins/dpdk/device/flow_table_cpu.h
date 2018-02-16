@@ -189,19 +189,6 @@ extern activelist_t * tail_act[MAXCPU];
 //extern struct rte_mbuf * f_vectors[256];
 
 
-always_inline void activelist_init(){
-    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
-    for(int i=0;i<MAXCPU;i++){
-        for(int j=0;j<(NUMFLOWS-1);j++){
-            (act+i*NUMFLOWS+j)->flow=NULL;
-            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
-        }
-        (act+i*NUMFLOWS+255)->flow=NULL;
-        (act+i*NUMFLOWS+255)->next=(act+i*NUMFLOWS+0);
-        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
-    }
-}
-
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -393,6 +380,61 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
     return i;
 }
 */
+
+always_inline void activelist_init(){
+    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
+    for(int i=0;i<MAXCPU;i++){
+        for(int j=0;j<(NUMFLOWS-1);j++){
+            (act+i*NUMFLOWS+j)->flow=NULL;
+            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
+        }
+        (act+i*NUMFLOWS+255)->flow=NULL;
+        (act+i*NUMFLOWS+255)->next=(act+i*NUMFLOWS+0);
+        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
+    }
+}
+
+always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
+
+    if(PREDICT_FALSE(head_act[cpu_index]==tail_act[cpu_index]->next)){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    }
+    else if(head_act[cpu_index]->flow!=NULL)
+        tail_act[cpu_index]=tail_act[cpu_index]->next;
+    tail_act[cpu_index]->flow=flow;
+
+}
+
+always_inline flowcount_t * flowout_act(u32 cpu_index){
+
+    flowcount_t * i = head_act[cpu_index]->flow;
+    head_act[cpu_index]->flow=NULL;
+     if(tail_act[cpu_index]!=head_act[cpu_index]){
+        head_act[cpu_index]=head_act[cpu_index]->next;
+     }
+    return i;
+}
+
+/*Function to update costs*/
+always_inline void update_costs(u32 cpu_index){
+
+    activelist_t * costlist = head_act[cpu_index];
+    if (PREDICT_TRUE(costlist->flow != NULL)){
+        flowcount_t * flow0;
+        f64 total = (f64)s_total[cpu_index];
+        f64 su = (f64)sum[cpu_index];
+        u32 n = nbl[cpu_index];
+    while(n>0){
+        flow0 = costlist->flow;
+        flow0->cost = flow0->weight*(total/su);
+        costlist = costlist->next;
+        n -= 1;
+    }
+    }
+}
+
+
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
@@ -411,10 +453,10 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             served = credit/(nbl[cpu_index]);
             credit = 0;
             for (int k=0;k<oldnbl;k++){
-                j = flowout(cpu_index);
+                j = flowout_act(cpu_index);
                 if(j->vqueue > served){
                     j->vqueue -= served;
-                    flowin(j,cpu_index);
+                    flowin_act(j,cpu_index);
                 }
                 else{
                     credit += served - j->vqueue;
@@ -427,6 +469,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
+		
             nbl[cpu_index]++;
             flowin(flow,cpu_index);
         }
