@@ -12,13 +12,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <vppinfra/time.h>
-#include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 
 #define TABLESIZE 128
 #define MAXCPU 4
 #define ALPHACPU 1.0
+#define NUMFLOWS 102400
 
 //#define ELOG_FAIRDROP
 //#define ELOG_DPDK_COST
@@ -173,30 +173,11 @@ extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
-#ifndef JIM_APPROX
-extern u16 error_cost[MAXCPU];
-extern error_cost_t * cost_node;
-extern u8 n_drops[MAXCPU];
-
-#endif
 extern f32 threshold[MAXCPU];
 extern activelist_t * act;
 extern activelist_t * head_act[MAXCPU];
 extern activelist_t * tail_act[MAXCPU];
-//extern struct rte_mbuf * f_vectors[256];
-
-always_inline void activelist_init(){
-    act = malloc(MAXCPU*256*sizeof(activelist_t));
-    for(int i=0;i<MAXCPU;i++){
-        for(int j=0;j<255;j++){
-            (act+i*256+j)->flow=NULL;
-            (act+i*256+j)->next=(act+i*256+j+1);
-        }
-        (act+i*256+255)->flow=NULL;
-        (act+i*256+255)->next=(act+i*256+0);
-        head_act[i]=tail_act[i]=(act+i*256+0);
-    }
-}
+extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -215,9 +196,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
-#ifndef JIM_APPROX
-		cost_node = malloc(MAXCPU*(sizeof(error_cost_t)));
-#endif
     }
 
     else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
@@ -338,55 +316,26 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     return flow;
 }
 
-
-/* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-always_inline void flowin(flowcount_t * flow,u32 cpu_index){
-    activelist_t * temp;
-    temp = malloc(sizeof(activelist_t));
-    temp->flow = flow;
-    temp->next = NULL;
-    if (head_af[cpu_index] == NULL){
-        head_af[cpu_index] = temp;
-        tail_af[cpu_index] = temp;
-    }
-    else{
-        tail_af[cpu_index]->next = temp;
-        tail_af[cpu_index] = temp;
-    }
-}
-
-/* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-always_inline flowcount_t * flowout(u32 cpu_index){
-    flowcount_t * temp;
-    activelist_t * next;
-    temp = head_af[cpu_index]->flow;
-    next = head_af[cpu_index]->next;
-    free(head_af[cpu_index]);
-    head_af[cpu_index] = next;
-    return temp;
-}
-
 /*
-always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
-    if(head_act[cpu_index]->flow==NULL){
-        head_act[cpu_index]->flow=flow;
-    }
-    else{
-        tail_act[cpu_index]=tail_act[cpu_index]->next;
-        tail_act[cpu_index]->flow=flow;
-    }
-}
-
-always_inline flowcount_t * flowout_act(u32 cpu_index){
-    flowcount_t * i = head_act[cpu_index]->flow;
-    head_act[cpu_index]->flow=NULL;
-
-    if(PREDICT_TRUE(tail_act[cpu_index]!=head_act[cpu_index])){
-        head_act[cpu_index]=head_act[cpu_index]->next;
-    }
-    return i;
-}
+*               Functions related to activelist. 
+* activelist_init --> creating a circular linked list for activelist
+* flowin_act --> for adding a new entry to activelist at tail
+* flowout_act --> for removing an entry from activelist at head
+* update_costs --> for updating the costs of all the entries in the activelist
 */
+
+always_inline void activelist_init(){
+    act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
+    for(int i=0;i<MAXCPU;i++){
+        for(int j=0;j<(NUMFLOWS-1);j++){
+            (act+i*NUMFLOWS+j)->flow=NULL;
+            (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
+        }
+        (act+i*NUMFLOWS+(NUMFLOWS-1))->flow=NULL;
+        (act+i*NUMFLOWS+(NUMFLOWS-1))->next=(act+i*NUMFLOWS+0);
+        head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
+    }
+}
 
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
 
@@ -410,18 +359,31 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
     return i;
 }
 
+always_inline void update_costs(u32 cpu_index){
+
+    activelist_t * costlist = head_act[cpu_index];
+    if (PREDICT_TRUE(costlist->flow != NULL)){
+        flowcount_t * flow0;
+        f64 total = (f64)s_total[cpu_index];
+        f64 su = (f64)sum[cpu_index];
+        u32 n = nbl[cpu_index];
+    while(n>0){
+        flow0 = costlist->flow;
+        flow0->cost = flow0->weight*(total/su);
+        costlist = costlist->next;
+        n -= 1;
+    }
+    }
+}
 
 /* vstate algorithm */
+
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
         u32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-#ifdef JIM_APPROX /*The exact calculation is not necessary as the drop cost gets cancelled between vq increments and decrements*/
 		credit = (t[cpu_index]-old_t[cpu_index]);
-#else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
-		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
-#endif
 		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
@@ -445,7 +407,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
-			if(nbl[cpu_index]<256)
+			if(nbl[cpu_index]<NUMFLOWS)
             nbl[cpu_index]++;
             flowin_act(flow,cpu_index);
         }
@@ -468,9 +430,6 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
         return 1;
     }
     else {
-#ifndef JIM_APPROX
-		n_drops[cpu_index]++;
-#endif
         rte_pktmbuf_free(mb);
         return 0;
     }
@@ -489,24 +448,6 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
 #endif
 }
 
-/*Function to update costs*/
-always_inline void update_costs(u32 cpu_index){
-
-	activelist_t * costlist = head_act[cpu_index];
-	if (PREDICT_TRUE(costlist->flow != NULL)){
-		flowcount_t * flow0;
-		f64 total = (f64)s_total[cpu_index];
-		f64 su = (f64)sum[cpu_index];
-		u32 n = nbl[cpu_index];
-	while(n>0){
-		flow0 = costlist->flow;
-		flow0->cost = flow0->weight*(total/su);
-		costlist = costlist->next;
-		n -= 1;
-	}
-	}
-}
-
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
 #ifndef JIM_APPROX
@@ -517,6 +458,127 @@ always_inline void departure (u32 cpu_index){
 
 always_inline void sleep_now (u32 t){
 	clib_cpu_time_wait(t);
+}
+
+/*
+    Function to create a sub vector of packets which are accepted by fairdrop algiorithm
+*/
+
+always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
+  u32 n_buf = n_buffers;
+  u16 i=0;
+  u16 j=0;
+  u8 hello=0;
+  if(PREDICT_TRUE(n_buf>0)){
+    u32 hash0,hash1,hash2,hash3;
+    u32 hash4,hash5,hash6,hash7;
+    u16 pktlen0,pktlen1,pktlen2,pktlen3;
+    u16 pktlen4,pktlen5,pktlen6,pktlen7;
+    u8 modulo0,modulo1,modulo2,modulo3;
+    u8 modulo4,modulo5,modulo6,modulo7;
+    struct rte_mbuf *mb0,*mb1,*mb2,*mb3;
+    struct rte_mbuf *mb4,*mb5,*mb6,*mb7;
+    flowcount_t * i0,*i1,*i2,*i3;
+    flowcount_t * i4,*i5,*i6,*i7;
+
+    while(n_buf>=8){
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
+//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
+
+      mb0 = xd->rx_vectors[queue_id][i];
+      mb1 = xd->rx_vectors[queue_id][i+1];
+      mb2 = xd->rx_vectors[queue_id][i+2];
+      mb3 = xd->rx_vectors[queue_id][i+3];
+      mb4 = xd->rx_vectors[queue_id][i+4];
+      mb5 = xd->rx_vectors[queue_id][i+5];
+      mb6 = xd->rx_vectors[queue_id][i+6];
+      mb7 = xd->rx_vectors[queue_id][i+7];
+
+      if(PREDICT_FALSE(hello==0)){
+        old_t[cpu_index] = t[cpu_index];
+        t[cpu_index] = mb0->udata64;
+        departure(cpu_index);
+        hello=1;
+      }
+
+      hash0 = mb0->hash.rss;
+      hash1 = mb1->hash.rss;
+      hash2 = mb2->hash.rss;
+      hash3 = mb3->hash.rss;
+      hash4 = mb4->hash.rss;
+      hash5 = mb5->hash.rss;
+      hash6 = mb6->hash.rss;
+      hash7 = mb7->hash.rss;
+
+      pktlen0 = mb0->timesync;
+      pktlen1 = mb1->timesync;
+      pktlen2 = mb2->timesync;
+      pktlen3 = mb3->timesync;
+      pktlen4 = mb4->timesync;
+      pktlen5 = mb5->timesync;
+      pktlen6 = mb6->timesync;
+      pktlen7 = mb7->timesync;
+
+      modulo0 = hash0%TABLESIZE;
+      modulo1 = hash1%TABLESIZE;
+      modulo2 = hash2%TABLESIZE;
+      modulo3 = hash3%TABLESIZE;
+      modulo4 = hash4%TABLESIZE;
+      modulo5 = hash5%TABLESIZE;
+      modulo6 = hash6%TABLESIZE;
+      modulo7 = hash7%TABLESIZE;
+
+
+      i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
+      i1 = flow_table_classify(modulo1, hash1, pktlen1, cpu_index);
+      i2 = flow_table_classify(modulo2, hash2, pktlen2, cpu_index);
+      i3 = flow_table_classify(modulo3, hash3, pktlen3, cpu_index);
+      i4 = flow_table_classify(modulo4, hash4, pktlen4, cpu_index);
+      i5 = flow_table_classify(modulo5, hash5, pktlen5, cpu_index);
+      i6 = flow_table_classify(modulo6, hash6, pktlen6, cpu_index);
+      i7 = flow_table_classify(modulo7, hash7, pktlen7, cpu_index);
+
+      j += arrival(mb0,j,i0,cpu_index,pktlen0);
+      j += arrival(mb1,j,i1,cpu_index,pktlen1);
+      j += arrival(mb2,j,i2,cpu_index,pktlen2);
+      j += arrival(mb3,j,i3,cpu_index,pktlen3);
+      j += arrival(mb4,j,i4,cpu_index,pktlen4);
+      j += arrival(mb5,j,i5,cpu_index,pktlen5);
+      j += arrival(mb6,j,i6,cpu_index,pktlen6);
+      j += arrival(mb7,j,i7,cpu_index,pktlen7);
+
+      i+=8;
+      n_buf-=8;
+
+    }
+    while(n_buf>0){
+
+      mb0 = xd->rx_vectors[queue_id][i];
+
+        if(PREDICT_FALSE(hello==0)){
+          old_t[cpu_index] = t[cpu_index];
+          t[cpu_index] = mb0->udata64;
+          departure(cpu_index);
+          hello=1;
+        }
+
+      hash0 = mb0->hash.rss;
+
+      pktlen0 = mb0->timesync;
+
+      modulo0 = hash0%TABLESIZE;
+
+      i0 = flow_table_classify(modulo0, hash0, pktlen0, cpu_index);
+
+      j += arrival(mb0,j,i0,cpu_index,pktlen0);
+
+      i++;
+      n_buf--;
+    }
+  }
+  return j;
 }
 
 
