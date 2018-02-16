@@ -283,9 +283,6 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
     }
 }
 
-
-struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
-
 /*
  * This function is used when there are no worker threads.
  * The main thread performs IO and forwards the packets.
