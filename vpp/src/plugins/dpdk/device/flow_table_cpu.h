@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <vppinfra/time.h>
+#include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 
