@@ -320,6 +320,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 }
 
 
+
 always_inline void activelist_init(){
     act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
     for(int i=0;i<MAXCPU;i++){
@@ -327,8 +328,8 @@ always_inline void activelist_init(){
             (act+i*NUMFLOWS+j)->flow=NULL;
             (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
         }
-        (act+i*NUMFLOWS+(NUMFLOWS-1))->flow=NULL;
-        (act+i*NUMFLOWS+(NUMFLOWS-1))->next=(act+i*NUMFLOWS+0);
+        (act+i*NUMFLOWS+255)->flow=NULL;
+        (act+i*NUMFLOWS+255)->next=(act+i*NUMFLOWS+0);
         head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
     }
 }
@@ -354,6 +355,26 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
      }
     return i;
 }
+
+/*Function to update costs*/
+always_inline void update_costs(u32 cpu_index){
+
+    activelist_t * costlist = head_act[cpu_index];
+    if (PREDICT_TRUE(costlist->flow != NULL)){
+        flowcount_t * flow0;
+        f64 total = (f64)s_total[cpu_index];
+        f64 su = (f64)sum[cpu_index];
+        u32 n = nbl[cpu_index];
+    while(n>0){
+        flow0 = costlist->flow;
+        flow0->cost = flow0->weight*(total/su);
+        costlist = costlist->next;
+        n -= 1;
+    }
+    }
+}
+
+
 
 /* vstate algorithm */
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
@@ -389,6 +410,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
 
     if (PREDICT_TRUE(flow != NULL)){
         if (flow->vqueue == 0){
+		    if(nbl<NUMFLOWS)
             nbl[cpu_index]++;
             flowin_act(flow,cpu_index);
         }
@@ -433,20 +455,6 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
     i = flow_table_classify(modulox, hashx0, pktlenx, cpu_index);
     drop = arrival(i,cpu_index,pktlenx);
     return drop;
-}
-
-/*Function to update costs*/
-always_inline void update_costs(u32 cpu_index){
-
-	activelist_t * costlist = head_af[cpu_index];
-	flowcount_t * flow0;
-	f64 total = (f64)s_total[cpu_index];
-	f64 su = (f64)sum[cpu_index];
-	while(costlist != NULL){
-		flow0 = costlist->flow;
-		flow0->cost = flow0->weight*(total/su);
-		costlist = costlist->next;
-	}
 }
 
 always_inline void departure (u32 cpu_index){
