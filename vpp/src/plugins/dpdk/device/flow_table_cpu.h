@@ -369,7 +369,7 @@ always_inline void update_costs(u32 cpu_index){
     activelist_t * costlist = head_act[cpu_index];
     if (PREDICT_TRUE(costlist->flow != NULL)){
         flowcount_t * flow0;
-        f64 total = (f64)s_total[cpu_index];
+        u64 total = s_total[cpu_index];
         f64 su = sum[cpu_index];
         u32 n = nbl[cpu_index];
     while(n>0){
