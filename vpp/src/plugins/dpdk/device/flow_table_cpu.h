@@ -168,8 +168,8 @@ extern u64 t[MAXCPU];
 extern u64 old_t[MAXCPU];
 extern u32 veryold_t[MAXCPU];
 extern u8 hello_world[MAXCPU];
-extern u64 s[MAXCPU];
-extern u64 s_total[MAXCPU];
+extern f64 s[MAXCPU];
+extern f64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
@@ -365,12 +365,10 @@ always_inline void update_costs(u32 cpu_index){
     activelist_t * costlist = head_act[cpu_index];
     if (PREDICT_TRUE(costlist->flow != NULL)){
         flowcount_t * flow0;
-        u64 total = s_total[cpu_index];
-        f64 su = sum[cpu_index];
         u32 n = nbl[cpu_index];
     while(n>0){
         flow0 = costlist->flow;
-        flow0->cost = flow0->weight*total/su;
+        flow0->cost = flow0->weight*s_total[cpu_index]/sum[cpu_index];
         costlist = costlist->next;
         n -= 1;
     }
