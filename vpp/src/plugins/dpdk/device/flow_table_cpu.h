@@ -166,7 +166,7 @@ extern u8 hello_world[MAXCPU];
 extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
-extern f64 sum[MAXCPU];
+extern u64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
 extern f32 threshold[MAXCPU];
@@ -347,11 +347,11 @@ always_inline void update_costs(u32 cpu_index){
 
         activelist_t * costlist = head_af[cpu_index];
         flowcount_t * flow0;
-        f64 total = (f64)s_total[cpu_index];
-        f64 su = (f64)sum[cpu_index];
+        u64 total = s_total[cpu_index];
+        f64 su = sum[cpu_index];
     while(costlist != NULL){
         flow0 = costlist->flow;
-        flow0->cost = flow0->weight*(total/su);
+        flow0->cost = total/(su/flow0->weight);
         //printf("%u\n",flow0->cost);
         costlist = costlist->next;
     }
