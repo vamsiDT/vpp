@@ -35,7 +35,7 @@
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 700
+#define WEIGHT_CLASS_1 350
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
