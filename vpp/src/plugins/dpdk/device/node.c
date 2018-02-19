@@ -362,8 +362,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u32 pktlen0,pktlen1,pktlen2,pktlen3;
       u8 modulo0,modulo1,modulo2,modulo3;
 	    u8 hello=0;
-
-	  update_costs(cpu_index);
 ///////////////////////////////////////////////////
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
@@ -403,6 +401,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
+		update_costs(cpu_index);
         departure(cpu_index);
         hello=1;
 	}
@@ -577,6 +576,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
+		update_costs(cpu_index);
         departure(cpu_index);
         hello=1;
     }
