@@ -16,7 +16,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 
-#define TABLESIZE 128
+#define TABLESIZE 4096
 #define MAXCPU 4
 #define ALPHACPU 1.0
 #define NUMFLOWS 10240
@@ -171,7 +171,7 @@ extern u8 hello_world[MAXCPU];
 extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
-extern u64 sum[MAXCPU];
+extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
 extern f32 threshold[MAXCPU];
@@ -374,7 +374,7 @@ always_inline void update_costs(u32 cpu_index){
         u32 n = nbl[cpu_index];
     while(n>0){
         flow0 = costlist->flow;
-        flow0->cost = total/(su/flow0->weight);
+        flow0->cost = flow0->weight*total/su;
         costlist = costlist->next;
         n -= 1;
     }
@@ -390,7 +390,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = (t[cpu_index]-old_t[cpu_index]);
-		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];
+		threshold[cpu_index] = (credit*(1.20))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
