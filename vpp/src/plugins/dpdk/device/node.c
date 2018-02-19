@@ -317,7 +317,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       return 0;
     }
   else{
-    update_costs(cpu_index);
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
   }
 

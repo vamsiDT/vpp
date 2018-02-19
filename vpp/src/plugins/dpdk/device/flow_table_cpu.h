@@ -171,7 +171,7 @@ extern u8 hello_world[MAXCPU];
 extern u64 s[MAXCPU];
 extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
-extern u64 sum[MAXCPU];
+extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
 extern f32 threshold[MAXCPU];
@@ -370,7 +370,7 @@ always_inline void update_costs(u32 cpu_index){
         u32 n = nbl[cpu_index];
     while(n>0){
         flow0 = costlist->flow;
-        flow0->cost = total/(su/flow0->weight);
+        flow0->cost = flow0->weight*total/su;
         costlist = costlist->next;
         n -= 1;
     }
@@ -382,10 +382,10 @@ always_inline void update_costs(u32 cpu_index){
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-        u32 served,credit;
+        f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = (t[cpu_index]-old_t[cpu_index]);
-		threshold[cpu_index] = (credit*((f32)(1.2)))/nbl[cpu_index];
+		threshold[cpu_index] = (credit*(1.2))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -500,6 +500,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
+		update_costs(cpu_index);
         departure(cpu_index);
         hello=1;
       }
@@ -561,6 +562,7 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
         if(PREDICT_FALSE(hello==0)){
           old_t[cpu_index] = t[cpu_index];
           t[cpu_index] = mb0->udata64;
+		  update_costs(cpu_index);
           departure(cpu_index);
           hello=1;
         }
