@@ -16,7 +16,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 
-#define TABLESIZE 128
+#define TABLESIZE 4096
 #define MAXCPU 4
 #define ALPHACPU 1.0
 #define NUMFLOWS 102400
@@ -163,13 +163,13 @@ extern u64 t[MAXCPU];
 extern u64 old_t[MAXCPU];
 extern u32 veryold_t[MAXCPU];
 extern u8 hello_world[MAXCPU];
-extern f64 s[MAXCPU];
-extern f64 s_total[MAXCPU];
+extern u64 s[MAXCPU];
+extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
-extern f64 sum[MAXCPU];
+extern u64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 
-extern f32 threshold[MAXCPU];
+extern u32 threshold[MAXCPU];
 extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
 always_inline flowcount_t *
@@ -347,12 +347,15 @@ always_inline void update_costs(u32 cpu_index){
 
         activelist_t * costlist = head_af[cpu_index];
         flowcount_t * flow0;
+		f64 total = (f64)s_total[cpu_index];
+		u64 su = sum[cpu_index];
     while(costlist != NULL){
         flow0 = costlist->flow;
-        flow0->cost = flow0->weight*s_total[cpu_index]/sum[cpu_index];
+        flow0->cost = flow0->weight*(total/su);
         //printf("%u\n",flow0->cost);
         costlist = costlist->next;
     }
+	sum[cpu_index]=0;
 }
 
 
@@ -361,10 +364,10 @@ always_inline void update_costs(u32 cpu_index){
 always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
     if(PREDICT_FALSE(update == 1)){
         flowcount_t * j;
-        f32 served,credit;
+        u32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = (t[cpu_index]-old_t[cpu_index]);
-		threshold[cpu_index] = (credit*(1.20))/nbl[cpu_index];
+		threshold[cpu_index] = (credit*((f32)1.20))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -432,7 +435,6 @@ always_inline void departure (u32 cpu_index){
 #ifndef JIM_APPROX
 	n_drops[cpu_index]=0;
 #endif
-	sum[cpu_index]=0;
 }
 
 always_inline void sleep_now (u32 t){
