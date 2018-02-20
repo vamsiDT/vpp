@@ -154,11 +154,6 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-typedef struct cost_node{
-	u64 clocks;
-	u64 vectors;
-}error_cost_t;
-
 extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
@@ -335,8 +330,8 @@ always_inline void activelist_init(){
             (act+i*NUMFLOWS+j)->flow=NULL;
             (act+i*NUMFLOWS+j)->next=(act+i*NUMFLOWS+j+1);
         }
-        (act+i*NUMFLOWS+255)->flow=NULL;
-        (act+i*NUMFLOWS+255)->next=(act+i*NUMFLOWS+0);
+        (act+i*NUMFLOWS+NUMFLOWS-1)->flow=NULL;
+        (act+i*NUMFLOWS+NUMFLOWS-1)->next=(act+i*NUMFLOWS+0);
         head_act[i]=tail_act[i]=(act+i*NUMFLOWS+0);
     }
 }
