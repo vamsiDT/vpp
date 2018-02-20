@@ -35,7 +35,7 @@
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 350
+#define WEIGHT_CLASS_1 700
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
@@ -371,7 +371,7 @@ always_inline void update_costs(u32 cpu_index){
         flowcount_t * flow0;
         u32 n = nbl[cpu_index];
 		f64 total = (f64)s_total[cpu_index];
-		u64 su = sum[cpu_index]
+		u64 su = sum[cpu_index];
     while(n>0){
         flow0 = costlist->flow;
         flow0->cost = flow0->weight*(total/su);
