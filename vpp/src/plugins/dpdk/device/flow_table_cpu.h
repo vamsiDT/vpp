@@ -153,11 +153,6 @@ typedef struct activelist{
     struct activelist * next;
 }activelist_t;
 
-typedef struct cost_node{
-	u64 clocks;
-	u64 vectors;
-}error_cost_t;
-
 extern flowcount_t *  nodet[TABLESIZE][MAXCPU];
 extern activelist_t * head_af[MAXCPU];
 extern activelist_t * tail_af[MAXCPU];
@@ -172,11 +167,6 @@ extern u64 s_total[MAXCPU];
 extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
-#ifndef JIM_APPROX
-extern u16 error_cost[MAXCPU];
-extern error_cost_t * cost_node;
-extern u8 n_drops[MAXCPU];
-#endif
 extern f32 threshold[MAXCPU];
 
 always_inline flowcount_t *
@@ -196,9 +186,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
         head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
-#ifndef JIM_APPROX
-		cost_node = malloc(MAXCPU*(sizeof(error_cost_t)));
-#endif
     }
 
     else if ( (nodet[modulox][cpu_index] + 0) == NULL ){
@@ -353,11 +340,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-#ifdef JIM_APPROX /*The exact calculation is not necessary as the drop cost gets cancelled between vq increments and decrements*/
 		credit = (t[cpu_index]-old_t[cpu_index]);//(15.0/9);
-#else	/*Exact value of credit calculation in which the clock cycles spent in dropping the packets is subtracted. */
-		credit = (((t[cpu_index]-old_t[cpu_index])) - (n_drops[cpu_index]*(error_cost[cpu_index]+dpdk_cost_total[cpu_index])));
-#endif
 		threshold[cpu_index] = credit*((f32)1.15)/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
 		//veryold_t[cpu_index] = nbl[cpu_index];
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
@@ -403,9 +386,6 @@ u8 drop;
     }
     else {
         drop = 1;
-#ifndef JIM_APPROX
-		n_drops[cpu_index]++;
-#endif
     }
 
 #ifdef ELOG_FAIRDROP
@@ -435,38 +415,17 @@ always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 /*Function to update costs*/
 always_inline void update_costs(vlib_main_t *vm,u32 cpu_index){
 
-#ifndef JIM_APPROX
-	if (PREDICT_FALSE(cost_node!=NULL)){
-	u16 error_drop_cost;
-	vlib_node_t *drop_cost = vlib_get_node_by_name (vm, (u8 *) "error-drop");
-	vlib_node_sync_stats (vm, drop_cost);
-	error_drop_cost = (f64)(drop_cost->stats_total.clocks - (cost_node+cpu_index)->clocks)/(f64)(drop_cost->stats_total.vectors - (cost_node+cpu_index)->vectors);
-	(cost_node+cpu_index)->clocks = drop_cost->stats_total.clocks;
-	(cost_node+cpu_index)->vectors = drop_cost->stats_total.vectors;
-	error_cost[cpu_index]=error_drop_cost;
-	}
-#endif
 	 activelist_t * costlist = head_af[cpu_index];
     while(costlist != NULL){
         flowcount_t * flow = costlist->flow;
-#ifdef JIM_APPROX
 		f64 total = (f64)s_total[cpu_index];
-#else /*Clock cycles spent in dropping the packets is subtracted from total clock clock cycles spent for a vector */
-		f64 total = s_total[cpu_index]-(n_drops[cpu_index]*(dpdk_cost_total[cpu_index]+error_cost[cpu_index]));
-#endif
-		//f64 sum_w = sum[cpu_index]/flow->weight;
-		//f64 cost = total/(sum[cpu_index]/flow->weight);
         flow->cost = flow->weight*(total/sum[cpu_index]);
-		//flow->cost = (u16)(((f64)flow->weight)*((f64)total/(f64)sum[cpu_index]));
         costlist = costlist->next;
     }
 }
 
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
-#ifndef JIM_APPROX
-	n_drops[cpu_index]=0;
-#endif
 	sum[cpu_index]=0;
 }
 
