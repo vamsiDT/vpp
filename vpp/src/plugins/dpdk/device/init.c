@@ -65,9 +65,8 @@ dpdk_main_t dpdk_main;
 
 #include <vlibapi/api_helper_macros.h>
 
-
+////////////////////////////////////////////////////////////
 #include <dpdk/device/flow_table_cpu.h>
-
 
 static uint16_t
 add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
@@ -83,7 +82,7 @@ add_timestamps(uint8_t port __rte_unused, uint16_t qidx __rte_unused,
 	}
     return nb_pkts;
 }
-
+////////////////////////////////////////////////////////////
 
 static void
   vl_api_sw_interface_set_dpdk_hqos_pipe_t_handler
