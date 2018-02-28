@@ -2340,7 +2340,7 @@ ip4_rewrite_inline (vlib_main_t * vm,
   old_t = t;
   t = (u64)((vlib_time_now (vm))*1e9);
 	//t = (u64)(unix_time_now_nsec ());
-  threshold=(t-old_t)*ALPHA;
+  threshold=(t-old_t)*10*ALPHA;
 //////////////end of extra code///////////////
 
   while (n_left_from > 0)
@@ -2540,8 +2540,8 @@ ip4_rewrite_inline (vlib_main_t * vm,
 
 //////////////start of extra code///////////////
     u8 drop0,drop1;
-	pktlen0 = (p0->current_length + 4);
-	pktlen1 = (p1->current_length + 4);
+	pktlen0 = (p0->current_length + 24)*8;
+	pktlen1 = (p1->current_length + 24)*8;
 	drop0 = fifo(pktlen0);
 	drop1 = fifo(pktlen1);
 	if(PREDICT_FALSE(drop0 == 1)){
@@ -2718,7 +2718,7 @@ ip4_rewrite_inline (vlib_main_t * vm,
 
 ///////////////start of extra code///////////
     u8 drop0;
-	pktlen0 = (p0->current_length + 4);
+	pktlen0 = (p0->current_length + 24)*8;
 	drop0 = fifo(pktlen0);
 	if(PREDICT_FALSE(drop0 == 1)){
 		next0 = IP4_REWRITE_NEXT_DROP;
