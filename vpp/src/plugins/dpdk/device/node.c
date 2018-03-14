@@ -345,7 +345,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u64 or_ol_flags;
 
 //////////////////////////////////////////////
-    
     u32 hash0,hash1,hash2,hash3;
     u32 modulo0,modulo1,modulo2,modulo3;
     u16 pktlen0,pktlen1,pktlen2,pktlen3;
@@ -465,10 +464,10 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     pktlen1 = (mb1->data_len + 24)*8;
     pktlen2 = (mb2->data_len + 24)*8;
     pktlen3 = (mb3->data_len + 24)*8;
-    drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-    drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-    drop2 = fq(modulo2,hash2,pktlen2,cpu_index);
-    drop3 = fq(modulo3,hash3,pktlen3,cpu_index);
+    drop0 = fq(modulo0,hash0,pktlen0);
+    drop1 = fq(modulo1,hash1,pktlen1);
+    drop2 = fq(modulo2,hash2,pktlen2);
+    drop3 = fq(modulo3,hash3,pktlen3);
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -576,7 +575,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     hash0 = mb0->hash.rss;
     modulo0 = (hash0)%TABLESIZE;
     pktlen0 = (mb0->data_len + 24)*8;
-    drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+    drop0 = fq(modulo0,hash0,pktlen0);
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
         error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
@@ -627,9 +626,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
 /*vstate update*/
-old_t[cpu_index] = t[cpu_index];
-t[cpu_index] = (u64)(unix_time_now_nsec ());
-departure(cpu_index);
+old_t = t;
+t = (u64)(unix_time_now_nsec ());
+departure();
 
   return mb_index;
 }
