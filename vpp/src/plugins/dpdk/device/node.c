@@ -298,6 +298,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   vlib_buffer_free_list_t *fl;
   vlib_buffer_t *bt = vec_elt_at_index (dm->buffer_templates, cpu_index);
 
+//printf("credit = %lu\n",t[cpu_index]-old_t[cpu_index]);
 
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;
