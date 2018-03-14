@@ -296,8 +296,8 @@ return drop;
 always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index){
     flowcount_t * i;
     u8 drop;
-    i = flow_table_classify(modulox,hashx0,pktlenx);
-    drop = arrival(i,pktlenx);
+    i = flow_table_classify(modulox,hashx0,pktlenx,cpu_index);
+    drop = arrival(i,pktlenx,cpu_index);
     return drop;
 }
 
