@@ -51,8 +51,6 @@
 #include <vnet/dpo/load_balance.h>
 #include <vnet/dpo/classify_dpo.h>
 #include <vnet/mfib/mfib_table.h>	/* for mFIB table and entry creation */
-#include <vnet/ip/fifo.h>
-#include <vnet/ip/fifo_var.h>
 
 /**
  * @file
@@ -2700,8 +2698,6 @@ ip4_rewrite_inline (vlib_main_t * vm,
   if (node->flags & VLIB_NODE_FLAG_TRACE)
     ip4_forward_next_trace (vm, node, frame, VLIB_TX);
 
-/*setting fifoqueue to zero after each vector */
-	fifoqueue = 0;
 
   return frame->n_vectors;
 }
