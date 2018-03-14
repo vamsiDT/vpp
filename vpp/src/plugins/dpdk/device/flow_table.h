@@ -50,8 +50,7 @@ extern activelist_t * tail_act[NUMINT];
 
 /* Flow classification function */
 always_inline flowcount_t *
-flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index){
-
+flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index) {
     flowcount_t * flow;
 
     if (PREDICT_FALSE(head[cpu_index] == NULL)){
@@ -64,7 +63,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index){
         (nodet[modulox][cpu_index] + 3)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
-        head = nodet[modulox][cpu_index] + 0;
+        head[cpu_index] = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
     }
 
@@ -217,6 +216,7 @@ always_inline void activelist_init(){
     (act+k*NUMFLOWS+(NUMFLOWS-1))->flow=NULL;
     (act+k*NUMFLOWS+(NUMFLOWS-1))->next=(act+k*NUMFLOWS+0);
     head_act[k]=tail_act[k]=(act+k*NUMFLOWS+0);
+    }
 }
 
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
