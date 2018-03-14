@@ -661,20 +661,11 @@ vnet_per_buffer_interface_output (vlib_main_t * vm,
     {
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
 
-//////////////////////////////////////////////
-    u32 hash0,hash1;
-    u32 modulo0,modulo1;
-    u16 pktlen0,pktlen1;
-    u8  drop0,drop1;
-    u32 drop = (vlib_get_node_by_name (vm, (u8 *) "error-drop"))->index;
-//////////////////////////////////////////////
-
       while (n_left_from >= 4 && n_left_to_next >= 2)
 	{
 	  u32 bi0, bi1, next0, next1;
 	  vlib_buffer_t *b0, *b1;
 	  vnet_hw_interface_t *hi0, *hi1;
-	  struct rte_mbuf *mb0, *mb1;
 
 	  /* Prefetch next iteration. */
 	  vlib_prefetch_buffer_with_index (vm, from[2], LOAD);
@@ -691,9 +682,6 @@ vnet_per_buffer_interface_output (vlib_main_t * vm,
 
 	  b0 = vlib_get_buffer (vm, bi0);
 	  b1 = vlib_get_buffer (vm, bi1);
-	  mb0 = rte_mbuf_from_vlib_buffer(b0);
-	  mb1 = rte_mbuf_from_vlib_buffer(b1);
-
 
 	  hi0 =
 	    vnet_get_sup_hw_interface (vnm,
@@ -704,25 +692,8 @@ vnet_per_buffer_interface_output (vlib_main_t * vm,
 				       vnet_buffer (b1)->sw_if_index
 				       [VLIB_TX]);
 
-	  	hash0 = mb0->hash.rss;
-      	hash1 = mb1->hash.rss;
-    	modulo0 = (hash0)%TABLESIZE;
-    	modulo1 = (hash1)%TABLESIZE;
-    	pktlen0 = (mb0->data_len + 24)*8;
-   		pktlen1 = (mb1->data_len + 24)*8;
-    	drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-    	drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
-
-    	if(PREDICT_FALSE(drop0 == 1)){
-        	next0 = drop;
-    	}
-    	else
-    		next0 = hi0->hw_if_index;
-    	if(PREDICT_FALSE(drop1 == 1)){
-        	next1 = drop;
-    	}
-    	else
-    		next1 = hi1->hw_if_index;
+	  next0 = hi0->hw_if_index;
+	  next1 = hi1->hw_if_index;
 
 	  vlib_validate_buffer_enqueue_x2 (vm, node, next_index, to_next,
 					   n_left_to_next, bi0, bi1, next0,
