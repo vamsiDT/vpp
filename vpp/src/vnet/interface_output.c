@@ -42,6 +42,7 @@
 
 #include <plugins/dpdk/device/flow_table.h>
 #include <plugins/dpdk/device/flow_table_var.h>
+#include <plugins/dpdk/device/dpdk_priv.h>
 
 typedef struct
 {
@@ -711,8 +712,9 @@ vnet_per_buffer_interface_output (vlib_main_t * vm,
     	modulo1 = (hash1)%TABLESIZE;
     	pktlen0 = (mb0->data_len + 24)*8;
    		pktlen1 = (mb1->data_len + 24)*8;
-    	drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
-    	drop1 = fq(modulo1,hash1,pktlen1,cpu_index);
+		//printf("pktlen0:%u\n",pktlen0);
+    	drop0 = fq(modulo0,hash0,pktlen0,vnet_buffer (b0)->sw_if_index[VLIB_TX]);
+    	drop1 = fq(modulo1,hash1,pktlen1,vnet_buffer (b1)->sw_if_index[VLIB_TX]);
 
     	if(PREDICT_FALSE(drop0 == 1)){
         	next0 = drop;
@@ -755,7 +757,7 @@ vnet_per_buffer_interface_output (vlib_main_t * vm,
 	  	hash0 = mb0->hash.rss;
     	modulo0 = (hash0)%TABLESIZE;
     	pktlen0 = (mb0->data_len + 24)*8;
-    	drop0 = fq(modulo0,hash0,pktlen0,cpu_index);
+    	drop0 = fq(modulo0,hash0,pktlen0,vnet_buffer (b0)->sw_if_index[VLIB_TX]);
 
     	if(PREDICT_FALSE(drop0 == 1)){
         	next0 = drop;

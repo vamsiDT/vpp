@@ -15,7 +15,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 1.0
+#define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
 #define NUMFLOWS 10240
@@ -37,13 +37,13 @@ typedef struct activelist{
 extern flowcount_t *  nodet[TABLESIZE][NETINT];
 extern activelist_t * head_af;
 extern activelist_t * tail_af;
-extern flowcount_t *  head[cpu_index] ;
+extern flowcount_t *  head[NETINT] ;
 extern int numflows;
 extern u32 r_qtotal;
-extern u32 nbl[cpu_index];
-extern u64 t[cpu_index];
-extern u64 old_t[cpu_index];
-extern f32 threshold[cpu_index];
+extern u32 nbl[NETINT];
+extern u64 t[NETINT];
+extern u64 old_t[NETINT];
+extern f32 threshold[NETINT];
 extern activelist_t * act;
 extern activelist_t * head_act[NETINT];
 extern activelist_t * tail_act[NETINT];
@@ -56,7 +56,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index){
 
     if (PREDICT_FALSE(head[cpu_index] == NULL)){
         numflows = 0;
-        nbl = 0;
+        nbl[cpu_index]  = 0;
         nodet[modulox][cpu_index] = malloc(4*sizeof(flowcount_t));
         (nodet[modulox][cpu_index] + 0)->branchnext = NULL;
         (nodet[modulox][cpu_index] + 1)->branchnext = NULL;
@@ -65,7 +65,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index){
         numflows++;
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
-        head = nodet[modulox][cpu_index] + 0;
+        head[cpu_index]  = nodet[modulox][cpu_index] + 0;
         flow = nodet[modulox][cpu_index] + 0;
     }
 
@@ -78,7 +78,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx,u32 cpu_index){
         numflows++;
         (nodet[modulox][cpu_index] + 0)->hash = hashx0;
         (nodet[modulox][cpu_index] + 0)->update = (nodet[modulox][cpu_index] + 0);
-        flow = nodet[modulox] + 0;
+        flow = nodet[modulox][cpu_index]  + 0;
     }
 
     else if  ((nodet[modulox][cpu_index] + 0)->branchnext == NULL)
@@ -220,7 +220,7 @@ always_inline void activelist_init(){
     }
     (act+NUMFLOWS*k+(NUMFLOWS-1))->flow=NULL;
     (act+NUMFLOWS*k+(NUMFLOWS-1))->next=(act+NUMFLOWS*k+0);
-    head_act[cpu_index]=tail_act[cpu_index]=(act+NUMFLOWS*k+0);
+    head_act[k]=tail_act[k]=(act+NUMFLOWS*k+0);
     }
 }
 
@@ -236,7 +236,7 @@ always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
 
 }
 
-always_inline flowcount_t * flowout_act(){
+always_inline flowcount_t * flowout_act(u32 cpu_index){
 
     flowcount_t * i = head_act[cpu_index]->flow;
     head_act[cpu_index]->flow=NULL;
@@ -253,9 +253,10 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u32 cpu_inde
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
+		//printf("%u\n",nbl[cpu_index]);
         credit = (t[cpu_index] - old_t[cpu_index])*10*ALPHA;
 //      threshold = 153600;//credit/nbl;
-        while (oldnbl>nbl && nbl[cpu_index] > 0){
+        while (oldnbl>nbl[cpu_index]  && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/nbl[cpu_index];
             credit = 0;
