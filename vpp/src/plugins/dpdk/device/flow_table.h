@@ -249,6 +249,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u32 cpu_inde
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
         credit = (t[cpu_index] - old_t[cpu_index])*10*ALPHA;
+		//printf("nbl[%u]=%u\n",cpu_index,nbl[cpu_index]);
 //		threshold = 153600;//credit/nbl;
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];

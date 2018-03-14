@@ -626,9 +626,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
 /*vstate update*/
-old_t[cpu_index] = t[cpu_index];
-t[cpu_index] = (u64)(unix_time_now_nsec ());
-departure(cpu_index);
+//old_t[cpu_index] = t[cpu_index];
+//t[cpu_index] = (u64)(unix_time_now_nsec ());
+//departure(cpu_index);
 
   return mb_index;
 }
@@ -715,6 +715,12 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
     }
   /* *INDENT-ON* */
 
+/*vstate update*/
+if(n_rx_packets>0){
+old_t[cpu_index] = t[cpu_index];
+t[cpu_index] = (u64)(unix_time_now_nsec ());
+departure(cpu_index);
+}
   poll_rate_limit (dm);
 
   return n_rx_packets;
