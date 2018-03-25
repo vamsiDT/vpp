@@ -16,7 +16,7 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 
-#define TABLESIZE 128
+#define TABLESIZE 1024
 #define MAXCPU 4
 #define ALPHACPU 1.0
 #define NUMFLOWS 102400
@@ -31,11 +31,11 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 208
 #else
-#define WEIGHT_DPDK 156//185
+#define WEIGHT_DPDK 158//185
 #endif
 
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 700
+#define WEIGHT_CLASS_1 3500
 #define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
 
 #ifdef BUSYLOOP
