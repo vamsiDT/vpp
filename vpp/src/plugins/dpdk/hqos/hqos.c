@@ -46,6 +46,9 @@
 
 #include <dpdk/device/dpdk_priv.h>
 
+#include <dpdk/device/flow_table.h>
+#include <dpdk/device/flow_table_var.h>
+
 dpdk_main_t dpdk_main;
 
 /***
@@ -483,6 +486,8 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
   u32 dev_pos;
 
   dev_pos = 0;
+   activelist_init(); //For fairdrop cpu
+
   while (1)
     {
       vlib_worker_thread_barrier_check ();
@@ -511,6 +516,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       u32 n_swq = vec_len (hqos->swq), i;
       u32 flush_count = hqos->flush_count;
 
+      u32 pkts_deq_len, n_pkts;
       /*
        * SWQ dequeue and HQoS enqueue for current device
        */
@@ -534,7 +540,11 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  /* HQoS enqueue when burst available */
 	  if (pkts_enq_len >= hqos->hqos_burst_enq)
 	    {
-	      rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+
+        /**********ADD HERE FAIRDROP ALGORITHM*******************/
+        // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+	      pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
+
 
 	      pkts_enq_len = 0;
 	      flush_count = 0;
@@ -546,7 +556,10 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  flush_count++;
 	  if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
 	    {
-	      rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+
+        /**********ADD HERE FAIRDROP ALGORITHM*******************/
+	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 
 	      pkts_enq_len = 0;
 	      flush_count = 0;
@@ -559,11 +572,11 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
        * HQoS dequeue and HWQ TX enqueue for current device
        */
       {
-	u32 pkts_deq_len, n_pkts;
+	
 
-	pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
-					       pkts_deq,
-					       hqos->hqos_burst_deq);
+	// pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
+	// 				       pkts_deq,
+	// 				       hqos->hqos_burst_deq);
 
 	for (n_pkts = 0; n_pkts < pkts_deq_len;)
 	  n_pkts += rte_eth_tx_burst (device_index,
