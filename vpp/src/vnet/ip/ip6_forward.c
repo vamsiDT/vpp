@@ -84,7 +84,7 @@ ip6_lookup_inline (vlib_main_t * vm,
   while (n_left_from > 0)
     {
       vlib_get_next_frame (vm, node, next, to_next, n_left_to_next);
-	  clib_cpu_time_wait(n_left_from*200);
+
       while (n_left_from >= 4 && n_left_to_next >= 2)
 	{
 	  vlib_buffer_t *p0, *p1;
