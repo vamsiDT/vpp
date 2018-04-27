@@ -516,7 +516,8 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       u32 n_swq = vec_len (hqos->swq), i;
       u32 flush_count = hqos->flush_count;
 
-      u32 pkts_deq_len, n_pkts;
+      u32 pkts_deq_len = 0;
+      u32 n_pkts;
       /*
        * SWQ dequeue and HQoS enqueue for current device
        */
@@ -536,6 +537,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  if (swq_pos >= n_swq)
 	    swq_pos = 0;
 	  hqos->swq_pos = swq_pos;
+
 
 	  /* HQoS enqueue when burst available */
 	  if (pkts_enq_len >= hqos->hqos_burst_enq)

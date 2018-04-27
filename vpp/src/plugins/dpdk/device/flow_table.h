@@ -330,8 +330,8 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 
       /* prefetches are interleaved with the rest of the code to reduce
          pressure on L1 cache */
-      dpdk_prefetch_buffer (pkts[mb_index + 8]);
-      dpdk_prefetch_ethertype (pkts[mb_index + 4]);
+      // dpdk_prefetch_buffer (pkts[mb_index + 8]);
+      // dpdk_prefetch_ethertype (pkts[mb_index + 4]);
 
       mb0 = pkts[mb_index];
       mb1 = pkts[mb_index + 1];
@@ -344,14 +344,14 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
       ASSERT (mb3);
 
 
-      dpdk_prefetch_buffer (pkts[mb_index + 9]);
-      dpdk_prefetch_ethertype (pkts[mb_index + 5]);
+      // dpdk_prefetch_buffer (pkts[mb_index + 9]);
+      // dpdk_prefetch_ethertype (pkts[mb_index + 5]);
 
-      dpdk_prefetch_buffer (pkts[mb_index + 10]);
-      dpdk_prefetch_ethertype (pkts[mb_index + 7]);
+      // dpdk_prefetch_buffer (pkts[mb_index + 10]);
+      // dpdk_prefetch_ethertype (pkts[mb_index + 7]);
 
-      dpdk_prefetch_buffer (pkts[mb_index + 11]);
-      dpdk_prefetch_ethertype (pkts[mb_index + 6]);
+      // dpdk_prefetch_buffer (pkts[mb_index + 11]);
+      // dpdk_prefetch_ethertype (pkts[mb_index + 6]);
 
     hash0 = mb0->hash.rss;
     //printf("hash0=%u\n",hash0);
@@ -411,12 +411,12 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     {
       struct rte_mbuf *mb0 = pkts[mb_index];
 
-      if (PREDICT_TRUE (n_buffers > 3))
-        {
-          dpdk_prefetch_buffer (pkts[mb_index + 2]);
-          dpdk_prefetch_ethertype (pkts
-                       [mb_index + 1]);
-        }
+      // if (PREDICT_TRUE (n_buffers > 3))
+      //   {
+      //     dpdk_prefetch_buffer (pkts[mb_index + 2]);
+      //     dpdk_prefetch_ethertype (pkts
+      //                  [mb_index + 1]);
+      //   }
 
       ASSERT (mb0);
 
