@@ -15,9 +15,9 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.1
+#define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (19200*3) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (262144) //(19200*3) //just a random number. Update the value with proper theoritical approach.
 #define NUMFLOWS 10240
 #define NUMINT 4
 
@@ -291,6 +291,7 @@ u8 drop;
         drop = 1;
         //update vstate is only after a vector. So no update before dropping a packet here.
     }
+//drop = 0;
 return drop;
 }
 
@@ -373,6 +374,10 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     drop1 = fq(modulo1,hash1,pktlen1,device_index);
     drop2 = fq(modulo2,hash2,pktlen2,device_index);
     drop3 = fq(modulo3,hash3,pktlen3,device_index);
+//	drop0=0;
+//	drop1=0;
+//	drop2=0;
+//	drop3=0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         rte_pktmbuf_free(mb0);
@@ -428,6 +433,7 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     pktlen0 = (mb0->data_len + 24)*8;
 
     drop0 = fq(modulo0,hash0,pktlen0,device_index);
+//	drop0 = 0;
 
     if(PREDICT_FALSE(drop0 == 1)){
         rte_pktmbuf_free(mb0);

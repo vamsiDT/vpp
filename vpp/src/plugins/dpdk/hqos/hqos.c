@@ -574,7 +574,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
        * HQoS dequeue and HWQ TX enqueue for current device
        */
       {
-	
+
 
 	// pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
 	// 				       pkts_deq,
