@@ -541,7 +541,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       u32 pkts_enq_len = hqos->pkts_enq_len;
       u32 swq_pos = hqos->swq_pos;
       u32 n_swq = vec_len (hqos->swq), i;
-      u32 flush_count = hqos->flush_count;
+      //u32 flush_count = hqos->flush_count;
 
       u32 pkts_deq_len = 0;
       u32 n_pkts;
