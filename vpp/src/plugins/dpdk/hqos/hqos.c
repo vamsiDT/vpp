@@ -576,7 +576,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
 
 	      pkts_enq_len = 0;
-	      flush_count = 0;
+	      //flush_count = 0;
 	      break;
 	    }
 	}
