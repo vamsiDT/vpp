@@ -493,7 +493,7 @@ fairdrop_rx_burst (struct rte_ring *r, void **obj_table, unsigned n)
 
       while (n_left)
   {
-    n_this_chunk = rte_ring_sc_dequeue_burst (swq,(void **) &pkts_enq[pkts_enq_len],hqos->hqos_burst_enq);
+    n_this_chunk = rte_ring_sc_dequeue_burst (r,obj_table,n);
     n_buffers += n_this_chunk;
     n_left -= n_this_chunk;
 
