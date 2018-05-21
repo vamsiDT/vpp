@@ -478,6 +478,33 @@ dpdk_hqos_thread_internal_hqos_dbg_bypass (vlib_main_t * vm)
     }
 }
 
+
+//rte_ring_sc_dequeue_burst (swq,(void **) &pkts_enq[pkts_enq_len],hqos->hqos_burst_enq);
+
+static inline u32
+fairdrop_rx_burst (struct rte_ring *r, void **obj_table, unsigned n)
+{
+  u32 n_buffers;
+  u32 n_left;
+  u32 n_this_chunk;
+
+  n_left = VLIB_FRAME_SIZE;
+  n_buffers = 0;
+
+      while (n_left)
+  {
+    n_this_chunk = rte_ring_sc_dequeue_burst (swq,(void **) &pkts_enq[pkts_enq_len],hqos->hqos_burst_enq);
+    n_buffers += n_this_chunk;
+    n_left -= n_this_chunk;
+
+    /* Empirically, DPDK r1.8 produces vectors w/ 32 or fewer elts */
+    if (n_this_chunk < 32)
+      break;
+  }
+
+  return n_buffers;
+}
+
 static_always_inline void
 dpdk_hqos_thread_internal (vlib_main_t * vm)
 {
@@ -527,7 +554,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  struct rte_ring *swq = hqos->swq[swq_pos];
 
 	  /* Read SWQ burst to packet buffer of this device */
-	  pkts_enq_len += rte_ring_sc_dequeue_burst (swq,
+	  pkts_enq_len += fairdrop_rx_burst (swq,
 						     (void **)
 						     &pkts_enq[pkts_enq_len],
 						     hqos->hqos_burst_enq);
@@ -540,7 +567,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
 
 	  /* HQoS enqueue when burst available */
-	  if (pkts_enq_len >= hqos->hqos_burst_enq)
+	  if (pkts_enq_len >= VLIB_FRAME_SIZE)
 	    {
 
         /**********ADD HERE FAIRDROP ALGORITHM*******************/
@@ -555,20 +582,20 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	}
       if (pkts_enq_len)
 	{
-	  flush_count++;
-	  if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
-	    {
+	  // flush_count++;
+	  // if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
+	  //   {
 
         /**********ADD HERE FAIRDROP ALGORITHM*******************/
 	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
         pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 
 	      pkts_enq_len = 0;
-	      flush_count = 0;
-	    }
+	    //   flush_count = 0;
+	    // }
 	}
       hqos->pkts_enq_len = pkts_enq_len;
-      hqos->flush_count = flush_count;
+      // hqos->flush_count = flush_count;
 
       /*
        * HQoS dequeue and HWQ TX enqueue for current device
