@@ -15,9 +15,10 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 1.0
+#define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
 #define THRESHOLD (262144) //(19200*3) //just a random number. Update the value with proper theoritical approach.
+//#define THRESHOLD 4096
 #define NUMFLOWS 10240
 #define NUMINT 4
 
