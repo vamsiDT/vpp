@@ -541,7 +541,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       u32 pkts_enq_len = hqos->pkts_enq_len;
       u32 swq_pos = hqos->swq_pos;
       u32 n_swq = vec_len (hqos->swq), i;
-      //u32 flush_count = hqos->flush_count;
+      u32 flush_count = hqos->flush_count;
 
       u32 pkts_deq_len = 0;
       u32 n_pkts;
@@ -566,41 +566,45 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  hqos->swq_pos = swq_pos;
 
 
-	  // /* HQoS enqueue when burst available */
-	  // if (pkts_enq_len >= VLIB_FRAME_SIZE)
-	  //   {
+	   /* HQoS enqueue when burst available */
+	   if (pkts_enq_len >= VLIB_FRAME_SIZE)
+	     {
 
-   //      /**********ADD HERE FAIRDROP ALGORITHM*******************/
+         /**********ADD HERE FAIRDROP ALGORITHM*******************/
    //      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-	  //     pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
+	       pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 
 
-	  //     pkts_enq_len = 0;
-	  //     //flush_count = 0;
-	  //     break;
-	  //   }
+	       pkts_enq_len = 0;
+	       flush_count = 0;
+	       //break;
+	     }
 	}
+//	if(pkts_enq_len)
+//	printf("pkts_enq_len=%u\t",pkts_enq_len);
       if (pkts_enq_len)
 	{
-	  // flush_count++;
-	  // if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
-	  //   {
+	   flush_count++;
+//	   if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
+	     {
 
         /**********ADD HERE FAIRDROP ALGORITHM*******************/
 	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
         pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 
 	      pkts_enq_len = 0;
-	    //   flush_count = 0;
-	    // }
+	       flush_count = 0;
+	     }
 	}
+//	if(pkts_deq_len)
+//	printf("pkts_deq_len=%u\n",pkts_deq_len);
       hqos->pkts_enq_len = pkts_enq_len;
-      // hqos->flush_count = flush_count;
+       hqos->flush_count = flush_count;
 
       /*
        * HQoS dequeue and HWQ TX enqueue for current device
        */
-      {
+	  {
 
 
 	// pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
