@@ -15,10 +15,10 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.1
+#define ALPHA 0.3
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (262144) //(19200*3) //just a random number. Update the value with proper theoritical approach.
-//#define THRESHOLD 4096
+#define THRESHOLD (172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
+//#define THRESHOLD 512*10
 #define NUMFLOWS 10240
 #define NUMINT 4
 
@@ -450,7 +450,6 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     }
 
     }
-
 /*vstate update*/
 old_t[device_index] = t[device_index];
 t[device_index] = (u64)(unix_time_now_nsec ());
