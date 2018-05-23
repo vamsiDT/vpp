@@ -554,7 +554,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  struct rte_ring *swq = hqos->swq[swq_pos];
 
 	  /* Read SWQ burst to packet buffer of this device */
-	  pkts_enq_len += fairdrop_rx_burst (swq,
+	  pkts_enq_len += rte_ring_sc_dequeue_burst (swq,
 						     (void **)
 						     &pkts_enq[pkts_enq_len],
 						     hqos->hqos_burst_enq);
