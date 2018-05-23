@@ -5,7 +5,7 @@
 #include <math.h>
 #ifndef FIFO_H
 #define FIFO_H
-#define ALPHA 1.0
+#define ALPHA 0.3
 extern u64 old_t;
 extern u64 t;
 extern u32 threshold;
