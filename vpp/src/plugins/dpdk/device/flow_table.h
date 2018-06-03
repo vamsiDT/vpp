@@ -19,7 +19,6 @@
 #define THRESHOLD (19200)
 #define NUMFLOWS 10240
 
-/*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
     u32 hash;
     u32 vqueue;
@@ -180,6 +179,10 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
     return flow;
 }
 
+
+/*Active list functions*/
+
+/*Active list initialization at vpp startup. This function is called in dpdk_lib_init() */
 always_inline void activelist_init(){
     act = malloc(NUMFLOWS*sizeof(activelist_t));
     for(int j=0;j<(NUMFLOWS-1);j++){
@@ -191,6 +194,7 @@ always_inline void activelist_init(){
     head_act=tail_act=(act+0);
 }
 
+/*Adding flow into the activelist*/
 always_inline void flowin_act(flowcount_t * flow){
 
     if(PREDICT_FALSE(head_act==tail_act->next)){
@@ -203,6 +207,7 @@ always_inline void flowin_act(flowcount_t * flow){
 
 }
 
+/*Removing flow from the activelist*/
 always_inline flowcount_t * flowout_act(){
 
     flowcount_t * i = head_act->flow;
@@ -263,6 +268,7 @@ u8 drop;
 return drop;
 }
 
+/* Function for fairdrop algorithm, for each packet*/
 always_inline u8 fairdrop (struct rte_mbuf *mb0){
     u32 hash0, modulo0;
     u16 pktlen0;
@@ -276,7 +282,7 @@ always_inline u8 fairdrop (struct rte_mbuf *mb0){
     return drop;
 }
 
-/*vstate update function before sending the vector. This function is after processing all the packets in the vector and runs only once per vector */
+/*vstate update function before sending the vector. This function is after processing all the packets in the vector and called only once per vector */
 always_inline void departure (){
     vstate(NULL,0,1);
 }

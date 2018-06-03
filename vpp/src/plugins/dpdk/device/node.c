@@ -345,6 +345,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u64 or_ol_flags;
 
 //////////////////////////////////////////////
+      /*For Fairdrop Algorithm*/
     u8  drop0,drop1,drop2,drop3;
 //////////////////////////////////////////////
 
@@ -448,7 +449,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 ////////////////////////////////////////////
+      /*For Fairdrop Algorithm*/
 
+      /*Per packet operation*/
     drop0 = fairdrop(mb0);
     drop1 = fairdrop(mb1);
     drop2 = fairdrop(mb2);
@@ -558,7 +561,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 ////////////////////////////////////////////////
+    /*For Fairdrop Algorithm*/
 
+    /*Per packet operation*/
     drop0 = fairdrop(mb0);
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -611,8 +616,9 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
 /////////////////////////////////////////
+  /*For Fairdrop Algorithm*/
 
-/*vstate update*/
+/*vstate update/decrement stage*/
 old_t = t;
 t = (u64)(unix_time_now_nsec ());
 departure();
