@@ -21,11 +21,7 @@
 #define ALPHACPU 1.0
 #define NUMFLOWS 102400
 
-//#define ELOG_FAIRDROP
-//#define ELOG_DPDK_COST
 #define BUSYLOOP
-#define JIM_APPROX
-
 #define WEIGHT_DROP 40
 
 #ifdef ELOG_FAIRDROP
@@ -180,6 +176,9 @@ extern activelist_t * head_act[MAXCPU];
 extern activelist_t * tail_act[MAXCPU];
 extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
 
+
+/* Flow classification function */
+
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 
@@ -325,6 +324,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 * update_costs --> for updating the costs of all the entries in the activelist
 */
 
+/*Active list initialization at vpp startup. This function is called in dpdk_lib_init() */
 always_inline void activelist_init(){
     act = malloc(MAXCPU*NUMFLOWS*sizeof(activelist_t));
     for(int i=0;i<MAXCPU;i++){
@@ -338,6 +338,7 @@ always_inline void activelist_init(){
     }
 }
 
+/*Adding flow into the activelist*/
 always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
 
     if(PREDICT_FALSE(head_act[cpu_index]==tail_act[cpu_index]->next)){
@@ -350,6 +351,7 @@ always_inline void flowin_act(flowcount_t * flow,u32 cpu_index){
 
 }
 
+/*Removing flow from the activelist*/
 always_inline flowcount_t * flowout_act(u32 cpu_index){
 
     flowcount_t * i = head_act[cpu_index]->flow;
@@ -422,7 +424,6 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
         vstate(flow,0,cpu_index);
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
-//		busyloop[cpu_index]+=pktlenx-(dpdk_cost_total[cpu_index]+WEIGHT_IP4E);
 		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
 #endif
         f_vectors[j]=mb;
@@ -433,31 +434,31 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
         return 0;
     }
 
-#ifdef ELOG_FAIRDROP
-	ELOG_TYPE_DECLARE (e) = {
-    .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u cost = %u",
-    .format_args = "i4i4i4i2",
-	};
-  	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u16 cost;} *ed;
-  	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-  	ed->flow_hash = flow->hash;
-  	ed->flow_vqueue = flow->vqueue;
-	ed->threshold = threshold[cpu_index];
-  	ed->cost = flow->cost;
-#endif
+// #ifdef ELOG_FAIRDROP
+// 	ELOG_TYPE_DECLARE (e) = {
+//     .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u cost = %u",
+//     .format_args = "i4i4i4i2",
+// 	};
+//   	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u16 cost;} *ed;
+//   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+//   	ed->flow_hash = flow->hash;
+//   	ed->flow_vqueue = flow->vqueue;
+// 	ed->threshold = threshold[cpu_index];
+//   	ed->cost = flow->cost;
+// #endif
 }
 
+/*vstate update function before sending the vector. This function is after processing all the packets in the vector and called only once per vector */
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
-#ifndef JIM_APPROX
-	n_drops[cpu_index]=0;
-#endif
 	sum[cpu_index]=0;
 }
 
+/*Busyloop function. Consumes t number of clock cycles*/
 always_inline void sleep_now (u32 t){
 	clib_cpu_time_wait(t);
 }
+
 
 /*
     Function to create a sub vector of packets which are accepted by fairdrop algiorithm
@@ -481,10 +482,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
     flowcount_t * i4,*i5,*i6,*i7;
 
     while(n_buf>=8){
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+4], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+5], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+6], CLIB_CACHE_LINE_BYTES, LOAD);
-//      CLIB_PREFETCH (xd->rx_vectors[queue_id][i+7], CLIB_CACHE_LINE_BYTES, LOAD);
 
       mb0 = xd->rx_vectors[queue_id][i];
       mb1 = xd->rx_vectors[queue_id][i+1];

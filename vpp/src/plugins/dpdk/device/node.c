@@ -29,10 +29,11 @@
 #include <dpdk/device/dpdk_priv.h>
 
 /////////////////////////////////////////////
+/*For Fairdrop Algorithm*/
 #include <dpdk/device/flow_table_cpu.h>
 #include <dpdk/device/flow_table_var.h>
 #include <vppinfra/elog.h>
-//////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////
 
 static char *dpdk_error_strings[] = {
 #define _(n,s) s,
@@ -293,8 +294,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   vlib_node_runtime_t * node, u32 cpu_index, u16 queue_id,
 		   int maybe_multiseg)
 {
-//  u64 dpdk_cost_begin = rte_rdtsc();
-//  u32 n_packets;
   u32 n_buffers;
   u32 next_index = VNET_DEVICE_INPUT_NEXT_ETHERNET_INPUT;
   u32 n_left_to_next, *to_next;
@@ -317,13 +316,15 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       return 0;
     }
   else{
+///////////////////////////////////////////////
+  	/*For Fairdrop Algorithm*/
     n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+///////////////////////////////////////////////
   }
 
 if (PREDICT_FALSE(n_buffers==0))
 	return 0;
 
-//n_packets = n_buffers;
 
   vec_reset_length (xd->d_trace_buffers[cpu_index]);
   trace_cnt = n_trace = vlib_get_trace_count (vm, node);
@@ -577,18 +578,16 @@ if (PREDICT_FALSE(n_buffers==0))
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
-#ifdef ELOG_DPDK_COST
-    ELOG_TYPE_DECLARE (e) = {
-    .format = "DPDK_COST: %u CPU: %u",
-    .format_args = "i4i4",
-    };
-    struct {u32 dpdk_cost;u32 cpu_index;} *ed;
-    ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-    ed->dpdk_cost = dpdk_cost_total[cpu_index];
-	ed->cpu_index = cpu_index;
-#endif
-
-//dpdk_cost_total[cpu_index]=((f64)rte_rdtsc() - (f64)dpdk_cost_begin)/(f64)n_packets;
+// #ifdef ELOG_DPDK_COST
+//     ELOG_TYPE_DECLARE (e) = {
+//     .format = "DPDK_COST: %u CPU: %u",
+//     .format_args = "i4i4",
+//     };
+//     struct {u32 dpdk_cost;u32 cpu_index;} *ed;
+//     ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+//     ed->dpdk_cost = dpdk_cost_total[cpu_index];
+// 	ed->cpu_index = cpu_index;
+// #endif
 
   return mb_index;
 }
