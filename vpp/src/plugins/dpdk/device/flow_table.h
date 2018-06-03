@@ -16,8 +16,7 @@
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define ALPHA 1.0
-#define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (19200)
 #define NUMFLOWS 10240
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
@@ -181,35 +180,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
     return flow;
 }
 
-/* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
-/*
-void flowin(flowcount_t * flow){
-    activelist_t * temp;
-    temp = malloc(sizeof(activelist_t));
-    temp->flow = flow;
-    temp->next = NULL;
-    if (head_af == NULL){
-        head_af = temp;
-        tail_af = temp;
-    }
-    else{
-        tail_af->next = temp;
-        tail_af = temp;
-    }
-}
-*/
-/* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-/*
-flowcount_t * flowout(){
-    flowcount_t * temp;
-    activelist_t * next;
-    temp = head_af->flow;
-    next = head_af->next;
-    free(head_af);
-    head_af = next;
-    return temp;
-}
-*/
 always_inline void activelist_init(){
     act = malloc(NUMFLOWS*sizeof(activelist_t));
     for(int j=0;j<(NUMFLOWS-1);j++){
@@ -251,7 +221,6 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         f32 served,credit;
         int oldnbl=nbl+1;
         credit = (t - old_t)*10*ALPHA;
-//		threshold = 153600;//credit/nbl;
         while (oldnbl>nbl && nbl > 0){
             oldnbl = nbl;
             served = credit/nbl;
@@ -290,16 +259,20 @@ u8 drop;
     }
     else {
         drop = 1;
-        //update vstate is only after a vector. So no update before dropping a packet here.
     }
 return drop;
 }
 
-always_inline u8 fq (u32 modulox, u32 hashx0, u16 pktlenx){
+always_inline u8 fairdrop (struct rte_mbuf *mb0){
+    u32 hash0, modulo0;
+    u16 pktlen0;
     flowcount_t * i;
     u8 drop;
-    i = flow_table_classify(modulox,hashx0,pktlenx);
-    drop = arrival(i,pktlenx);
+    hash0 = mb0->hash.rss;
+    modulo0 = (hash0)%TABLESIZE;
+    pktlen0 = (mb0->data_len + 24)*8;
+    i = flow_table_classify(modulo0,hash0,pktlen0);
+    drop = arrival(i,pktlen0);
     return drop;
 }
 

@@ -345,10 +345,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
       u64 or_ol_flags;
 
 //////////////////////////////////////////////
-    u32 hash0,hash1,hash2,hash3;
-    u32 modulo0,modulo1,modulo2,modulo3;
-    u16 pktlen0,pktlen1,pktlen2,pktlen3;
-    u8  drop0,drop1,drop2,drop3 ;
+    u8  drop0,drop1,drop2,drop3;
 //////////////////////////////////////////////
 
 
@@ -451,23 +448,11 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	    }
 
 ////////////////////////////////////////////
-    hash0 = mb0->hash.rss;
-	//printf("hash0=%u\n",hash0);
-    hash1 = mb1->hash.rss;
-    hash2 = mb2->hash.rss;
-    hash3 = mb3->hash.rss;
-    modulo0 = (hash0)%TABLESIZE;
-    modulo1 = (hash1)%TABLESIZE;
-    modulo2 = (hash2)%TABLESIZE;
-    modulo3 = (hash3)%TABLESIZE;
-    pktlen0 = (mb0->data_len + 24)*8;
-    pktlen1 = (mb1->data_len + 24)*8;
-    pktlen2 = (mb2->data_len + 24)*8;
-    pktlen3 = (mb3->data_len + 24)*8;
-    drop0 = fq(modulo0,hash0,pktlen0);
-    drop1 = fq(modulo1,hash1,pktlen1);
-    drop2 = fq(modulo2,hash2,pktlen2);
-    drop3 = fq(modulo3,hash3,pktlen3);
+
+    drop0 = fairdrop(mb0);
+    drop1 = fairdrop(mb1);
+    drop2 = fairdrop(mb2);
+    drop3 = fairdrop(mb3);
 
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
@@ -489,6 +474,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
         error3 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b3->error = node->errors[error3];
     }
+
 ///////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
@@ -572,15 +558,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 	  b0->error = node->errors[error0];
 
 ////////////////////////////////////////////////
-    hash0 = mb0->hash.rss;
-    modulo0 = (hash0)%TABLESIZE;
-    pktlen0 = (mb0->data_len + 24)*8;
-    drop0 = fq(modulo0,hash0,pktlen0);
+
+    drop0 = fairdrop(mb0);
     if(PREDICT_FALSE(drop0 == 1)){
         next0 = VNET_DEVICE_INPUT_NEXT_DROP;
         error0 = DPDK_ERROR_IP_CHECKSUM_ERROR;
         b0->error = node->errors[error0];
     }
+
 ////////////////////////////////////////////////
 
 	  vlib_buffer_advance (b0, device_input_next_node_advance[next0]);
@@ -625,10 +610,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
+/////////////////////////////////////////
+
 /*vstate update*/
 old_t = t;
 t = (u64)(unix_time_now_nsec ());
 departure();
+
+/////////////////////////////////////////
 
   return mb_index;
 }
