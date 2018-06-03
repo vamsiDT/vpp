@@ -180,7 +180,15 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 }
 
 
-/*Active list functions*/
+
+/*
+*               Functions related to activelist. 
+* activelist_init --> creating a circular linked list for activelist
+* flowin_act --> for adding a new entry to activelist at tail
+* flowout_act --> for removing an entry from activelist at head
+* update_costs --> for updating the costs of all the entries in the activelist
+*/
+
 
 /*Active list initialization at vpp startup. This function is called in dpdk_lib_init() */
 always_inline void activelist_init(){
