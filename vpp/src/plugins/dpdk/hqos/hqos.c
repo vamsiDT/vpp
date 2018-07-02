@@ -577,7 +577,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
 	        pkts_enq_len = 0;
 	        flush_count = 0;
-	        break;
+	        //break;
 	      }
 	}
 //	if(pkts_enq_len)
@@ -585,7 +585,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       if (pkts_enq_len)
 	{
 	   flush_count++;
-	   if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
+//	   if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
 	     {
 
         /**********ADD HERE FAIRDROP ALGORITHM*******************/
