@@ -48,6 +48,9 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 //////////////////////////////////////////////
     u16 pktlen0,pktlen1,pktlen2,pktlen3;
     u8  drop0,drop1,drop2,drop3;
+    old_t[device_index] = t[device_index];
+    t[device_index] = (u64)(unix_time_now_nsec());
+    threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
 //////////////////////////////////////////////
 
       while (n_buffers >= 12)

@@ -569,10 +569,10 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
           /**********ADD HERE FAIRDROP ALGORITHM*******************/
           // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+          // old_t[device_index] = t[device_index];
+          // t[device_index] = (u64)(unix_time_now_nsec());
+          // threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
 	        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
-          old_t[device_index] = t[device_index];
-          t[device_index] = (u64)(unix_time_now_nsec());
-          threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
           fifoqueue[device_index]=0;
 
 
@@ -590,10 +590,10 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
         /**********ADD HERE FAIRDROP ALGORITHM*******************/
 	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+        // old_t[device_index] = t[device_index];
+        // t[device_index] = (u64)(unix_time_now_nsec());
+        // threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
         pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
-        old_t[device_index] = t[device_index];
-        t[device_index] = (u64)(unix_time_now_nsec());
-        threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
         fifoqueue[device_index]=0;
 
 	      pkts_enq_len = 0;
