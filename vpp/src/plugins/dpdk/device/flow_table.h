@@ -6,18 +6,18 @@
 *
 *
 */
-#include <vlib/vlib.h>
-#include <vnet/ip/ip.h>
-#include <vnet/vnet.h>
+//#include <vlib/vlib.h>
+//#include <vnet/ip/ip.h>
+//#include <vnet/vnet.h>
 #include <stdlib.h>
 #include <math.h>
 #include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 1.0
+#define ALPHA 0.1
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (344064) //(192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (19200*2) //(344064) //(192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
 //#define THRESHOLD 512*10
 #define NUMFLOWS 10240
 #define NUMINT 4
@@ -44,7 +44,7 @@ extern u32 r_qtotal;
 extern u32 nbl[NUMINT];
 extern u64 t[NUMINT];
 extern u64 old_t[NUMINT];
-extern f32 threshold;
+extern u32 threshold[NUMINT];
 extern activelist_t * act;
 extern activelist_t * head_act[NUMINT];
 extern activelist_t * tail_act[NUMINT];
@@ -250,6 +250,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u32 device_i
         f32 served,credit;
         int oldnbl=nbl[device_index]+1;
         credit = (t[device_index] - old_t[device_index])*10*ALPHA;
+//		threshold[device_index]=(credit/nbl[device_index])*1.2;
 		//printf("nbl[%u]=%u\n",cpu_index,nbl[cpu_index]);
 //		threshold = 153600;//credit/nbl;
         while (oldnbl>nbl[device_index] && nbl[device_index] > 0){
@@ -325,6 +326,8 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     u32 modulo0,modulo1,modulo2,modulo3;
     u16 pktlen0,pktlen1,pktlen2,pktlen3;
     u8  drop0,drop1,drop2,drop3 ;
+//old_t[device_index] = t[device_index];
+//t[device_index] = (u64)(unix_time_now_nsec ());
 //////////////////////////////////////////////
 
       while (n_buffers >= 12)
@@ -452,10 +455,11 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 
     }
 /*vstate update*/
-//old_t[device_index] = t[device_index];
-//t[device_index] = (u64)(unix_time_now_nsec ());
-//departure(device_index);
-
+if(fd_index){
+old_t[device_index] = t[device_index];
+t[device_index] = (u64)(unix_time_now_nsec ());
+departure(device_index);
+}
   return fd_index;
 }
 

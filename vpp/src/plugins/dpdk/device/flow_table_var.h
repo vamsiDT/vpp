@@ -10,7 +10,7 @@ u32 r_qtotal;
 u32 nbl[NUMINT];
 u64 t[NUMINT] = {0,0,0,0};
 u64 old_t[NUMINT];
-f32 threshold;
+u32 threshold[NUMINT]={38400,38400,38400,38400};
 activelist_t * act;
 activelist_t * head_act[NUMINT];
 activelist_t * tail_act[NUMINT];
