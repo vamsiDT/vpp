@@ -26,7 +26,7 @@ extern u32 fifoqueue[NUMINT];
 
 always_inline u8 fifo(u16 pktlen,u32 device_index){
 	u8 drop;
-	if(fifoqueue[device_index] < threshold[device_index] ){
+	if(fifoqueue[device_index] <= threshold[device_index] ){
 		fifoqueue[device_index]+=pktlen;
         drop=0;
     }
