@@ -629,7 +629,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 				      &pkts_deq[n_pkts],
 				      (uint16_t) (pkts_deq_len - n_pkts));
       }
-	if(pkts_deq_len > 0){
+	if(pkts_deq_len){
 	/*vstate update*/
 	old_t[device_index] = t[device_index];
 	t[device_index] = (u64)(unix_time_now_nsec ());
