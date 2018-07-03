@@ -4,3 +4,4 @@ u64 old_t[NUMINT];
 
 u32 fifoqueue[NUMINT] = {0,0,0,0};
 u32 threshold[NUMINT] = {344064,344064,344064,344064};
+uint8_t first=0;

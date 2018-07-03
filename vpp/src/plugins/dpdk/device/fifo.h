@@ -35,7 +35,7 @@ always_inline u8 fifo(u16 pktlen,u32 device_index){
 return drop;
 }
 
-
+extern uint8_t first;
 static_always_inline u32
 taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_pkts, u32 device_index)
 {
@@ -50,7 +50,10 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     u8  drop0,drop1,drop2,drop3;
     old_t[device_index] = t[device_index];
     t[device_index] = (u64)(unix_time_now_nsec());
-    threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
+    if(PREDICT_TRUE(first==1))
+      threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
+    else
+      first=1;
 //////////////////////////////////////////////
 
       while (n_buffers >= 12)
