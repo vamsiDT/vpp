@@ -255,7 +255,7 @@ typedef struct
 #endif
 
 #ifndef HQOS_FLUSH_COUNT_THRESHOLD
-#define HQOS_FLUSH_COUNT_THRESHOLD              10
+#define HQOS_FLUSH_COUNT_THRESHOLD              100000
 #endif
 
 typedef struct dpdk_device_config_hqos_t
