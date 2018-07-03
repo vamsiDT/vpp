@@ -577,22 +577,6 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	        break;
 	      }
 	}
-//	if(pkts_enq_len)
-//	printf("pkts_enq_len=%u\t",pkts_enq_len);
-
-      // /* HQoS enqueue when burst available */
-      // if (pkts_enq_len >= VLIB_FRAME_SIZE )
-      //   {
-
-      //     /**********ADD HERE FAIRDROP ALGORITHM*******************/
-      //     // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-      //     pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
-
-
-      //     pkts_enq_len = 0;
-      //     flush_count = 0;
-      //     //break;
-      //   }
 
       if (pkts_enq_len)
 	{
