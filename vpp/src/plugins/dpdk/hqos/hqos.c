@@ -46,8 +46,8 @@
 
 #include <dpdk/device/dpdk_priv.h>
 
-#include <dpdk/device/flow_table.h>
-#include <dpdk/device/flow_table_var.h>
+#include <dpdk/device/fifo.h>
+#include <dpdk/device/fifo_var.h>
 
 dpdk_main_t dpdk_main;
 
@@ -569,7 +569,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
           /**********ADD HERE FAIRDROP ALGORITHM*******************/
           // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-	        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
+	        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 
 
 	        pkts_enq_len = 0;
@@ -586,7 +586,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
         /**********ADD HERE FAIRDROP ALGORITHM*******************/
 	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
+        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 
 	      pkts_enq_len = 0;
 	       flush_count = 0;
@@ -614,10 +614,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 				      (uint16_t) (pkts_deq_len - n_pkts));
       }
 	if(pkts_deq_len){
-	/*vstate update*/
-	old_t[device_index] = t[device_index];
-	t[device_index] = (u64)(unix_time_now_nsec ());
-	departure(device_index);
+	fifoqueue[device_index]=0;
 	}
 
       /* Advance to next device */
