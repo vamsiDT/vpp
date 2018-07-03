@@ -513,7 +513,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
   u32 dev_pos;
 
   dev_pos = 0;
-   activelist_init(); //For fairdrop cpu
+   //activelist_init(); //For fairdrop cpu
 
   while (1)
     {
@@ -607,15 +607,22 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	// 				       pkts_deq,
 	// 				       hqos->hqos_burst_deq);
 
+
+	if(pkts_deq_len){
+//    	old_t[device_index] = t[device_index];
+//    	t[device_index] = (u64)(unix_time_now_nsec ());
+//    	threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
+
+    	fifoqueue[device_index]=0;
+    }
+
+
 	for (n_pkts = 0; n_pkts < pkts_deq_len;)
 	  n_pkts += rte_eth_tx_burst (device_index,
 				      (uint16_t) queue_id,
 				      &pkts_deq[n_pkts],
 				      (uint16_t) (pkts_deq_len - n_pkts));
       }
-	if(pkts_deq_len){
-	fifoqueue[device_index]=0;
-	}
 
       /* Advance to next device */
       dev_pos++;

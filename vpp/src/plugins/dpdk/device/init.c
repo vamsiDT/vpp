@@ -32,7 +32,6 @@
 #include <fcntl.h>
 
 #include <dpdk/device/dpdk_priv.h>
-#include <dpdk/device/flow_table.h>
 
 dpdk_main_t dpdk_main;
 

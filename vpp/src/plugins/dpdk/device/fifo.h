@@ -14,7 +14,7 @@
 #include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHA 1.0
+#define ALPHA 0.9
 #define NUMINT 4
 
 
@@ -26,7 +26,7 @@ extern u32 fifoqueue[NUMINT];
 
 always_inline u8 fifo(u16 pktlen,u32 device_index){
 	u8 drop;
-	if(fifoqueue[device_index] <= threshold[device_index] ){
+	if(fifoqueue[device_index] < threshold[device_index] ){
 		fifoqueue[device_index]+=pktlen;
         drop=0;
     }
@@ -43,9 +43,10 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
   u32 mb_index=0;
   u32 fd_index=0;
 
+
 //////////////start of extra code///////////////
   old_t[device_index] = t[device_index];
-  t[device_index] = (u64)(unix_time_now_nsec ());
+  t[device_index] = (u64)(unix_time_now_nsec());
   threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
 //////////////end of extra code///////////////
 
@@ -171,6 +172,16 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 //old_t[device_index] = t[device_index];
 //t[device_index] = (u64)(unix_time_now_nsec ());
 //departure(device_index);
+//	fifoqueue[device_index]=0;
+
+/*
+//////////////start of extra code///////////////
+  old_t[device_index] = t[device_index];
+  t[device_index] = (u64)(unix_time_now_nsec());
+  threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
+  fifoqueue[device_index]=0;
+//////////////end of extra code///////////////
+*/
 
   return fd_index;
 }
