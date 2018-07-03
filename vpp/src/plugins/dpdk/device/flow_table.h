@@ -17,7 +17,7 @@
 #define TABLESIZE 4096
 #define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (344064) //(192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
 //#define THRESHOLD 512*10
 #define NUMFLOWS 10240
 #define NUMINT 4
