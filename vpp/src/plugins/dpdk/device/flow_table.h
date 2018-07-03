@@ -17,7 +17,7 @@
 #define TABLESIZE 4096
 #define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
 //#define THRESHOLD 512*10
 #define NUMFLOWS 10240
 #define NUMINT 4
@@ -290,6 +290,7 @@ u8 drop;
     }
     else {
         drop = 1;
+		//printf("drop\n");
         //update vstate is only after a vector. So no update before dropping a packet here.
     }
 //drop = 0;
@@ -451,9 +452,9 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 
     }
 /*vstate update*/
-old_t[device_index] = t[device_index];
-t[device_index] = (u64)(unix_time_now_nsec ());
-departure(device_index);
+//old_t[device_index] = t[device_index];
+//t[device_index] = (u64)(unix_time_now_nsec ());
+//departure(device_index);
 
   return fd_index;
 }

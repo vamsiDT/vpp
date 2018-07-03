@@ -498,7 +498,7 @@ fairdrop_rx_burst (struct rte_ring *r, void **obj_table, unsigned n)
     n_left -= n_this_chunk;
 
     /* Empirically, DPDK r1.8 produces vectors w/ 32 or fewer elts */
-    if (n_this_chunk < 32)
+    if (n_this_chunk < 128)
       break;
   }
 
@@ -554,10 +554,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  struct rte_ring *swq = hqos->swq[swq_pos];
 
 	  /* Read SWQ burst to packet buffer of this device */
-	  pkts_enq_len += rte_ring_sc_dequeue_burst (swq,
-						     (void **)
-						     &pkts_enq[pkts_enq_len],
-						     hqos->hqos_burst_enq);
+	  pkts_enq_len += rte_ring_sc_dequeue_burst (swq, (void **) &pkts_enq[pkts_enq_len], hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
 
 	  /* Get next SWQ for this device */
 	  swq_pos++;
@@ -567,7 +564,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
 
 	    /* HQoS enqueue when burst available */
-	    if (pkts_enq_len >= VLIB_FRAME_SIZE)
+	    if (pkts_enq_len >= VLIB_FRAME_SIZE )
 	      {
 
           /**********ADD HERE FAIRDROP ALGORITHM*******************/
@@ -617,6 +614,12 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 				      &pkts_deq[n_pkts],
 				      (uint16_t) (pkts_deq_len - n_pkts));
       }
+	if(pkts_deq_len > 0){
+	/*vstate update*/
+	old_t[device_index] = t[device_index];
+	t[device_index] = (u64)(unix_time_now_nsec ());
+	departure(device_index);
+	}
 
       /* Advance to next device */
       dev_pos++;
