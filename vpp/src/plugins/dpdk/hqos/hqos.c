@@ -561,11 +561,12 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  if (swq_pos >= n_swq)
 	    swq_pos = 0;
 	  hqos->swq_pos = swq_pos;
-
+    if(pkts_enq_len){
     pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
     pkts_enq_len = 0;
     flush_count = 0;
-
+  }
+    if(pkts_deq_len)
     //for (n_pkts = 0; n_pkts < pkts_deq_len;)
      rte_eth_tx_burst (device_index, (uint16_t) queue_id, &pkts_deq[0], (uint16_t) (pkts_deq_len)); 
 
