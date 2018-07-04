@@ -537,14 +537,14 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       u16 queue_id = dq->queue_id;
 
       struct rte_mbuf **pkts_enq = hqos->pkts_enq;
-      struct rte_mbuf **pkts_deq = hqos->pkts_deq;
+//      struct rte_mbuf **pkts_deq = hqos->pkts_deq;
       u32 pkts_enq_len = hqos->pkts_enq_len;
       u32 swq_pos = hqos->swq_pos;
       u32 n_swq = vec_len (hqos->swq), i;
       u32 flush_count = hqos->flush_count;
 
-      u32 pkts_deq_len = 0;
-      u32 n_pkts;
+//      u32 pkts_deq_len = 0;
+//      u32 n_pkts;
       /*
        * SWQ dequeue and HQoS enqueue for current device
        */
@@ -554,7 +554,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  struct rte_ring *swq = hqos->swq[swq_pos];
 
 	  /* Read SWQ burst to packet buffer of this device */
-	  pkts_enq_len = fairdrop_rx_burst (swq, (void **) &pkts_enq, hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
+	  pkts_enq_len = fairdrop_rx_burst (swq, (void **) &pkts_enq[pkts_enq_len], hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
 
 	  /* Get next SWQ for this device */
 	  swq_pos++;
@@ -562,12 +562,14 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	    swq_pos = 0;
 	  hqos->swq_pos = swq_pos;
 
-    pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
+//    pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
     pkts_enq_len = 0;
     flush_count = 0;
 
     //for (n_pkts = 0; n_pkts < pkts_deq_len;)
-    rte_eth_tx_burst (device_index, (uint16_t) queue_id, &pkts_deq, (uint16_t) (pkts_deq_len)); 
+    rte_eth_tx_burst (device_index, (uint16_t) queue_id, pkts_enq, (uint16_t) (pkts_enq_len));
+	pkts_enq_len = 0;
+    flush_count = 0;
 
 
 	 //    /* HQoS enqueue when burst available */
