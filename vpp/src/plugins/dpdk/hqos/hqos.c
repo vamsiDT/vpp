@@ -62,7 +62,7 @@ static dpdk_device_config_hqos_t hqos_params_default = {
 
   .swq_size = 4096,
   .burst_enq = 256,
-  .burst_deq = 512,
+  .burst_deq = 220,
 
   /*
    * Packet field to identify the subport.
