@@ -62,7 +62,7 @@ static dpdk_device_config_hqos_t hqos_params_default = {
 
   .swq_size = 4096,
   .burst_enq = 256,
-  .burst_deq = 220,
+  .burst_deq = 512,
 
   /*
    * Packet field to identify the subport.
@@ -570,7 +570,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
           /**********ADD HERE FAIRDROP ALGORITHM*******************/
           // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-	        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
+	        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
 			//printf("%u\t%u\n",pkts_enq_len,pkts_deq_len);
 
 	        pkts_enq_len = 0;
@@ -587,7 +587,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
 		////////////////////////////ADD HERE FAIRDROP ALG///////////////////////////
 	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
+        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
 
 	      pkts_enq_len = 0;
 	       flush_count = 0;
@@ -601,7 +601,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       /*
        * HQoS dequeue and HWQ TX enqueue for current device
        */
-	  {
+if(pkts_deq_len)	  {
 
 	// pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
 	// 				       pkts_deq,
@@ -611,7 +611,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  n_pkts += rte_eth_tx_burst (device_index,
 				      (uint16_t) queue_id,
 				      &pkts_deq[n_pkts],
-				      (uint16_t) (pkts_deq_len - n_pkts));
+				      (uint16_t) (pkts_deq_len - n_pkts)); 
       }
 /*
 	if(pkts_deq_len){
