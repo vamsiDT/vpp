@@ -14,7 +14,7 @@
 #include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHA 0.1
+#define ALPHA 1.0
 #define NUMINT 4
 
 
