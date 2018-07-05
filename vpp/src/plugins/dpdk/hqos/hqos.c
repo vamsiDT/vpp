@@ -544,7 +544,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       u32 flush_count = hqos->flush_count;
 
       u32 pkts_deq_len = 0;
-     // u32 n_pkts;
+      u32 n_pkts;
       /*
        * SWQ dequeue and HQoS enqueue for current device
        */

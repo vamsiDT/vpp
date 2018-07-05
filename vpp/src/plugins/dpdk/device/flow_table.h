@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <plugins/dpdk/device/dpdk.h>
-#include <elog.h>
+#include <vppinfra/elog.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
