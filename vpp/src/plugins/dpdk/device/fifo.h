@@ -14,7 +14,7 @@
 #include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHA 1.0
+#define ALPHA 0.1
 #define NUMINT 4
 
 
@@ -50,10 +50,10 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
     u8  drop0,drop1,drop2,drop3;
     old_t[device_index] = t[device_index];
     t[device_index] = (u64)(unix_time_now_nsec());
-    if(PREDICT_TRUE(first[device_index]==1))
+//    if(PREDICT_TRUE(first[device_index]==1))
       threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
-    else
-      first[device_index]=1;
+//    else
+//      first[device_index]=1;
 //////////////////////////////////////////////
 
       while (n_buffers >= 12)
@@ -168,6 +168,7 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 
     }
 
+fifoqueue[device_index]=0;
   return fd_index;
 }
 
