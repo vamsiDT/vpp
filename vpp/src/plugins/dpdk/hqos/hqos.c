@@ -566,9 +566,10 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
     pkts_enq_len = 0;
     flush_count = 0;
   }
-    if(pkts_deq_len)
+    if(pkts_deq_len){
     //for (n_pkts = 0; n_pkts < pkts_deq_len;)
-     rte_eth_tx_burst (device_index, (uint16_t) queue_id, &pkts_deq[0], (uint16_t) (pkts_deq_len)); 
+     rte_eth_tx_burst (device_index, (uint16_t) queue_id, &pkts_deq[0], (uint16_t) (pkts_deq_len));
+	pkts_deq_len=0;}
 
 
 	 //    /* HQoS enqueue when burst available */
