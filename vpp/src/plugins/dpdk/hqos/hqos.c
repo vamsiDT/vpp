@@ -554,7 +554,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  struct rte_ring *swq = hqos->swq[swq_pos];
 
 	  /* Read SWQ burst to packet buffer of this device */
-	  pkts_enq_len = rte_ring_sc_dequeue_burst (swq, (void **) &pkts_enq[0], hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
+	  pkts_enq_len += rte_ring_sc_dequeue_burst (swq, (void **) &pkts_enq[pkts_enq_len], hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
 
 	  /* Get next SWQ for this device */
 	  swq_pos++;
@@ -620,7 +620,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  n_pkts += rte_eth_tx_burst (device_index,
 				      (uint16_t) queue_id,
 				      &pkts_deq[n_pkts],
-				      (uint16_t) (pkts_deq_len - n_pkts)); 
+				      (uint16_t) (pkts_deq_len - n_pkts));
       }
 /*
 	if(pkts_deq_len){
@@ -784,13 +784,13 @@ dpdk_hqos_metadata_set (dpdk_device_hqos_per_worker_thread_t * hqos,
 						 pkt3_tc_q,
 						 0);
 
-      pkt0->hash.sched.lo = pkt0_sched & 0xFFFFFFFF;
+      pkt0->hash.sched.lo = pkt0->hash.rss;//pkt0_sched & 0xFFFFFFFF;
       pkt0->hash.sched.hi = pkt0_sched >> 32;
-      pkt1->hash.sched.lo = pkt1_sched & 0xFFFFFFFF;
+      pkt1->hash.sched.lo = pkt1->hash.rss;//pkt1_sched & 0xFFFFFFFF;
       pkt1->hash.sched.hi = pkt1_sched >> 32;
-      pkt2->hash.sched.lo = pkt2_sched & 0xFFFFFFFF;
+      pkt2->hash.sched.lo = pkt2->hash.rss;//pkt2_sched & 0xFFFFFFFF;
       pkt2->hash.sched.hi = pkt2_sched >> 32;
-      pkt3->hash.sched.lo = pkt3_sched & 0xFFFFFFFF;
+      pkt3->hash.sched.lo = pkt3->hash.rss;//pkt3_sched & 0xFFFFFFFF;
       pkt3->hash.sched.hi = pkt3_sched >> 32;
     }
 
@@ -818,7 +818,7 @@ dpdk_hqos_metadata_set (dpdk_device_hqos_per_worker_thread_t * hqos,
 						pkt_tc_q,
 						0);
 
-      pkt->hash.sched.lo = pkt_sched & 0xFFFFFFFF;
+      pkt->hash.sched.lo = pkt->hash.rss;//pkt_sched & 0xFFFFFFFF;
       pkt->hash.sched.hi = pkt_sched >> 32;
     }
 }

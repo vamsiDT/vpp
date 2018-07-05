@@ -16,14 +16,14 @@
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
-#define ALPHA 0.2
+#define ALPHA 1.0
 #define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (19200*2) //(344064) //(192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (344064) //(192000)//(172032) //(19200*3) //just a random number. Update the value with proper theoritical approach.
 //#define THRESHOLD 512*10
 #define NUMFLOWS 10240
 #define NUMINT 4
 
-#define ELOG_FAIRDROP
+//#define ELOG_FAIRDROP
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
@@ -471,11 +471,11 @@ fairdrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 
     }
 /*vstate update*/
-//if(fd_index){
+if(fd_index){
 old_t[device_index] = t[device_index];
 t[device_index] = (u64)(unix_time_now_nsec ());
 departure(device_index);
-//}
+}
   return fd_index;
 }
 

@@ -270,8 +270,8 @@ static_always_inline
 
 	  ASSERT (hqos->swq != NULL);
 
-	  dpdk_hqos_metadata_set (hqos,
-				  &tx_vector[tx_tail], tx_head - tx_tail);
+	  //dpdk_hqos_metadata_set (hqos,
+		//		  &tx_vector[tx_tail], tx_head - tx_tail);
 	  rv = rte_ring_sp_enqueue_burst (hqos->swq,
 					  (void **) &tx_vector[tx_tail],
 					  (uint16_t) (tx_head - tx_tail));
