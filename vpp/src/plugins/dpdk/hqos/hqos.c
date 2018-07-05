@@ -554,54 +554,54 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 	  struct rte_ring *swq = hqos->swq[swq_pos];
 
 	  /* Read SWQ burst to packet buffer of this device */
-	  pkts_enq_len = fairdrop_rx_burst (swq, (void **) &pkts_enq[0], hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
+	  pkts_enq_len = rte_ring_sc_dequeue_burst (swq, (void **) &pkts_enq[0], hqos->hqos_burst_enq); //rte_ring_sc_dequeue_burst
 
 	  /* Get next SWQ for this device */
 	  swq_pos++;
 	  if (swq_pos >= n_swq)
 	    swq_pos = 0;
 	  hqos->swq_pos = swq_pos;
-    if(pkts_enq_len){
-    pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
-    pkts_enq_len = 0;
-    flush_count = 0;
-  }
-    if(pkts_deq_len){
-    //for (n_pkts = 0; n_pkts < pkts_deq_len;)
-     rte_eth_tx_burst (device_index, (uint16_t) queue_id, &pkts_deq[0], (uint16_t) (pkts_deq_len));
-	pkts_deq_len=0;}
+ //    if(pkts_enq_len){
+ //    pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
+ //    pkts_enq_len = 0;
+ //    flush_count = 0;
+ //  }
+ //    if(pkts_deq_len){
+ //    //for (n_pkts = 0; n_pkts < pkts_deq_len;)
+ //     rte_eth_tx_burst (device_index, (uint16_t) queue_id, &pkts_deq[0], (uint16_t) (pkts_deq_len));
+	// pkts_deq_len=0;}
 
 
-	 //    /* HQoS enqueue when burst available */
-	 //    if (pkts_enq_len >= VLIB_FRAME_SIZE )
-		// //if(pkts_enq_len > 0)
-	 //      {
+	    /* HQoS enqueue when burst available */
+	    if (pkts_enq_len >= VLIB_FRAME_SIZE )
+		//if(pkts_enq_len > 0)
+	      {
 
-  //         /**********ADD HERE FAIRDROP ALGORITHM*******************/
-  //         // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-	 //        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
-		// 	//printf("%u\t%u\n",pkts_enq_len,pkts_deq_len);
+          /**********ADD HERE FAIRDROP ALGORITHM*******************/
+          // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+	        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
+			//printf("%u\t%u\n",pkts_enq_len,pkts_deq_len);
 
-	 //        pkts_enq_len = 0;
-	 //        flush_count = 0;
-	 //        break;
-	 //      }
+	        pkts_enq_len = 0;
+	        flush_count = 0;
+	        break;
+	      }
 	}
 
- //      if (pkts_enq_len)
-	// {
-	//    flush_count++;
-	//    if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
-	//      {
+      if (pkts_enq_len)
+	{
+	   flush_count++;
+	   if (PREDICT_FALSE (flush_count == HQOS_FLUSH_COUNT_THRESHOLD))
+	     {
 
-	// 	////////////////////////////ADD HERE FAIRDROP ALG///////////////////////////
-	//       // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
- //        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
+		////////////////////////////ADD HERE FAIRDROP ALG///////////////////////////
+	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
+        pkts_deq_len = fairdrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
 
-	//       pkts_enq_len = 0;
-	//        flush_count = 0;
-	//      }
-	// }
+	      pkts_enq_len = 0;
+	       flush_count = 0;
+	     }
+	}
 //	if(pkts_deq_len)
 //	printf("pkts_deq_len=%u\n",pkts_deq_len);
       hqos->pkts_enq_len = pkts_enq_len;
@@ -610,18 +610,18 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
       /*
        * HQoS dequeue and HWQ TX enqueue for current device
        */
- //   {
+   {
 
-	// // pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
-	// // 				       pkts_deq,
-	// // 				       hqos->hqos_burst_deq);
+	// pkts_deq_len = rte_sched_port_dequeue (hqos->hqos,
+	// 				       pkts_deq,
+	// 				       hqos->hqos_burst_deq);
 
-	// for (n_pkts = 0; n_pkts < pkts_deq_len;)
-	//   n_pkts += rte_eth_tx_burst (device_index,
-	// 			      (uint16_t) queue_id,
-	// 			      &pkts_deq[n_pkts],
-	// 			      (uint16_t) (pkts_deq_len - n_pkts)); 
- //      }
+	for (n_pkts = 0; n_pkts < pkts_deq_len;)
+	  n_pkts += rte_eth_tx_burst (device_index,
+				      (uint16_t) queue_id,
+				      &pkts_deq[n_pkts],
+				      (uint16_t) (pkts_deq_len - n_pkts)); 
+      }
 /*
 	if(pkts_deq_len){
 	old_t[device_index] = t[device_index];

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <plugins/dpdk/device/dpdk.h>
+#include <elog.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
@@ -21,6 +22,8 @@
 //#define THRESHOLD 512*10
 #define NUMFLOWS 10240
 #define NUMINT 4
+
+#define ELOG_FAIRDROP
 
 /*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
@@ -284,7 +287,7 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update,u32 device_i
 
 /* arrival function for each packet */
 always_inline u8 arrival(flowcount_t * flow, u16 pktlenx,u32 device_index){
-u8 drop;
+u16 drop;
     if(flow->vqueue <= THRESHOLD){
         vstate(flow,pktlenx,0,device_index);
         drop = 0;
@@ -295,6 +298,19 @@ u8 drop;
         //update vstate is only after a vector. So no update before dropping a packet here.
     }
 //drop = 0;
+#ifdef ELOG_FAIRDROP
+    ELOG_TYPE_DECLARE (e) = {
+    .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u drop = %u",
+    .format_args = "i4i4i4i2",
+    };
+    struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u16 drop;} *ed;
+    ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+    ed->flow_hash = flow->hash;
+    ed->flow_vqueue = flow->vqueue;
+    ed->threshold = THRESHOLD;
+    ed->drop = drop;
+#endif
+
 return drop;
 }
 
