@@ -14,10 +14,10 @@
 #include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHA 1.0
+#define ALPHA 0.9
 #define NUMINT 4
 //#define ELOG_FAIRDROP
-
+#define THRESHOLD (344064)
 
 extern u64 t[NUMINT];
 extern u64 old_t[NUMINT];
@@ -27,7 +27,7 @@ extern u32 fifoqueue[NUMINT];
 
 always_inline u8 fifo(u16 pktlen,u32 device_index){
 	u8 drop;
-	if(fifoqueue[device_index] <= threshold[device_index] ){
+	if(fifoqueue[device_index] <= THRESHOLD ){
 		fifoqueue[device_index]+=pktlen;
         drop=0;
     }
@@ -50,6 +50,17 @@ always_inline u8 fifo(u16 pktlen,u32 device_index){
 return drop;
 }
 
+always_inline void departure (u32 device_index ){
+	u32 credit;
+	old_t[device_index] = t[device_index];
+	t[device_index] = (u64)(unix_time_now_nsec());
+	credit=(t[device_index]-old_t[device_index])*10*ALPHA;
+	if(fifoqueue[device_index]>credit)
+		fifoqueue[device_index] -= credit;
+	else
+		fifoqueue[device_index]=0;
+}
+
 extern u8 first[NUMINT];
 static_always_inline u32
 taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_pkts, u32 device_index)
@@ -63,12 +74,12 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 //////////////////////////////////////////////
     u16 pktlen0,pktlen1,pktlen2,pktlen3;
     u8  drop0,drop1,drop2,drop3;
-    old_t[device_index] = t[device_index];
-    t[device_index] = (u64)(unix_time_now_nsec());
-    if(PREDICT_TRUE(first[device_index]==1))
-      threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
-    else
-      first[device_index]=1;
+ //   old_t[device_index] = t[device_index];
+ //   t[device_index] = (u64)(unix_time_now_nsec());
+ //   if(PREDICT_TRUE(first[device_index]==1))
+ //     threshold[device_index]=(t[device_index]-old_t[device_index])*10*ALPHA;
+ //   else
+ //     first[device_index]=1;
 //////////////////////////////////////////////
 
       while (n_buffers >= 12)
@@ -183,7 +194,8 @@ taildrop_enqueue (struct rte_mbuf **pkts, struct rte_mbuf **fd_pkts, uint32_t n_
 
     }
 
-fifoqueue[device_index]=0;
+//fifoqueue[device_index]=0;
+departure(device_index);
   return fd_index;
 }
 
