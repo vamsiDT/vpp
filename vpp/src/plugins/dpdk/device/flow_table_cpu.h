@@ -386,7 +386,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = (t[cpu_index]-old_t[cpu_index]);
-		//threshold[cpu_index] = (credit*(1.2))/nbl[cpu_index];
+		threshold[cpu_index] = (credit*(1.2))/nbl[cpu_index];
 
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
@@ -467,10 +467,10 @@ always_inline void sleep_now (u32 t){
 
 always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
   u32 n_buf = n_buffers;
-  if(n_buffers >= VLIB_FRAME_SIZE)
-    threshold[cpu_index]=threshold[cpu_index]/2;
-  else
-    threshold[cpu_index]=threshold[cpu_index]*1.2;
+//  if(n_buffers >= VLIB_FRAME_SIZE)
+//    threshold[cpu_index]=threshold[cpu_index]/2;
+//  else
+//    threshold[cpu_index]=threshold[cpu_index]*1.2;
   u16 i=0;
   u16 j=0;
   u8 hello=0;
