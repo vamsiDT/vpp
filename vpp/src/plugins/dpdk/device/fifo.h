@@ -14,7 +14,7 @@
 #include <plugins/dpdk/device/dpdk.h>
 #ifndef FLOW_TABLE_H
 #define FLOW_TABLE_H
-#define ALPHA 0.9
+#define ALPHA 0.8
 #define NUMINT 4
 //#define ELOG_FAIRDROP
 #define THRESHOLD (344064)
