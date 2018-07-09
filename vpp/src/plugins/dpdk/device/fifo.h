@@ -16,6 +16,7 @@
 #define FLOW_TABLE_H
 #define ALPHA 1.0
 #define NUMINT 4
+//#define ELOG_FAIRDROP
 
 
 extern u64 t[NUMINT];
@@ -32,6 +33,20 @@ always_inline u8 fifo(u16 pktlen,u32 device_index){
     }
 	else
 		drop=1;
+
+#ifdef ELOG_FAIRDROP
+    ELOG_TYPE_DECLARE (e) = {
+    .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u drop = %u",
+    .format_args = "i4i4i4i2",
+    };
+    struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u16 drop;} *ed;
+    ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+    ed->flow_hash = 0;
+    ed->flow_vqueue = fifoqueue[device_index];
+    ed->threshold = threshold[device_index];
+    ed->drop = drop;
+#endif
+
 return drop;
 }
 

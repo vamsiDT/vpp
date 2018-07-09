@@ -578,7 +578,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
           /**********ADD HERE FAIRDROP ALGORITHM*******************/
           // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-	        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
+	        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 			//fifoqueue[device_index]=0;
 			//printf("%u\t%u\n",pkts_enq_len,pkts_deq_len);
 
@@ -596,7 +596,7 @@ dpdk_hqos_thread_internal (vlib_main_t * vm)
 
 		////////////////////////////ADD HERE FAIRDROP ALG///////////////////////////
 	      // rte_sched_port_enqueue (hqos->hqos, pkts_enq, pkts_enq_len);
-        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, dev_pos);
+        pkts_deq_len = taildrop_enqueue (pkts_enq, pkts_deq, pkts_enq_len, device_index);
 		//fifoqueue[device_index]=0;
 
 	      pkts_enq_len = 0;
