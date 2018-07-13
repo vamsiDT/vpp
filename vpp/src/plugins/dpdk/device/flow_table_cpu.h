@@ -176,7 +176,7 @@ extern activelist_t * act;
 extern activelist_t * head_act[MAXCPU];
 extern activelist_t * tail_act[MAXCPU];
 extern struct rte_mbuf * f_vectors[VLIB_FRAME_SIZE];
-
+extern u32 n_pack[MAXCPU];
 
 /* Flow classification function */
 

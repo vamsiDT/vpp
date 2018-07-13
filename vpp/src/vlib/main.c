@@ -1475,11 +1475,22 @@ vlib_main_or_worker_loop (vlib_main_t * vm, int is_main)
 
   while (1)
     {
-	u64 cpu_time_now = clib_cpu_time_now ();
-  u32 cpu_index = os_get_cpu_number();
-	s_total[cpu_index]= cpu_time_now - s[cpu_index];
-	s[cpu_index] = cpu_time_now;
+//	u64 cpu_time_now = clib_cpu_time_now ();
+//  	u32 cpu_index = os_get_cpu_number();
+//	if(n_pack[cpu_index])
+//	s_total[cpu_index]= cpu_time_now - s[cpu_index];
+//	s[cpu_index] = cpu_time_now;
 
+//	u32 cpu_index = os_get_cpu_number();
+//	u64 cpu_time_now = clib_cpu_time_now();
+
+   // if(n_pack[cpu_index]>0){
+   //     u64 cpu_time_now = clib_cpu_time_now ();
+   //     s_total[cpu_index]= cpu_time_now - s[cpu_index];
+   //     s[cpu_index] = cpu_time_now;
+   //     }
+//if(n_pack[cpu_index])
+//clib_warning("%lu\t%u\n",s_total[cpu_index],n_pack[cpu_index]);
       vlib_node_runtime_t *n;
 
       if (!is_main)
@@ -1614,6 +1625,13 @@ vlib_main_or_worker_loop (vlib_main_t * vm, int is_main)
     //s_total[os_get_cpu_number()] = (cpu_time_now-s[os_get_cpu_number()]);
 	//clib_warning("%lu\n",s_total[os_get_cpu_number()]);
 //////////////////////////////////////////
+/*
+	if(n_pack[cpu_index]>0){
+        u64 cpu_time_nowa = clib_cpu_time_now ();
+        s_total[cpu_index]= cpu_time_nowa - cpu_time_now;
+//        s[cpu_index] = cpu_time_now;
+        }
+*/
     }
 }
 

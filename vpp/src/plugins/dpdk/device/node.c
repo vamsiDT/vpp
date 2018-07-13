@@ -309,6 +309,7 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
     return 0;
 
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
+	n_pack[cpu_index] = n_buffers;
 
 
   if (n_buffers == 0)
@@ -318,7 +319,13 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   else{
 ///////////////////////////////////////////////
   	/*For Fairdrop Algorithm*/
-    n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+	u64 cpu_time_now = clib_cpu_time_now ();
+    //u32 cpu_index = os_get_cpu_number();
+    if(n_pack[cpu_index])
+    s_total[cpu_index]= cpu_time_now - s[cpu_index];
+    s[cpu_index] = cpu_time_now;
+
+	n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
 ///////////////////////////////////////////////
   }
 
