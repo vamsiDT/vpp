@@ -318,7 +318,7 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
 }
 
 /*
-*               Functions related to activelist. 
+*               Functions related to activelist.
 * activelist_init --> creating a circular linked list for activelist
 * flowin_act --> for adding a new entry to activelist at tail
 * flowout_act --> for removing an entry from activelist at head
@@ -376,6 +376,7 @@ always_inline void update_costs(u32 cpu_index){
         n -= 1;
     }
     }
+	sum[cpu_index]=0;
 }
 
 /* vstate algorithm */
@@ -435,24 +436,23 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
         return 0;
     }
 
-// #ifdef ELOG_FAIRDROP
-// 	ELOG_TYPE_DECLARE (e) = {
-//     .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u cost = %u",
-//     .format_args = "i4i4i4i2",
-// 	};
-//   	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u16 cost;} *ed;
-//   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-//   	ed->flow_hash = flow->hash;
-//   	ed->flow_vqueue = flow->vqueue;
-// 	ed->threshold = threshold[cpu_index];
-//   	ed->cost = flow->cost;
-// #endif
+#ifdef ELOG_FAIRDROP
+ 	ELOG_TYPE_DECLARE (e) = {
+     .format = "Flow Hash: %u Flow Vqueue = %u Threshold = %u cost = %u",
+     .format_args = "i4i4i4i2",
+ 	};
+   	struct {u32 flow_hash; u32 flow_vqueue;u32 threshold;u16 cost;} *ed;
+   	ed = ELOG_DATA (&vlib_global_main.elog_main, e);
+   	ed->flow_hash = flow->hash;
+   	ed->flow_vqueue = flow->vqueue;
+ 	ed->threshold = threshold[cpu_index];
+   	ed->cost = flow->cost;
+ #endif
 }
 
 /*vstate update function before sending the vector. This function is after processing all the packets in the vector and called only once per vector */
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
-	sum[cpu_index]=0;
 }
 
 /*Busyloop function. Consumes t number of clock cycles*/
@@ -467,10 +467,11 @@ always_inline void sleep_now (u32 t){
 
 always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
   u32 n_buf = n_buffers;
-//  if(n_buffers >= VLIB_FRAME_SIZE)
-//    threshold[cpu_index]=threshold[cpu_index]/2;
-//  else
-//    threshold[cpu_index]=threshold[cpu_index]*1.2;
+/*  if(n_buffers >= VLIB_FRAME_SIZE)
+    threshold[cpu_index]=threshold[cpu_index]/2;
+  else
+    threshold[cpu_index]=threshold[cpu_index]*1.2;
+*/
   u16 i=0;
   u16 j=0;
   u8 hello=0;

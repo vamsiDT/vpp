@@ -134,11 +134,11 @@ format_vlib_node_stats (u8 * s, va_list * va)
   /* Clocks per packet, per call or per suspend. */
   x = 0;
   if (p > 0)
-    x =  l ;// (f64) p;
+    x =  l/(f64)p ;// (f64) p;
   else if (c > 0)
-    x =  l ;// (f64) c;
+    x =  l/(f64)c ;// (f64) c;
   else if (d > 0)
-    x = (f64) l ;// (f64) d;
+    x = l/(f64) d ;// (f64) d;
 
   if (c > 0)
     v = (double) p / (double) c;
