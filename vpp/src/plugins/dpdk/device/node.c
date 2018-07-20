@@ -194,7 +194,6 @@ dpdk_rx_burst (dpdk_main_t * dm, dpdk_device_t * xd, u16 queue_id)
 	  /* Empirically, DPDK r1.8 produces vectors w/ 32 or fewer elts */
 	  if (n_this_chunk < 32)
 	    break;
-//	if(n_this_chunk==0)break;
 	}
     }
   else
@@ -290,6 +289,7 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
  * The main thread performs IO and forwards the packets.
  */
 
+
 static_always_inline u32
 dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   vlib_node_runtime_t * node, u32 cpu_index, u16 queue_id,
@@ -312,53 +312,42 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
 
-//    u64 cpu_time_now = clib_cpu_time_now ();
-//    s_total[cpu_index]= cpu_time_now - s[cpu_index];
-//    s[cpu_index] = cpu_time_now;
+if(queue_id==0 && xd->device_index==0){
 
-//    printf("Fuckoff n_pack[%u]=%u queue_id=%u\n",cpu_index,n_pack[cpu_index],queue_id);
+    u64 cpu_time_now = clib_cpu_time_now ();
+    dpdk_cost_total[cpu_index]= cpu_time_now - s[cpu_index];
+    s[cpu_index] = cpu_time_now;
+
+//if(n_pack[cpu_index]){
 if(n_pack[cpu_index]){
-//	printf("Fuckoff n_pack[%u]=%u queue_id=%u\n",cpu_index,n_pack[cpu_index],queue_id);
+/*
     u64 cpu_time_now = clib_cpu_time_now ();
     s_total[cpu_index]= cpu_time_now - s[cpu_index];
     s[cpu_index] = cpu_time_now;
-	update_costs(cpu_index);
-
-/*	old_t[cpu_index]=t[cpu_index];
-    t[cpu_index]=clib_cpu_time_now();
-    departure(cpu_index);
 */
+///
+	//update_costs(cpu_index);
+///
+	s_total[cpu_index]=dpdk_cost_total[cpu_index];
 
-/*
-	if(n_buffers==0){
-		old_t[cpu_index]=t[cpu_index];
-		t[cpu_index]=clib_cpu_time_now();
-		departure(cpu_index);
-	}*/
+
+
+	//departure(cpu_index);
 }
-
-
-/*
-else if (n_buffers){
-s[cpu_index]=clib_cpu_time_now();
-t[cpu_index]=s[cpu_index];
-}
-*/
-
-/*else{
-if(n_buffers==0)
-t[cpu_index]=clib_cpu_time_now();
-}*/
 n_pack[cpu_index]=n_buffers;
 
-  if (n_buffers == 0)
-    {
-      return 0;
-    }
-  else{
-	n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-  }
+if(n_buffers){
+///
+//old_t[cpu_index]=t[cpu_index];
+//t[cpu_index]=xd->rx_vectors[queue_id][0]->udata64;
+update_costs(cpu_index);
+departure(cpu_index);
+///
+n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+//departure(cpu_index);
+}
 
+}
 if (PREDICT_FALSE(n_buffers==0))
 	return 0;
 
@@ -696,23 +685,7 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
   uword n_rx_packets = 0;
   dpdk_device_and_queue_t *dq;
   u32 cpu_index = os_get_cpu_number ();
-/*
-//if(n_pack[cpu_index]){
-    u64 cpu_time_now = clib_cpu_time_now ();
-    s_total[cpu_index]= cpu_time_now - s[cpu_index];
-    s[cpu_index] = cpu_time_now;
-	old_t[cpu_index] = t[cpu_index];
-    t[cpu_index] = cpu_time_now;
 
-if(n_pack[cpu_index]){
-    update_costs(cpu_index);
-//	old_t[cpu_index] = t[cpu_index];
-//    t[cpu_index] = mb0->udata64;
-    //update_costs(cpu_index);
-    departure(cpu_index);
-}
-	n_pack[cpu_index]=0;
-*/
 
   /*
    * Poll all devices on this cpu for input/interrupts.
@@ -730,7 +703,7 @@ if(n_pack[cpu_index]){
 
   poll_rate_limit (dm);
 
-  return n_rx_packets;
+  return n_pack[cpu_index];
 }
 
 /* *INDENT-OFF* */
