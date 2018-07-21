@@ -22,7 +22,7 @@
 #define NUMFLOWS 102400
 
 //#define ELOG_FAIRDROP
-#define THRESHOLD 8000
+#define THRESHOLD 6000
 
 #define BUSYLOOP
 #define WEIGHT_DROP 40
@@ -450,7 +450,7 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
  #endif
 
 
-    if(PREDICT_TRUE(flow->vqueue <= threshold[cpu_index])){
+    if(PREDICT_TRUE(flow->vqueue <= THRESHOLD)){
         vstate(flow,0,cpu_index);
 #ifdef BUSYLOOP
         if(PREDICT_FALSE(pktlenx > 500))
@@ -483,11 +483,6 @@ always_inline void sleep_now (u32 t){
 
 always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
   u32 n_buf = n_buffers;
-  if(n_buffers >= VLIB_FRAME_SIZE)
-    threshold[cpu_index]=threshold[cpu_index]/2;
-  else
-    threshold[cpu_index]=threshold[cpu_index]*1.2;
-
 
   u16 i=0;
   u16 j=0;
