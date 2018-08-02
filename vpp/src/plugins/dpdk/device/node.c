@@ -200,6 +200,8 @@ dpdk_rx_burst (dpdk_main_t * dm, dpdk_device_t * xd, u16 queue_id)
     {
       ASSERT (0);
     }
+//	struct rte_eth_dev *dev = &rte_eth_devices[xd->device_index];
+
 
   return n_buffers;
 }
@@ -311,40 +313,28 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
-
 if(queue_id==0 && xd->device_index==0){
 
     u64 cpu_time_now = clib_cpu_time_now ();
     dpdk_cost_total[cpu_index]= cpu_time_now - s[cpu_index];
     s[cpu_index] = cpu_time_now;
 
-//if(n_pack[cpu_index]){
+  if(n_buffers >= 256)
+    threshold[cpu_index]-=5;//=threshold[cpu_index]/2;
+  else
+    threshold[cpu_index]+=10;//=threshold[cpu_index]*1.2;
+
+
 if(n_pack[cpu_index]){
-/*
-    u64 cpu_time_now = clib_cpu_time_now ();
-    s_total[cpu_index]= cpu_time_now - s[cpu_index];
-    s[cpu_index] = cpu_time_now;
-*/
-///
-	//update_costs(cpu_index);
-///
 	s_total[cpu_index]=dpdk_cost_total[cpu_index];
 
-
-
-	//departure(cpu_index);
 }
 n_pack[cpu_index]=n_buffers;
 
 if(n_buffers){
-///
-//old_t[cpu_index]=t[cpu_index];
-//t[cpu_index]=xd->rx_vectors[queue_id][0]->udata64;
 update_costs(cpu_index);
 departure(cpu_index);
-///
 n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-//departure(cpu_index);
 }
 
 }

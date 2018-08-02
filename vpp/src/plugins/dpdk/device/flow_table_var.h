@@ -22,3 +22,4 @@ activelist_t * act;
 activelist_t * head_act[MAXCPU];
 activelist_t * tail_act[MAXCPU];
 u32 n_pack[MAXCPU]={1,1,1,1};
+u64 rx_miss[MAXCPU]={0,0,0,0};
