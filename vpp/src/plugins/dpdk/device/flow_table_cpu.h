@@ -21,7 +21,7 @@
 #define ALPHACPU 1.0
 #define NUMFLOWS 102400
 
-#define ELOG_FAIRDROP
+//#define ELOG_FAIRDROP
 #define THRESHOLD 6000
 
 #define BUSYLOOP
