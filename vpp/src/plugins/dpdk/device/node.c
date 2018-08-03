@@ -299,7 +299,14 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;
 
+
   n_buffers = dpdk_rx_burst (dm, xd, queue_id);
+
+if((xd->device_index==0) && (queue_id==0) && (n_buffers)){
+int a = rte_eth_rx_queue_count(xd->device_index, queue_id);
+printf("%d\n",a);
+}
+
 
   if (n_buffers == 0)
     {
