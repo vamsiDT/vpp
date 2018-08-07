@@ -318,36 +318,18 @@ if(queue_id==0 && xd->device_index==0){
     dpdk_cost_total[cpu_index]= cpu_time_now - s[cpu_index];
     s[cpu_index] = cpu_time_now;
 
-//if(n_pack[cpu_index]){
-if(n_pack[cpu_index]){
-/*
-    u64 cpu_time_now = clib_cpu_time_now ();
-    s_total[cpu_index]= cpu_time_now - s[cpu_index];
-    s[cpu_index] = cpu_time_now;
-*/
-///
-	//update_costs(cpu_index);
-///
-	s_total[cpu_index]=dpdk_cost_total[cpu_index];
-
-
-
-	//departure(cpu_index);
-}
-n_pack[cpu_index]=n_buffers;
-
-if(n_buffers){
-///
-//old_t[cpu_index]=t[cpu_index];
-//t[cpu_index]=xd->rx_vectors[queue_id][0]->udata64;
-update_costs(cpu_index);
-departure(cpu_index);
-///
-n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
-//departure(cpu_index);
+	if(n_pack[cpu_index]){
+		s_total[cpu_index]=dpdk_cost_total[cpu_index];
+	}
+	n_pack[cpu_index]=n_buffers;
+//	printf("%u\n",n_buffers);
+	if(n_buffers){
+		update_costs(cpu_index);
+		departure(cpu_index);
+		n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+	}
 }
 
-}
 if (PREDICT_FALSE(n_buffers==0))
 	return 0;
 
