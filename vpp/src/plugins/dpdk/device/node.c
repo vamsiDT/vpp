@@ -268,7 +268,7 @@ dpdk_prefetch_ethertype (struct rte_mbuf *mb)
    template and then use 128/256 bit vector instruction to copy data.
    This code first loads whole cacheline into 4 128-bit registers (xmm)
    or two 256 bit registers (ymm) and then stores data into all 4 buffers
-   efectively saving on register load operations.
+v   efectively saving on register load operations.
 */
 
 static_always_inline void
@@ -290,6 +290,8 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
  * The main thread performs IO and forwards the packets.
  */
 
+//int old_a[MAXCPU][4];
+//int a[MAXCPU][4];
 
 static_always_inline u32
 dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
@@ -310,20 +312,28 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;
 
+if(queue_id==0 && xd->device_index==0){
+	int a = rte_eth_rx_queue_count(xd->device_index, queue_id);
+
+if(a){
+    if(a>256){
+			threshold[cpu_index]=threshold[cpu_index]/(f32)(1+((a-256)/256.0));
+			//threshold[cpu_index]=threshold[cpu_index]/2;
+	}
+	else if (a>250 && a<=256)
+			threshold[cpu_index]=threshold[cpu_index]*1;
+	else
+		threshold[cpu_index]=threshold[cpu_index]*(1+((a-256)/256.0));
+		//threshold[cpu_index]=threshold[cpu_index]*1.3;
+printf("%d\t%f\n",a,threshold[cpu_index]);
+}
+}
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
-
 if(queue_id==0 && xd->device_index==0){
-//printf("%u\n",rte_eth_rx_queue_count(xd->device_index, queue_id));
     u64 cpu_time_now = clib_cpu_time_now ();
     dpdk_cost_total[cpu_index]= cpu_time_now - s[cpu_index];
     s[cpu_index] = cpu_time_now;
-
-/*  if(n_buffers >= 256)
-    threshold[cpu_index]-=5;//=threshold[cpu_index]/2;
-  else
-    threshold[cpu_index]+=10;//=threshold[cpu_index]*1.2;
-*/
 
 if(n_pack[cpu_index])
 	s_total[cpu_index]=dpdk_cost_total[cpu_index];
@@ -332,17 +342,10 @@ n_pack[cpu_index]=n_buffers;
 
 if(n_buffers){
 
-int a = rte_eth_rx_queue_count(xd->device_index, queue_id);
-printf("%d\n",a);
-/*
-	if(a>=VLIB_FRAME_SIZE)
-		threshold[cpu_index]=threshold[cpu_index]-100;
-	else
-		threshold[cpu_index]=threshold[cpu_index]+20;
-*/
 	update_costs(cpu_index);
 	departure(cpu_index);
 	n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
+
 }
 
 }

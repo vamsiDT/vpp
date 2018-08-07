@@ -440,7 +440,7 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
     ed->flow_hash = rte_eth_rx_queue_count(0,0);
     ed->flow_vqueue = flow->vqueue;
     ed->threshold = threshold[cpu_index];
-    ed->cost = flow->cost;
+    ed->cost = veryold_t[cpu_index];
  #endif
 //rte_eth_rx_queue_count(xd->device_index, queue_id);
 
