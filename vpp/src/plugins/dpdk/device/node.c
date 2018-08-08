@@ -293,6 +293,9 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
 //int old_a[MAXCPU][4];
 //int a[MAXCPU][4];
 
+u8 n_less[MAXCPU];
+u8 n_more[MAXCPU];
+
 static_always_inline u32
 dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 		   vlib_node_runtime_t * node, u32 cpu_index, u16 queue_id,
@@ -317,15 +320,29 @@ if(queue_id==0 && xd->device_index==0){
 
 if(a){
     if(a>256){
+			n_more[cpu_index]++;
+			if(n_more[cpu_index]>4){
+			//threshold[cpu_index]=threshold[cpu_index]*0.7;
 			threshold[cpu_index]=threshold[cpu_index]/(f32)(1+((a-256)/256.0));
+			n_more[cpu_index]=0;
+			}
 			//threshold[cpu_index]=threshold[cpu_index]/2;
 	}
-	else if (a>250 && a<=256)
+	else if (a==256){
+			n_more[cpu_index]=0;
+			n_less[cpu_index]=0;
 			threshold[cpu_index]=threshold[cpu_index]*1;
-	else
-		threshold[cpu_index]=threshold[cpu_index]*(1+((a-256)/256.0));
+	}
+	else{
+		n_less[cpu_index]++;
+		if(n_less[cpu_index]>2){
+		threshold[cpu_index]=threshold[cpu_index]*1.3;
+		//threshold[cpu_index]=threshold[cpu_index]*(1+((256-a)/256.0));
+		n_less[cpu_index]=0;
+		}
 		//threshold[cpu_index]=threshold[cpu_index]*1.3;
-printf("%d\t%f\n",a,threshold[cpu_index]);
+	}
+//printf("%d\t%f\n",a,threshold[cpu_index]);
 }
 }
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
