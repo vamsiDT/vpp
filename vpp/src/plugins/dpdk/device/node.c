@@ -322,8 +322,9 @@ if(queue_id==0 && xd->device_index==0){
 		s_total[cpu_index]=dpdk_cost_total[cpu_index];
 	}
 	n_pack[cpu_index]=n_buffers;
-//	printf("%u\n",n_buffers);
+//	printf("%u\t%lf\n",n_buffers,sum[cpu_index]);
 	if(n_buffers){
+//		printf("%u\t%lf\t%u\t%u\n",n_buffers,sum[cpu_index],THRESHOLD*nbl[cpu_index],nbl[cpu_index]);
 		update_costs(cpu_index);
 		departure(cpu_index);
 		n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
