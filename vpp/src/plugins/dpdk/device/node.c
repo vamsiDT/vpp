@@ -214,7 +214,7 @@ dpdk_process_subseq_segs (vlib_main_t * vm, vlib_buffer_t * b,
   struct rte_mbuf *mb_seg = 0;
   vlib_buffer_t *b_seg, *b_chain = 0;
   mb_seg = mb->next;
-v  b_chain = b;
+  b_chain = b;
 
   while ((mb->nb_segs > 1) && (nb_seg < mb->nb_segs))
     {
@@ -290,11 +290,6 @@ dpdk_buffer_init_from_template (void *d0, void *d1, void *d2, void *d3,
  * The main thread performs IO and forwards the packets.
  */
 
-//int old_a[MAXCPU][4];
-//int a[MAXCPU][4];
-
-u8 n_less[MAXCPU];
-u8 n_more[MAXCPU];
 
 static_always_inline u32
 dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
@@ -318,53 +313,16 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 if(queue_id==0 && xd->device_index==0){
 	int a = rte_eth_rx_queue_count(xd->device_index, queue_id);
 
-/*
 if(a){
-    if(a>256 || sum[cpu_index]>70000){
-			n_more[cpu_index]++;
-			if(n_more[cpu_index]>4){
-			//threshold[cpu_index]=threshold[cpu_index]*0.7;
-			threshold[cpu_index]=threshold[cpu_index]/(f32)(1+((a-256)/256.0));
-			n_more[cpu_index]=0;
-			}
-			//threshold[cpu_index]=threshold[cpu_index]/2;
+	if(a>512){
+		threshold[cpu_index]=threshold[cpu_index]*0.7;
 	}
-	else if (a==256){
-			n_more[cpu_index]=0;
-			n_less[cpu_index]=0;
-			threshold[cpu_index]=threshold[cpu_index]*1;
-	}
-	else{
-		n_less[cpu_index]++;
-		if(n_less[cpu_index]>1){
-		threshold[cpu_index]=threshold[cpu_index]*1.3;
-		//threshold[cpu_index]=threshold[cpu_index]*(1+((256-a)/256.0));
-		n_less[cpu_index]=0;
-		}
-		//threshold[cpu_index]=threshold[cpu_index]*1.3;
-	}
-printf("%d\t%f\t%lf\n",a,threshold[cpu_index],sum[cpu_index]);
-}
-*/
-
-if(a){
-	if ( a >256 || (sum[cpu_index]>threshold[cpu_index]*nbl[cpu_index]*1.5) ){
-        threshold[cpu_index]=threshold[cpu_index]/2.0;
-    }
-	else if( a<256 || (sum[cpu_index]<threshold[cpu_index]*nbl[cpu_index]*0.9) ){
-        threshold[cpu_index]=threshold[cpu_index]*1.3;
-    }
-/*
-	if( a<256 || (sum[cpu_index]<threshold[cpu_index]*nbl[cpu_index]*0.9) ){
+	else if(a<256){
 		threshold[cpu_index]=threshold[cpu_index]*1.3;
 	}
-	else if ( a >256 || (sum[cpu_index]>threshold[cpu_index]*nbl[cpu_index]*1.5) ){
-		threshold[cpu_index]=threshold[cpu_index]/2.0;
-	}
-*/
-printf("%d\t%f\t%lf\n",a,threshold[cpu_index],sum[cpu_index]);
-
 }
+
+//printf("%d\t%f\t%lf\n",a,threshold[cpu_index],sum[cpu_index]);
 
 }
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
