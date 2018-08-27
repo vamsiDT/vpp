@@ -16,11 +16,10 @@
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define ALPHA 1.0
-#define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define NUMFLOWS 10240
-#define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
+#define NUMFLOWS 10240 /*This number can be change to a larger value at compile time, based on the required activelist size */
+#define THRESHOLD (19200)
 
-/*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
+/* Flow entry */
 typedef struct flowcount{
     u32 hash;
     u32 vqueue;
@@ -28,6 +27,7 @@ typedef struct flowcount{
     struct flowcount * update;
 }flowcount_t;
 
+/*Acticelist entry */
 typedef struct activelist{
     struct flowcount * flow;
     struct activelist * next;
@@ -57,7 +57,6 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
 
     if (PREDICT_FALSE(head == NULL)){
         numflows = 0;
-//        nbl = 0;
         nodet[modulox] = malloc(4*sizeof(flowcount_t));
         (nodet[modulox] + 0)->branchnext = NULL;
         (nodet[modulox] + 1)->branchnext = NULL;
@@ -184,39 +183,36 @@ flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx){
     return flow;
 }
 
-/* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
+// /* function to insert the flow in blacklogged flows list. The flow is inserted at the end of the list i.e tail.*/
+// always_inline void flowin(flowcount_t * flow){
+//     activelist_t * temp;
+//     temp = malloc(sizeof(activelist_t));
+//     temp->flow = flow;
+//     temp->next = NULL;
+//     if (head_af == NULL){
+//         head_af = temp;
+//         tail_af = temp;
+//     }
+//     else{
+//         tail_af->next = temp;
+//         tail_af = temp;
+//     }
+// }
 
-always_inline void flowin(flowcount_t * flow){
-    activelist_t * temp;
-    temp = malloc(sizeof(activelist_t));
-    temp->flow = flow;
-    temp->next = NULL;
-    if (head_af == NULL){
-        head_af = temp;
-        tail_af = temp;
-    }
-    else{
-        tail_af->next = temp;
-        tail_af = temp;
-    }
-}
-
-/* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
-
-always_inline flowcount_t * flowout(){
-    flowcount_t * temp;
-    activelist_t * next;
-    temp = head_af->flow;
-    next = head_af->next;
-    free(head_af);
-    head_af = next;
-    return temp;
-}
+// /* function to extract the flow from the blacklogged flows list. The flow is taken from the head of the list. */
+// always_inline flowcount_t * flowout(){
+//     flowcount_t * temp;
+//     activelist_t * next;
+//     temp = head_af->flow;
+//     next = head_af->next;
+//     free(head_af);
+//     head_af = next;
+//     return temp;
+// }
 
 /*Ring Activelist Implementation with size NUMFLOWS.
 **Activelist entries are overwritten when the activelist is full. (Algorithm cannot work when the activelist overflows)
   */
-
 always_inline void activelist_init(){
     act = malloc(NUMFLOWS*sizeof(activelist_t));
     for(int j=0;j<(NUMFLOWS-1);j++){
@@ -258,7 +254,6 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         u32 served,credit;
         int oldnbl=nbl+1;
         credit=(t-old_t)*ALPHA*10;
-//		threshold = (credit)/nbl;
         while (oldnbl>nbl && nbl > 0 ){
             oldnbl = nbl;
             served = credit/nbl;
