@@ -587,10 +587,10 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
 #endif /*FLOW_TABLE_H*/
 
 /*
-*   "Gather ye rosebuds while ye may"
-*                  - Mike Portnoy
+*   CARPE DIEM
+*   Sieze the day
 *
-*   End
+*   The End
 *
 */
 
