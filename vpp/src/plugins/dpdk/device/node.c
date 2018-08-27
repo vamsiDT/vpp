@@ -452,7 +452,6 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
 
 ////////////////////////////////////////////
     hash0 = mb0->hash.rss;
-	//printf("hash0=%u\n",hash0);
     hash1 = mb1->hash.rss;
     hash2 = mb2->hash.rss;
     hash3 = mb3->hash.rss;

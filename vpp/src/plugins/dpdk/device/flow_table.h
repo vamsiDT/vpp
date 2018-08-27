@@ -15,10 +15,8 @@
 #define FLOW_TABLE_H
 #define TABLESIZE 4096
 #define ALPHA 1.0
-#define BUFFER 384000 //just a random number. Update the value with proper theoritical approach.
-#define THRESHOLD (19200) //just a random number. Update the value with proper theoritical approach.
+#define THRESHOLD (19200)
 
-/*Node in the flow table. srcdst is 64 bit divided as |32bitsrcip|32bitdstip| ; swsrcdstport is divided as |32bit swifindex|16bit srcport|16bit dstport|*/
 typedef struct flowcount{
     u32 hash;
     u32 vqueue;
@@ -212,7 +210,6 @@ always_inline void vstate(flowcount_t * flow, u16 pktlenx,u8 update){
         f32 served,credit;
         int oldnbl=nbl+1;
         credit = (t - old_t)*10*ALPHA;
-//		threshold = 153600;//credit/nbl;
         while (oldnbl>nbl && nbl > 0){
             oldnbl = nbl;
             served = credit/nbl;
@@ -249,8 +246,8 @@ u8 drop;
         drop = 0;
     }
     else {
-        drop = 1;
-        //update vstate is only after a vector. So no update before dropping a packet here.
+        drop = 1; /* Drop Packet */
+        /*update vstate is only after a vector. So no update before dropping a packet here */
     }
 return drop;
 }
@@ -270,10 +267,10 @@ always_inline void departure (){
 #endif /*FLOW_TABLE_H*/
 
 /*
-*   "Gather ye rosebuds while ye may"
-*                  - Mike Portnoy
+*   CARPE DIEM
+*   Sieze the day
 *
-*   End
+*   The End
 *
 */
 
