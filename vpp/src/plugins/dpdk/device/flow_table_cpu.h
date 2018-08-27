@@ -18,24 +18,18 @@
 
 #define TABLESIZE 1024
 #define MAXCPU 4
-#define ALPHACPU 1.0
 #define NUMFLOWS 102400
 
-//#define ELOG_FAIRDROP
+
 #define THRESHOLD 6000
 
 #define BUSYLOOP
-#define WEIGHT_DROP 40
 
-#ifdef ELOG1_FAIRDROP
-#define WEIGHT_DPDK 208
-#else
-#define WEIGHT_DPDK 118//185
-#endif
-
+#define WEIGHT_DPDK 118
 #define WEIGHT_IP4E 192
-#define WEIGHT_CLASS_1 3100//1550
-#define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)
+
+#define WEIGHT_CLASS_1 3100 /*Packets with heavy processing requirements. In this case, 10 times of ip4 forwarding*/
+#define WEIGHT_CLASS_2 (WEIGHT_DPDK+WEIGHT_IP4E)    /*Basic Ip4 forwarding packets*/
 
 #ifdef BUSYLOOP
 #define FLOW_HASH_4157820474    (WEIGHT_CLASS_1)    //192.168.0.1
@@ -369,19 +363,13 @@ always_inline flowcount_t * flowout_act(u32 cpu_index){
 always_inline void update_costs(u32 cpu_index){
 
     activelist_t * costlist = head_act[cpu_index];
-//	dpdk_cost_total[cpu_index] = sum[cpu_index];
     if (PREDICT_TRUE(costlist->flow != NULL)){
         flowcount_t * flow0;
         u32 n = nbl[cpu_index];
     while(n>0){
         flow0 = costlist->flow;
         flow0->cost = flow0->weight*s_total[cpu_index]/sum[cpu_index];
-//		printf("B.U vq = %u\t",flow0->vqueue);
-//		if( flow0->cost > flow0->weight)
 		flow0->vqueue = (flow0->vqueue + (int)(flow0->n_packets*flow0->cost))- (int)(flow0->n_packets*flow0->weight);
-//		printf("A.U vq = %u\n",flow0->vqueue);
-//		else
-//		flow0->vqueue = (flow0->vqueue + (flow0->n_packets*flow0->weight))- (flow0->n_packets*flow0->cost);
 		flow0->n_packets=0;
         costlist = costlist->next;
         n -= 1;
@@ -398,8 +386,6 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
 		credit = (t[cpu_index]-old_t[cpu_index]);
-//		threshold[cpu_index] = (credit*(1.2))/nbl[cpu_index];
-//		printf("%u\n",nbl[cpu_index]);
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -427,7 +413,7 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
             flowin_act(flow,cpu_index);
         }
 
-        flow->vqueue += flow->weight;
+        flow->vqueue += flow->weight; /* Flow vqueues are incremented by weight and vqueues are corrected with real costs after updating the costs */
         flow->n_packets += 1;
         sum[cpu_index]+=flow->weight;
 
@@ -450,24 +436,25 @@ always_inline u8 arrival(struct rte_mbuf * mb,u16 j,flowcount_t * flow,u32 cpu_i
     ed->cost = flow->cost;
  #endif
 
-
     if(PREDICT_TRUE(flow->vqueue <= THRESHOLD)){
         vstate(flow,0,cpu_index);
-#ifdef BUSYLOOP
-        if(PREDICT_FALSE(pktlenx > 500))
-		busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
-#endif
+        #ifdef BUSYLOOP
+            if(PREDICT_FALSE(pktlenx > 500))
+                busyloop[cpu_index]+=pktlenx-(WEIGHT_DPDK+WEIGHT_IP4E);
+        #endif
         f_vectors[j]=mb;
         return 1;
     }
     else {
-        rte_pktmbuf_free(mb);
+        rte_pktmbuf_free(mb); /* DROP */
         return 0;
     }
-
 }
 
-/*vstate update function before sending the vector. This function is after processing all the packets in the vector and called only once per vector */
+/* vstate update function before sending the vector. 
+ * This function is after processing all the packets in the vector and called only once per vector 
+ */
+
 always_inline void departure (u32 cpu_index){
     vstate(NULL,1,cpu_index);
 }
@@ -479,8 +466,9 @@ always_inline void sleep_now (u32 t){
 
 
 /*
-    Function to create a sub vector of packets which are accepted by fairdrop algiorithm
-*/
+ *   Function to create a sub vector of packets which are accepted by fairdrop algiorithm
+ *                            SHADOW VECTOR
+ */
 
 always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffers, u32 cpu_index){
   u32 n_buf = n_buffers;
@@ -515,10 +503,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
       if(PREDICT_FALSE(hello==0)){
         old_t[cpu_index] = t[cpu_index];
         t[cpu_index] = mb0->udata64;
-//		f32 credit = (t[cpu_index]-old_t[cpu_index]);
-//		threshold[cpu_index] = (credit*(1.2))/nbl[cpu_index];
-		//update_costs(cpu_index);
-//        departure(cpu_index);
         hello=1;
       }
 
@@ -579,10 +563,6 @@ always_inline u32 fairdrop_vectors (dpdk_device_t *xd,u16 queue_id, u32 n_buffer
         if(PREDICT_FALSE(hello==0)){
           old_t[cpu_index] = t[cpu_index];
           t[cpu_index] = mb0->udata64;
-//		  f32 credit = (t[cpu_index]-old_t[cpu_index]);
-//          threshold[cpu_index] = (credit*(1.2))/nbl[cpu_index];
-		  //update_costs(cpu_index);
-//          departure(cpu_index);
           hello=1;
         }
 

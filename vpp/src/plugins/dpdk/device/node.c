@@ -309,8 +309,18 @@ dpdk_device_input (dpdk_main_t * dm, dpdk_device_t * xd,
   if ((xd->flags & DPDK_DEVICE_FLAG_ADMIN_UP) == 0)
     return 0;
 
+/* Polling - This functions returns a maximum of VLIB_FRAME SIZE PACKETS and xd->rx_vectors[queue_id] points to the packets available for processing */
   	n_buffers = dpdk_rx_burst (dm, xd, queue_id);
 
+
+/* Extra code added for the purpose of Fairdrop algorithm
+ * Fairdrop algorithm is run over the batch of packets returned by the dpdk_rx_burst function.
+ * The accepted packets are a new batch of packets as input for VPP processing, we call it shadow vector. 
+ * f_vectors is the new variable which contains the pointers to the mbufs of only accepted packets
+ *
+ *		The functions used in this section and descriptions 
+ *				can be found in flow_table_cpu.h
+ */
 
 if(queue_id==0 && xd->device_index==0){
 
@@ -322,14 +332,13 @@ if(queue_id==0 && xd->device_index==0){
 		s_total[cpu_index]=dpdk_cost_total[cpu_index];
 	}
 	n_pack[cpu_index]=n_buffers;
-//	printf("%u\t%lf\n",n_buffers,sum[cpu_index]);
 	if(n_buffers){
-//		printf("%u\t%lf\t%u\t%u\n",n_buffers,sum[cpu_index],THRESHOLD*nbl[cpu_index],nbl[cpu_index]);
 		update_costs(cpu_index);
 		departure(cpu_index);
 		n_buffers=fairdrop_vectors(xd,queue_id,n_buffers,cpu_index);
 	}
 }
+/* This is the end of Fairdrop */
 
 if (PREDICT_FALSE(n_buffers==0))
 	return 0;
@@ -371,6 +380,13 @@ if (PREDICT_FALSE(n_buffers==0))
       u64 or_ol_flags;
 
       vlib_get_next_frame (vm, node, next_index, to_next, n_left_to_next);
+
+
+/* From here on by default mbuf of the packets is xd->rx_vectors[queue_id][packet_number]
+ * 
+ * But, since we create a shadow vector, the packets to be processed are referenced by f_vectors[packet_number]
+ *
+ */
 
       while (n_buffers >= 12 && n_left_to_next >= 4)
 	{
@@ -587,17 +603,6 @@ if (PREDICT_FALSE(n_buffers==0))
 
   vnet_device_increment_rx_packets (cpu_index, mb_index);
 
-// #ifdef ELOG_DPDK_COST
-//     ELOG_TYPE_DECLARE (e) = {
-//     .format = "DPDK_COST: %u CPU: %u",
-//     .format_args = "i4i4",
-//     };
-//     struct {u32 dpdk_cost;u32 cpu_index;} *ed;
-//     ed = ELOG_DATA (&vlib_global_main.elog_main, e);
-//     ed->dpdk_cost = dpdk_cost_total[cpu_index];
-// 	ed->cpu_index = cpu_index;
-// #endif
-
   return mb_index;
 }
 
@@ -686,7 +691,11 @@ dpdk_input (vlib_main_t * vm, vlib_node_runtime_t * node, vlib_frame_t * f)
 
   poll_rate_limit (dm);
 
-  return n_pack[cpu_index];
+/* By default return value is n_rx_packets. We would like to see the actual number of packets returned from Input.
+ * We are not interesteed in number of packets returned from fairdrop algorithm. This can be found easily by no.of packets in the next node.
+ * So the return value here is modified to n_pack which is equal to n_buffers returned by dpdk_rx_burst function 
+ */
+   return n_pack[cpu_index];
 }
 
 /* *INDENT-OFF* */
