@@ -19,6 +19,7 @@
 #define THRESHOLD (19200)
 #define NUMFLOWS 10240
 
+/* Hash table Flow entry */
 typedef struct flowcount{
     u32 hash;
     u32 vqueue;
@@ -26,6 +27,7 @@ typedef struct flowcount{
     struct flowcount * update;
 }flowcount_t;
 
+/* Activelist entry */
 typedef struct activelist{
     struct flowcount * flow;
     struct activelist * next;
@@ -297,10 +299,11 @@ always_inline void departure (){
 #endif /*FLOW_TABLE_H*/
 
 /*
-*   "Gather ye rosebuds while ye may"
-*                  - Mike Portnoy
+*   CARPE DIEM
+*   Sieze the day
 *
-*   End
+*   The End
 *
 */
+
 
