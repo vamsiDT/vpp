@@ -30,7 +30,7 @@
 #ifdef ELOG_FAIRDROP
 #define WEIGHT_DPDK 208
 #else
-#define WEIGHT_DPDK 158//185
+#define WEIGHT_DPDK 158
 #endif
 
 #define WEIGHT_IP4E 192
@@ -168,6 +168,9 @@ extern u32 busyloop[MAXCPU];
 extern f64 sum[MAXCPU];
 extern u64 dpdk_cost_total[MAXCPU];
 extern f32 threshold[MAXCPU];
+
+
+/* Flow Classification function */
 
 always_inline flowcount_t *
 flow_table_classify(u32 modulox, u32 hashx0, u16 pktlenx, u32 cpu_index){
@@ -340,9 +343,9 @@ always_inline void vstate(flowcount_t * flow,u8 update,u32 cpu_index){
         flowcount_t * j;
         f32 served,credit;
         int oldnbl=nbl[cpu_index]+1;
-		credit = (t[cpu_index]-old_t[cpu_index]);//(15.0/9);
-		threshold[cpu_index] = credit*((f32)1.15)/nbl[cpu_index];//(credit)*2;//((f32)n_packets)*((f32)380.0)/nbl[cpu_index];
-		//veryold_t[cpu_index] = nbl[cpu_index];
+		credit = (t[cpu_index]-old_t[cpu_index]);
+		threshold[cpu_index] = credit*((f32)1.15)/nbl[cpu_index];
+
         while (oldnbl>nbl[cpu_index] && nbl[cpu_index] > 0){
             oldnbl = nbl[cpu_index];
             served = credit/(nbl[cpu_index]);
@@ -437,10 +440,10 @@ always_inline void sleep_now (u32 t){
 #endif /*FLOW_TABLE_H*/
 
 /*
-*   "Gather ye rosebuds while ye may"
-*                  - Mike Portnoy
+*   CARPE DIEM
+*   Sieze the day
 *
-*   End
+*   The End
 *
 */
 

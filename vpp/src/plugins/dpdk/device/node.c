@@ -32,7 +32,7 @@
 #include <dpdk/device/flow_table_cpu.h>
 #include <dpdk/device/flow_table_var.h>
 #include <vppinfra/elog.h>
-//////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////
 
 static char *dpdk_error_strings[] = {
 #define _(n,s) s,
